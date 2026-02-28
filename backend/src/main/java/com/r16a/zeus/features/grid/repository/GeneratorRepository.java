@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface GeneratorRepository extends CrudRepository<Generator, UUID> {
     List<Generator> findByBusId(UUID busId);
+    List<Generator> findByBusIdIn(List<UUID> busIds);
 }

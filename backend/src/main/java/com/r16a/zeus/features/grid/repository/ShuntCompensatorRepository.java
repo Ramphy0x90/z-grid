@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface ShuntCompensatorRepository extends CrudRepository<ShuntCompensator, UUID> {
     List<ShuntCompensator> findByBusId(UUID busId);
+    List<ShuntCompensator> findByBusIdIn(List<UUID> busIds);
 }

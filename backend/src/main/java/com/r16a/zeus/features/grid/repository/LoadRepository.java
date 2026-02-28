@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface LoadRepository extends CrudRepository<Load, UUID> {
     List<Load> findByBusId(UUID busId);
+    List<Load> findByBusIdIn(List<UUID> busIds);
 }

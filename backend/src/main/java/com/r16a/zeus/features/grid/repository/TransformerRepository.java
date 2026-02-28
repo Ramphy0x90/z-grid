@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface TransformerRepository extends CrudRepository<Transformer, UUID> {
     List<Transformer> findByGridId(UUID gridId);
+    void deleteByGridId(UUID gridId);
 }

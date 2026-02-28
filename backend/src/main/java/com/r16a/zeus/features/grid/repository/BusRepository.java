@@ -7,4 +7,6 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface BusRepository extends CrudRepository<Bus, UUID> {
     List<Bus> findByGridId(UUID gridId);
+    long countByGridId(UUID gridId);
+    void deleteByGridId(UUID gridId);
 }
