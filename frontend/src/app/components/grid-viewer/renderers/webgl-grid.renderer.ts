@@ -67,6 +67,9 @@ type BufferHandles = {
 	nodePositions: WebGLBuffer;
 	nodeRadii: WebGLBuffer;
 	nodeColors: WebGLBuffer;
+	attachedPositions: WebGLBuffer;
+	attachedRadii: WebGLBuffer;
+	attachedColors: WebGLBuffer;
 };
 
 type ProgramHandles = {
@@ -197,6 +200,7 @@ export class WebglGridRenderer {
 	private readonly ySign: number;
 	private readonly renderSpace: RenderSpace;
 	private dynamicNodeColors: Float32Array = new Float32Array(0);
+	private dynamicAttachedColors: Float32Array = new Float32Array(0);
 	private dynamicLineColors: Float32Array = new Float32Array(0);
 	private lastInteractionKey = '';
 
@@ -247,6 +251,9 @@ export class WebglGridRenderer {
 			nodePositions: createBuffer(gl),
 			nodeRadii: createBuffer(gl),
 			nodeColors: createBuffer(gl),
+			attachedPositions: createBuffer(gl),
+			attachedRadii: createBuffer(gl),
+			attachedColors: createBuffer(gl),
 		};
 
 		gl.enable(gl.BLEND);
@@ -261,6 +268,7 @@ export class WebglGridRenderer {
 	setGraph(graph: NormalizedGridGraph): void {
 		this.graph = graph;
 		this.dynamicNodeColors = new Float32Array(graph.nodeColors);
+		this.dynamicAttachedColors = new Float32Array(graph.attachedColors);
 		this.dynamicLineColors = new Float32Array(graph.lineColors);
 		this.lastInteractionKey = '';
 		const gl = this.gl;
@@ -287,6 +295,19 @@ export class WebglGridRenderer {
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.nodeColors);
 		gl.bufferData(gl.ARRAY_BUFFER, graph.nodeColors, gl.DYNAMIC_DRAW);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedPositions);
+		gl.bufferData(
+			gl.ARRAY_BUFFER,
+			this.renderSpace === 'map' ? graph.mapAttachedPositions : graph.schematicAttachedPositions,
+			gl.STATIC_DRAW,
+		);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedRadii);
+		gl.bufferData(gl.ARRAY_BUFFER, graph.attachedRadii, gl.STATIC_DRAW);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedColors);
+		gl.bufferData(gl.ARRAY_BUFFER, graph.attachedColors, gl.DYNAMIC_DRAW);
 	}
 
 	resize(width: number, height: number): void {
@@ -364,12 +385,17 @@ export class WebglGridRenderer {
 		}
 		this.lastInteractionKey = interactionKey;
 		this.dynamicNodeColors.set(this.graph.nodeColors);
+		this.dynamicAttachedColors.set(this.graph.attachedColors);
 		this.dynamicLineColors.set(this.graph.lineColors);
 
 		const highlightedBusId =
 			selected?.kind === 'bus' ? selected.id : hovered?.kind === 'bus' ? hovered.id : null;
 		const highlightedEdgeId =
-			selected?.kind === 'edge' ? selected.id : hovered?.kind === 'edge' ? hovered.id : null;
+			selected?.kind === 'line' || selected?.kind === 'transformer'
+				? selected.id
+				: hovered?.kind === 'line' || hovered?.kind === 'transformer'
+					? hovered.id
+					: null;
 
 		if (highlightedBusId) {
 			const busIndex = this.graph.busIndexById.get(highlightedBusId);
@@ -387,6 +413,21 @@ export class WebglGridRenderer {
 				this.dynamicLineColors[edgeIndex * 4 + 1] = 1;
 				this.dynamicLineColors[edgeIndex * 4 + 2] = 0.533;
 				this.dynamicLineColors[edgeIndex * 4 + 3] = 1;
+			}
+		}
+		const highlightedAttachedId =
+			selected?.kind === 'load' || selected?.kind === 'generator' || selected?.kind === 'shunt'
+				? selected.id
+				: hovered?.kind === 'load' || hovered?.kind === 'generator' || hovered?.kind === 'shunt'
+					? hovered.id
+					: null;
+		if (highlightedAttachedId) {
+			const attachedIndex = this.graph.attachedElementIds.indexOf(highlightedAttachedId);
+			if (attachedIndex >= 0) {
+				this.dynamicAttachedColors[attachedIndex * 4] = 0;
+				this.dynamicAttachedColors[attachedIndex * 4 + 1] = 1;
+				this.dynamicAttachedColors[attachedIndex * 4 + 2] = 0.533;
+				this.dynamicAttachedColors[attachedIndex * 4 + 3] = 1;
 			}
 		}
 	}
@@ -416,6 +457,31 @@ export class WebglGridRenderer {
 			return nodeHit;
 		}
 
+		const attachedPositions =
+			this.renderSpace === 'map'
+				? this.graph.mapAttachedPositions
+				: this.graph.schematicAttachedPositions;
+		const attachmentThreshold = 7 / this.viewport.zoom;
+		let attachedHit: SelectedElement = null;
+		let bestAttachmentDistance = Number.POSITIVE_INFINITY;
+		for (let index = 0; index < this.graph.attachedElementIds.length; index += 1) {
+			const x = attachedPositions[index * 2];
+			const y = attachedPositions[index * 2 + 1];
+			const radius = Math.max(attachmentThreshold, this.graph.attachedRadii[index] / this.viewport.zoom);
+			const distance = Math.hypot(point.x - x, point.y - y);
+			if (distance <= radius && distance < bestAttachmentDistance) {
+				bestAttachmentDistance = distance;
+				const kind = this.graph.attachedElementKinds[index];
+				attachedHit = {
+					kind: kind === 'generator' ? 'generator' : kind === 'load' ? 'load' : 'shunt',
+					id: this.graph.attachedElementIds[index],
+				};
+			}
+		}
+		if (attachedHit) {
+			return attachedHit;
+		}
+
 		const segments =
 			this.renderSpace === 'map' ? this.graph.mapLineSegments : this.graph.schematicLineSegments;
 		const lineThreshold = 6 / this.viewport.zoom;
@@ -429,7 +495,10 @@ export class WebglGridRenderer {
 			const distance = distanceToSegment(point.x, point.y, x1, y1, x2, y2);
 			if (distance <= lineThreshold && distance < bestLineDistance) {
 				bestLineDistance = distance;
-				edgeHit = { kind: 'edge', id: this.graph.edgeIds[index] };
+				edgeHit = {
+					kind: this.graph.edgeKinds[index] === 'transformer' ? 'transformer' : 'line',
+					id: this.graph.edgeIds[index],
+				};
 			}
 		}
 		return edgeHit;
@@ -479,6 +548,25 @@ export class WebglGridRenderer {
 		gl.enableVertexAttribArray(this.handles.nodeAttributes.color);
 		gl.vertexAttribPointer(this.handles.nodeAttributes.color, 4, gl.FLOAT, false, 0, 0);
 		gl.drawArrays(gl.POINTS, 0, this.graph.busIds.length);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedColors);
+		gl.bufferData(gl.ARRAY_BUFFER, this.dynamicAttachedColors, gl.DYNAMIC_DRAW);
+		gl.useProgram(this.handles.nodeProgram);
+		gl.uniform2f(this.handles.nodeUniforms.center, this.viewport.centerX, this.viewport.centerY);
+		gl.uniform2f(this.handles.nodeUniforms.halfSize, halfSizeX, halfSizeY);
+		gl.uniform1f(this.handles.nodeUniforms.zoom, this.viewport.zoom);
+		gl.uniform1f(this.handles.nodeUniforms.ySign, this.ySign);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedPositions);
+		gl.enableVertexAttribArray(this.handles.nodeAttributes.position);
+		gl.vertexAttribPointer(this.handles.nodeAttributes.position, 2, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedRadii);
+		gl.enableVertexAttribArray(this.handles.nodeAttributes.radius);
+		gl.vertexAttribPointer(this.handles.nodeAttributes.radius, 1, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.attachedColors);
+		gl.enableVertexAttribArray(this.handles.nodeAttributes.color);
+		gl.vertexAttribPointer(this.handles.nodeAttributes.color, 4, gl.FLOAT, false, 0, 0);
+		gl.drawArrays(gl.POINTS, 0, this.graph.attachedElementIds.length);
 	}
 
 	dispose(): void {
@@ -488,6 +576,9 @@ export class WebglGridRenderer {
 		gl.deleteBuffer(this.buffers.nodePositions);
 		gl.deleteBuffer(this.buffers.nodeRadii);
 		gl.deleteBuffer(this.buffers.nodeColors);
+		gl.deleteBuffer(this.buffers.attachedPositions);
+		gl.deleteBuffer(this.buffers.attachedRadii);
+		gl.deleteBuffer(this.buffers.attachedColors);
 		gl.deleteProgram(this.handles.lineProgram);
 		gl.deleteProgram(this.handles.nodeProgram);
 	}

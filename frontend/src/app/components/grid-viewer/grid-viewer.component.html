@@ -146,6 +146,16 @@
     @if (editEnabled() && placementMode()) {
       <p class="placement-hint" aria-live="polite">{{ placementHint() }}</p>
     }
+    @if (inspectorSelection(); as selected) {
+      <aside class="inspector-floating" aria-label="Selected element inspector">
+        <app-grid-element-inspector
+          [selection]="selected"
+          [editEnabled]="editEnabled()"
+          [busIds]="inspectorBusIds()"
+          (applyRequested)="onInspectorApply($event)"
+        />
+      </aside>
+    }
     @if (editEnabled() && connectionPreview(); as preview) {
       <svg class="connection-preview" aria-hidden="true">
         <line [attr.x1]="preview.x1" [attr.y1]="preview.y1" [attr.x2]="preview.x2" [attr.y2]="preview.y2"></line>

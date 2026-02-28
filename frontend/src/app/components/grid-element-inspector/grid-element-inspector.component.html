@@ -1,0 +1,49 @@
+@if (selection(); as selected) {
+	<section class="inspector-panel" aria-label="Grid element inspector">
+		<header class="inspector-header">
+			<div>
+				<h3>{{ title() }}</h3>
+				<p class="inspector-id">ID: {{ selected.element.id }}</p>
+			</div>
+			@if (!editEnabled()) {
+				<span class="mode-chip">Read only</span>
+			}
+		</header>
+
+		@if (form(); as activeForm) {
+			<form class="inspector-form" [formGroup]="activeForm" (ngSubmit)="onApply()">
+				<div class="inspector-fields">
+					@for (field of fields(); track field.key) {
+						@if (field.inputType === 'boolean') {
+							<label class="inspector-field inspector-field-checkbox">
+								<input type="checkbox" [formControlName]="field.key" [disabled]="!editEnabled()" />
+								<span>{{ field.label }}</span>
+							</label>
+						} @else if (field.inputType === 'select') {
+							<label class="inspector-field">
+								<span>{{ field.label }}</span>
+								<select [formControlName]="field.key" [disabled]="!editEnabled()">
+									@for (option of field.options ?? []; track option.value) {
+										<option [value]="option.value">{{ option.label }}</option>
+									}
+								</select>
+							</label>
+						} @else {
+							<label class="inspector-field">
+								<span>{{ field.label }}</span>
+								<input
+									[type]="field.inputType === 'number' ? 'number' : 'text'"
+									[formControlName]="field.key"
+									[readonly]="!editEnabled()"
+									[attr.step]="field.step ?? null"
+								/>
+							</label>
+						}
+					}
+				</div>
+
+				<button type="submit" class="apply-button" [disabled]="!canApply()">Apply</button>
+			</form>
+		}
+	</section>
+}

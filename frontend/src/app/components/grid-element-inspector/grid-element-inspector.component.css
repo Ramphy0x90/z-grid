@@ -1,0 +1,110 @@
+:host {
+	display: block;
+}
+
+.inspector-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	height: 100%;
+	padding: 12px;
+	border: 1px solid var(--border-panel);
+	border-radius: 10px;
+	background: rgba(12, 14, 20, 0.96);
+	backdrop-filter: blur(8px);
+	box-shadow: var(--shadow-md);
+}
+
+.inspector-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.inspector-header h3 {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-primary);
+}
+
+.inspector-id {
+	margin: 4px 0 0;
+	font-size: 11px;
+	color: var(--text-muted);
+	word-break: break-all;
+}
+
+.mode-chip {
+	padding: 2px 8px;
+	border-radius: 999px;
+	border: 1px solid var(--border-subtle);
+	background: var(--bg-elevated);
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.inspector-form {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 0;
+}
+
+.inspector-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: min(62vh, 640px);
+	overflow: auto;
+	padding-right: 4px;
+}
+
+.inspector-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.inspector-field-checkbox {
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
+}
+
+.inspector-field input:not([type='checkbox']),
+.inspector-field select {
+	border: 1px solid var(--border-input);
+	background: var(--bg-elevated);
+	color: var(--text-primary);
+	border-radius: 7px;
+	padding: 6px 8px;
+	font-size: 12px;
+}
+
+.inspector-field input:focus-visible,
+.inspector-field select:focus-visible,
+.apply-button:focus-visible {
+	outline: 2px solid var(--accent-interactive);
+	outline-offset: 2px;
+}
+
+.apply-button {
+	align-self: flex-end;
+	border: 1px solid var(--border-input);
+	background: var(--accent-interactive);
+	color: var(--text-inverse);
+	border-radius: 7px;
+	padding: 6px 12px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.apply-button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}

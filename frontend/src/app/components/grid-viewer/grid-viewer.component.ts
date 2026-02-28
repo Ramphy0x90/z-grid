@@ -26,8 +26,21 @@ import {
 import { MapWebglRenderer } from './renderers/map-webgl.renderer';
 import { SchematicWebglRenderer } from './renderers/schematic-webgl.renderer';
 import { GridInteractionController } from './renderers/grid-interaction.controller';
-import type { GridDataset } from './models/grid.models';
+import type {
+	BusModel,
+	GeneratorModel,
+	GridDataset,
+	LineModel,
+	LoadModel,
+	ShuntCompensatorModel,
+	TransformerModel,
+} from './models/grid.models';
 import { environment } from '../../../environments/environment';
+import {
+	GridElementInspectorComponent,
+	type GridElementInspectorApplyEvent,
+	type GridElementInspectorSelection,
+} from '../grid-element-inspector/grid-element-inspector.component';
 
 type ActiveView = 'map' | 'schematic';
 type MapStyleId = 'cartoDark' | 'cartoLight' | 'osmStandard' | 'openTopo';
@@ -74,6 +87,7 @@ const MAP_STYLE_OPTIONS: readonly MapStyleOption[] = [
 
 @Component({
 	selector: 'app-grid-viewer',
+	imports: [GridElementInspectorComponent],
 	templateUrl: './grid-viewer.component.html',
 	styleUrl: './grid-viewer.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -104,6 +118,36 @@ export class GridViewerComponent implements AfterViewInit {
 	protected readonly placementHint = computed(() => this.getPlacementHint());
 	protected readonly connectionPreview = computed(() => this.getConnectionPreview());
 	protected readonly placedConnectionOverlays = computed(() => this.getPlacedConnectionOverlays());
+	protected readonly inspectorSelection = computed<GridElementInspectorSelection | null>(() => {
+		const selected = this.facade.selectedElement();
+		if (!selected) {
+			return null;
+		}
+		const dataset = this.facade.dataset();
+		if (selected.kind === 'bus') {
+			const element = dataset.buses.find((bus) => bus.id === selected.id);
+			return element ? { kind: 'bus', element } : null;
+		}
+		if (selected.kind === 'line') {
+			const element = dataset.lines.find((line) => line.id === selected.id);
+			return element ? { kind: 'line', element } : null;
+		}
+		if (selected.kind === 'transformer') {
+			const element = dataset.transformers.find((transformer) => transformer.id === selected.id);
+			return element ? { kind: 'transformer', element } : null;
+		}
+		if (selected.kind === 'load') {
+			const element = dataset.loads.find((load) => load.id === selected.id);
+			return element ? { kind: 'load', element } : null;
+		}
+		if (selected.kind === 'generator') {
+			const element = dataset.generators.find((generator) => generator.id === selected.id);
+			return element ? { kind: 'generator', element } : null;
+		}
+		const element = dataset.shuntCompensators.find((shunt) => shunt.id === selected.id);
+		return element ? { kind: 'shunt', element } : null;
+	});
+	protected readonly inspectorBusIds = computed(() => this.facade.dataset().buses.map((bus) => bus.id));
 
 	private mapRenderer: MapWebglRenderer | null = null;
 	private schematicRenderer: SchematicWebglRenderer | null = null;
@@ -369,7 +413,7 @@ export class GridViewerComponent implements AfterViewInit {
 				? this.facade.addLineBetweenBuses(sourceBusId, element.id)
 				: this.facade.addTransformerBetweenBuses(sourceBusId, element.id);
 		this.syncGraphToRenderers();
-		this.facade.selectElement({ kind: 'edge', id: edgeId });
+		this.facade.selectElement({ kind: mode, id: edgeId });
 		this.facade.setPlacementMode(null);
 		this.pendingConnectionBusId.set(null);
 		this.emitDatasetChange();
@@ -581,5 +625,71 @@ export class GridViewerComponent implements AfterViewInit {
 
 	private emitDatasetChange(): void {
 		this.datasetChange.emit(this.facade.dataset());
+	}
+
+	protected onInspectorApply(event: GridElementInspectorApplyEvent): void {
+		const dataset = this.facade.dataset();
+		const nextDataset = this.applyInspectorPatch(dataset, event);
+		this.facade.updateDataset(nextDataset);
+		this.syncGraphToRenderers();
+		this.emitDatasetChange();
+	}
+
+	private applyInspectorPatch(
+		dataset: GridDataset,
+		event: GridElementInspectorApplyEvent,
+	): GridDataset {
+		if (event.kind === 'bus') {
+			return {
+				...dataset,
+				buses: dataset.buses.map((bus) =>
+					bus.id === event.id ? ({ ...bus, ...event.changes } as BusModel) : bus,
+				),
+			};
+		}
+		if (event.kind === 'line') {
+			return {
+				...dataset,
+				lines: dataset.lines.map((line) =>
+					line.id === event.id ? ({ ...line, ...event.changes } as LineModel) : line,
+				),
+			};
+		}
+		if (event.kind === 'transformer') {
+			return {
+				...dataset,
+				transformers: dataset.transformers.map((transformer) =>
+					transformer.id === event.id
+						? ({ ...transformer, ...event.changes } as TransformerModel)
+						: transformer,
+				),
+			};
+		}
+		if (event.kind === 'load') {
+			return {
+				...dataset,
+				loads: dataset.loads.map((load) =>
+					load.id === event.id ? ({ ...load, ...event.changes } as LoadModel) : load,
+				),
+			};
+		}
+		if (event.kind === 'generator') {
+			return {
+				...dataset,
+				generators: dataset.generators.map((generator) =>
+					generator.id === event.id
+						? ({ ...generator, ...event.changes } as GeneratorModel)
+						: generator,
+				),
+			};
+		}
+		return {
+			...dataset,
+			shuntCompensators: dataset.shuntCompensators.map((shunt) =>
+				shunt.id === event.id
+					? ({ ...shunt, ...event.changes } as ShuntCompensatorModel)
+					: shunt,
+			),
+		};
 	}
 }
