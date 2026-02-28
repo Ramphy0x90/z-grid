@@ -1,85 +1,85 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 :root {
-  /* Background layers — blue-slate undertone instead of pure gray */
-  --bg-base: #0c0e14;
-  --bg-surface: #12151c;
-  --bg-elevated: #181c25;
-  --bg-sunken: #0e1018;
-  --bg-input: #151820;
-  --bg-table-header: #1a1e28;
-  --bg-hover: #1e2230;
-  --bg-active: #232838;
+  /* Background layers — deep space with warmth */
+  --bg-base: #0b0d13;
+  --bg-surface: #111520;
+  --bg-elevated: #171c28;
+  --bg-sunken: #090c12;
+  --bg-input: #131724;
+  --bg-table-header: #1a1f2c;
+  --bg-hover: #1c2234;
+  --bg-active: #222940;
 
-  /* Borders — tinted with blue */
-  --border-default: #252a38;
-  --border-subtle: #1f2433;
-  --border-input: #2c3245;
-  --border-panel: #272c3c;
-  --border-hover: #3a4158;
-  --border-strong: #4a5270;
+  /* Borders — tinted with blue-violet */
+  --border-default: #262c40;
+  --border-subtle: #1e2438;
+  --border-input: #2e3550;
+  --border-panel: #282f44;
+  --border-hover: #3d4568;
+  --border-strong: #4e5878;
 
-  /* Text hierarchy — slightly cool-white for clarity */
-  --text-primary: #f0f2f7;
-  --text-secondary: #c8cdd8;
-  --text-tertiary: #9ca3b8;
-  --text-muted: #717a94;
-  --text-dim: #505a72;
-  --text-inverse: #0c0e14;
+  /* Text hierarchy — slightly warm-white for vibrancy */
+  --text-primary: #f2f3f8;
+  --text-secondary: #cad0de;
+  --text-tertiary: #9ea6be;
+  --text-muted: #7480a0;
+  --text-dim: #535e7a;
+  --text-inverse: #0b0d13;
 
-  /* Accent - Energy (emerald green) */
-  --accent-energy: #10b981;
-  --accent-energy-hover: #0d9668;
+  /* Accent - Energy (vivid emerald) */
+  --accent-energy: #34d399;
+  --accent-energy-hover: #10b981;
   --accent-energy-muted: #065f46;
-  --accent-energy-subtle: rgba(16, 185, 129, 0.10);
+  --accent-energy-subtle: rgba(52, 211, 153, 0.12);
 
-  /* Accent - Interactive (cyan-blue) */
-  --accent-interactive: #22d3ee;
-  --accent-interactive-muted: #0e4a5c;
-  --accent-interactive-subtle: rgba(34, 211, 238, 0.08);
+  /* Accent - Interactive (electric cyan) */
+  --accent-interactive: #38e8ff;
+  --accent-interactive-muted: #0e4f64;
+  --accent-interactive-subtle: rgba(56, 232, 255, 0.10);
 
-  /* Accent - Focus (blue) */
-  --accent-focus: #4f8cff;
-  --accent-focus-subtle: rgba(79, 140, 255, 0.06);
+  /* Accent - Focus (vivid blue) */
+  --accent-focus: #5c9aff;
+  --accent-focus-subtle: rgba(92, 154, 255, 0.08);
 
-  /* Status - Warning (amber) */
-  --status-warning: #f59e0b;
+  /* Status - Warning (warm amber) */
+  --status-warning: #fbbf24;
   --status-warning-muted: #78350f;
-  --status-warning-subtle: rgba(245, 158, 11, 0.10);
-  --status-warning-text: #fbbf24;
+  --status-warning-subtle: rgba(251, 191, 36, 0.10);
+  --status-warning-text: #fcd34d;
 
-  /* Status - Critical (red) */
-  --status-critical: #ef4444;
+  /* Status - Critical (hot coral) */
+  --status-critical: #f87171;
   --status-critical-muted: #7f1d1d;
-  --status-critical-subtle: rgba(239, 68, 68, 0.08);
-  --status-critical-text: #fda4af;
+  --status-critical-subtle: rgba(248, 113, 113, 0.10);
+  --status-critical-text: #fca5a5;
 
-  /* Status - Offline (gray) */
-  --status-offline: #717a94;
-  --status-offline-muted: #252a38;
-  --status-offline-subtle: rgba(113, 122, 148, 0.08);
+  /* Status - Offline (steel) */
+  --status-offline: #7480a0;
+  --status-offline-muted: #262c40;
+  --status-offline-subtle: rgba(116, 128, 160, 0.08);
 
-  /* Status - Maintenance (purple) */
-  --status-maintenance: #a78bfa;
+  /* Status - Maintenance (electric purple) */
+  --status-maintenance: #b49cff;
   --status-maintenance-muted: #3b0764;
-  --status-maintenance-subtle: rgba(167, 139, 250, 0.08);
+  --status-maintenance-subtle: rgba(180, 156, 255, 0.10);
 
-  /* Chart colors */
-  --chart-1: #10b981;
-  --chart-2: #22d3ee;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #a78bfa;
-  --chart-6: #f472b6;
-  --chart-7: #38bdf8;
-  --chart-8: #fbbf24;
+  /* Chart colors — punched up for vibrancy */
+  --chart-1: #34d399;
+  --chart-2: #38e8ff;
+  --chart-3: #fbbf24;
+  --chart-4: #f87171;
+  --chart-5: #b49cff;
+  --chart-6: #fb7caa;
+  --chart-7: #4cc9f0;
+  --chart-8: #fcd34d;
 
-  /* Shadows — tinted blue-black for depth */
-  --shadow-sm: 0 1px 3px rgba(4, 6, 16, 0.4), 0 1px 2px rgba(4, 6, 16, 0.25);
-  --shadow-md: 0 4px 14px rgba(4, 6, 16, 0.45), 0 2px 4px rgba(4, 6, 16, 0.3);
-  --shadow-lg: 0 12px 36px rgba(4, 6, 16, 0.55), 0 4px 8px rgba(4, 6, 16, 0.35);
-  --shadow-glow-energy: 0 0 14px rgba(16, 185, 129, 0.18), 0 0 4px rgba(16, 185, 129, 0.12);
-  --shadow-glow-interactive: 0 0 14px rgba(34, 211, 238, 0.18), 0 0 4px rgba(34, 211, 238, 0.12);
+  /* Shadows — deeper with colored ambient light */
+  --shadow-sm: 0 1px 3px rgba(2, 4, 14, 0.5), 0 1px 2px rgba(2, 4, 14, 0.3);
+  --shadow-md: 0 4px 16px rgba(2, 4, 14, 0.5), 0 2px 4px rgba(2, 4, 14, 0.35);
+  --shadow-lg: 0 12px 40px rgba(2, 4, 14, 0.6), 0 4px 8px rgba(2, 4, 14, 0.4);
+  --shadow-glow-energy: 0 0 20px rgba(52, 211, 153, 0.25), 0 0 6px rgba(52, 211, 153, 0.15);
+  --shadow-glow-interactive: 0 0 20px rgba(56, 232, 255, 0.25), 0 0 6px rgba(56, 232, 255, 0.15);
 
   /* Transitions */
   --transition-fast: 120ms ease;
@@ -172,7 +172,7 @@ body {
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.2);
+  background: rgba(56, 232, 255, 0.22);
   color: var(--text-primary);
 }
 

@@ -14,8 +14,8 @@
   padding: 10px;
   border: 1px solid var(--border-panel);
   border-radius: 12px;
-  background: var(--bg-sunken);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-sunken) 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(56, 232, 255, 0.03);
   overflow: hidden;
 }
 
@@ -93,7 +93,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   overflow: hidden;
-  background: #090b10;
+  background: radial-gradient(ellipse at 30% 20%, rgba(56, 232, 255, 0.03) 0%, #090b10 70%);
 }
 
 .top-toolbar {

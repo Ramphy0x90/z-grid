@@ -143,7 +143,7 @@ tbody td {
 }
 
 tbody tr:hover td {
-  background: rgba(34, 211, 238, 0.04);
+  background: rgba(56, 232, 255, 0.05);
 }
 
 tbody tr:last-child td {
