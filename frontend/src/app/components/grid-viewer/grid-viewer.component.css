@@ -68,9 +68,36 @@
 }
 
 .toolbar-button:focus-visible,
-.view-toggle:focus-visible {
+.view-toggle:focus-visible,
+.map-style-select:focus-visible {
   outline: 2px solid var(--accent-interactive);
   outline-offset: 2px;
+}
+
+.map-style-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.map-style-select {
+  border: 1px solid var(--border-input);
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.map-style-select:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
 }
 
 .chip {

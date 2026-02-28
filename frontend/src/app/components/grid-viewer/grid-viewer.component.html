@@ -23,6 +23,21 @@
           Map
         </button>
       </div>
+      @if (activeView() === 'map') {
+        <label class="map-style-control" for="map-style-select">
+          <span>Style</span>
+          <select
+            id="map-style-select"
+            class="map-style-select"
+            [value]="selectedMapStyleId()"
+            (change)="onMapStyleChange($event)"
+          >
+            @for (style of mapStyleOptions; track style.id) {
+              <option [value]="style.id">{{ style.label }}</option>
+            }
+          </select>
+        </label>
+      }
       <button type="button" class="toolbar-button" (click)="resetViewport()">Fit view</button>
       <span class="chip" aria-live="polite">Total elements: {{ totalElements() }}</span>
       <button type="button" class="toolbar-button" (click)="zoomOut()" aria-label="Zoom out">

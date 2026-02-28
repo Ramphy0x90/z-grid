@@ -16,6 +16,7 @@ import {
 	map as createLeafletMap,
 	tileLayer,
 	type Map as LeafletMap,
+	type TileLayer,
 } from 'leaflet';
 import {
 	GridViewerFacade,
@@ -29,6 +30,47 @@ import type { GridDataset } from './models/grid.models';
 import { environment } from '../../../environments/environment';
 
 type ActiveView = 'map' | 'schematic';
+type MapStyleId = 'cartoDark' | 'cartoLight' | 'osmStandard' | 'openTopo';
+
+type MapStyleOption = {
+	id: MapStyleId;
+	label: string;
+	tileUrl: string;
+	attribution: string;
+	maxZoom: number;
+};
+
+const MAP_STYLE_OPTIONS: readonly MapStyleOption[] = [
+	{
+		id: 'cartoDark',
+		label: 'CARTO Dark',
+		tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+		attribution: '&copy; OpenStreetMap contributors, &copy; CARTO',
+		maxZoom: 20,
+	},
+	{
+		id: 'cartoLight',
+		label: 'CARTO Light',
+		tileUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+		attribution: '&copy; OpenStreetMap contributors, &copy; CARTO',
+		maxZoom: 20,
+	},
+	{
+		id: 'osmStandard',
+		label: 'OSM Standard',
+		tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+		attribution: '&copy; OpenStreetMap contributors',
+		maxZoom: 19,
+	},
+	{
+		id: 'openTopo',
+		label: 'OpenTopoMap',
+		tileUrl: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+		attribution:
+			'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+		maxZoom: 17,
+	},
+];
 
 @Component({
 	selector: 'app-grid-viewer',
@@ -51,6 +93,8 @@ export class GridViewerComponent implements AfterViewInit {
 	private readonly viewerBodyRef?: ElementRef<HTMLElement>;
 
 	protected readonly activeView = signal<ActiveView>('schematic');
+	protected readonly mapStyleOptions = MAP_STYLE_OPTIONS;
+	protected readonly selectedMapStyleId = signal<MapStyleId>(this.resolveInitialMapStyleId());
 	readonly dataset = input<GridDataset | null>(null);
 	readonly editEnabled = input(false);
 	readonly datasetChange = output<GridDataset>();
@@ -66,6 +110,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private mapController: GridInteractionController | null = null;
 	private schematicController: GridInteractionController | null = null;
 	private leafletMap: LeafletMap | null = null;
+	private leafletTileLayer: TileLayer | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private animationFrameId = 0;
 	private lastDatasetGridId: string | null = null;
@@ -186,6 +231,18 @@ export class GridViewerComponent implements AfterViewInit {
 		const isSameTool = this.facade.placementMode() === tool;
 		this.pendingConnectionBusId.set(null);
 		this.facade.setPlacementMode(isSameTool ? null : tool);
+	}
+
+	protected onMapStyleChange(event: Event): void {
+		const target = event.target;
+		if (!(target instanceof HTMLSelectElement)) {
+			return;
+		}
+		if (!this.isMapStyleId(target.value)) {
+			return;
+		}
+		this.selectedMapStyleId.set(target.value);
+		this.applyMapStyleLayer();
 	}
 
 	private syncGraphToRenderers(): void {
@@ -343,12 +400,8 @@ export class GridViewerComponent implements AfterViewInit {
 			keyboard: false,
 			touchZoom: false,
 		});
-		const tiles = tileLayer(environment.map.tileUrl, {
-			attribution: environment.map.attribution,
-			maxZoom: 19,
-		});
-		tiles.addTo(map);
 		this.leafletMap = map;
+		this.applyMapStyleLayer();
 		this.syncLeafletViewToViewport(this.facade.mapViewport());
 	}
 
@@ -364,6 +417,41 @@ export class GridViewerComponent implements AfterViewInit {
 		const safeZoom = Math.max(Number.EPSILON, viewportZoom);
 		const rawZoom = Math.log2((360 * safeZoom) / 256);
 		return Math.min(19, Math.max(0, rawZoom));
+	}
+
+	private resolveInitialMapStyleId(): MapStyleId {
+		const configuredTileUrl = environment.map.tileUrl;
+		const matching = MAP_STYLE_OPTIONS.find((style) => style.tileUrl === configuredTileUrl);
+		return matching?.id ?? 'cartoDark';
+	}
+
+	private isMapStyleId(value: string): value is MapStyleId {
+		return MAP_STYLE_OPTIONS.some((style) => style.id === value);
+	}
+
+	private getSelectedMapStyle(): MapStyleOption {
+		const selectedId = this.selectedMapStyleId();
+		return (
+			MAP_STYLE_OPTIONS.find((style) => style.id === selectedId) ??
+			MAP_STYLE_OPTIONS.find((style) => style.id === 'cartoDark') ??
+			MAP_STYLE_OPTIONS[0]
+		);
+	}
+
+	private applyMapStyleLayer(): void {
+		if (!this.leafletMap) {
+			return;
+		}
+		if (this.leafletTileLayer) {
+			this.leafletTileLayer.removeFrom(this.leafletMap);
+			this.leafletTileLayer = null;
+		}
+		const style = this.getSelectedMapStyle();
+		this.leafletTileLayer = tileLayer(style.tileUrl, {
+			attribution: style.attribution,
+			maxZoom: style.maxZoom,
+		});
+		this.leafletTileLayer.addTo(this.leafletMap);
 	}
 
 	private getPlacementHint(): string {
