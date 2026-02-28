@@ -1,0 +1,19 @@
+<button
+  type="button"
+  class="layout-divider"
+  [class.layout-divider-dragging]="isDragging()"
+  role="separator"
+  [attr.aria-label]="ariaLabel()"
+  aria-orientation="vertical"
+  [attr.aria-valuemin]="min()"
+  [attr.aria-valuemax]="max()"
+  [attr.aria-valuenow]="currentValue()"
+  [attr.aria-valuetext]="ariaValueText()"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerUp($event)"
+  (keydown)="onKeydown($event)"
+>
+  <span class="layout-divider-handle" aria-hidden="true"></span>
+</button>

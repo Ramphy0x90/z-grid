@@ -24,6 +24,7 @@
   display: grid;
   gap: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .page-panel {
@@ -37,51 +38,11 @@
   background: #111115;
 }
 
-.layout-divider {
-  box-sizing: border-box;
-  width: var(--divider-width);
-  min-width: var(--divider-width);
-  border: 0;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  position: relative;
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.layout-divider::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: #303036;
-  transition: background-color 120ms ease;
-}
-
-.layout-divider-handle {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 2px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: #575766;
-}
-
-.layout-divider:hover::before,
-.layout-divider:focus-visible::before,
-.layout-divider-dragging::before {
-  background: #00d4ff;
-}
-
-.layout-divider:focus-visible {
-  outline: none;
+app-layout-divider {
+  display: block;
+  min-height: 0;
+  min-width: 0;
+  z-index: 5;
 }
 
 .grid-viewer-panel {
@@ -89,6 +50,28 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+.layout-drag-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+}
+
+.layout-drag-ghost {
+  height: 100%;
+  background: rgb(15 16 24 / 42%);
+  border: 1px dashed rgb(0 212 255 / 48%);
+}
+
+.layout-drag-ghost-left {
+  border-right-width: 0;
+}
+
+.layout-drag-ghost-right {
+  border-left-width: 0;
 }
 
 app-grid-viewer {
@@ -116,7 +99,7 @@ p {
     grid-template-columns: 1fr !important;
   }
 
-  .layout-divider {
+  app-layout-divider {
     display: none;
   }
 

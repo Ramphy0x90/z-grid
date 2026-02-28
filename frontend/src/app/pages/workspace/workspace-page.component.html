@@ -11,29 +11,28 @@
       </p>
     </article>
 
-    <button
-      #layoutDivider
-      type="button"
-      class="layout-divider"
-      [class.layout-divider-dragging]="isDividerDragging()"
-      role="separator"
-      aria-label="Resize page and grid viewer panels"
-      aria-orientation="vertical"
-      [attr.aria-valuemin]="25"
-      [attr.aria-valuemax]="75"
-      [attr.aria-valuenow]="layoutSplitPercent()"
-      [attr.aria-valuetext]="layoutValueText()"
-      (pointerdown)="startDividerDrag($event)"
-      (pointermove)="dragDivider($event)"
-      (pointerup)="endDividerDrag($event)"
-      (pointercancel)="endDividerDrag($event)"
-      (keydown)="onDividerKeydown($event)"
-    >
-      <span class="layout-divider-handle" aria-hidden="true"></span>
-    </button>
+    <app-layout-divider
+      [trackElement]="workspacePanels"
+      [value]="layoutSplitPercent()"
+      [min]="25"
+      [max]="75"
+      [presets]="layoutPresets"
+      [leftPanelLabel]="'page'"
+      [rightPanelLabel]="'grid viewer'"
+      [ariaLabel]="'Resize page and grid viewer panels'"
+      (valueChange)="onLayoutSplitChange($event)"
+      (draggingChange)="onDividerDraggingChange($event)"
+    />
 
     <aside class="grid-viewer-panel" aria-label="Grid viewer panel">
       <app-grid-viewer />
     </aside>
+
+    @if (isDividerDragging()) {
+      <div class="layout-drag-overlay" aria-hidden="true">
+        <div class="layout-drag-ghost layout-drag-ghost-left" [style.width.%]="layoutSplitPercent()"></div>
+        <div class="layout-drag-ghost layout-drag-ghost-right" [style.width.%]="100 - layoutSplitPercent()"></div>
+      </div>
+    }
   </div>
 </section>
