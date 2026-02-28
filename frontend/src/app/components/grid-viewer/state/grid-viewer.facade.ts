@@ -14,7 +14,7 @@ export type SelectedElement = {
   id: string;
 } | null;
 
-export type PlacementTool = 'bus' | null;
+export type PlacementTool = 'bus' | 'line' | 'transformer' | 'load' | 'generator' | 'shunt' | null;
 
 @Injectable()
 export class GridViewerFacade {
@@ -86,10 +86,10 @@ export class GridViewerFacade {
     this.placementModeState.set(mode);
   }
 
-  addBusAt(view: 'map' | 'schematic', x: number, y: number): string {
+  addBusAt(layout: { mapX: number; mapY: number; schematicX: number; schematicY: number }): string {
     const dataset = this.datasetState();
-    const numericIndex = this.createBusNumericIndex(dataset);
-    const id = this.createBusId(dataset, numericIndex);
+    const numericIndex = this.createNumericIndex(dataset.buses.map((item) => item.id), 'bus-');
+    const id = this.createUniqueId(dataset.buses.map((item) => item.id), 'bus-', numericIndex);
     const name = `Bus ${numericIndex}`;
     const newDataset: GridDataset = {
       ...dataset,
@@ -114,10 +114,10 @@ export class GridViewerFacade {
         ...dataset.busLayout,
         {
           busId: id,
-          lat: view === 'map' ? y : dataset.busLayout[0]?.lat ?? 0,
-          lng: view === 'map' ? x : dataset.busLayout[0]?.lng ?? 0,
-          schematicX: view === 'schematic' ? x : dataset.busLayout[0]?.schematicX ?? 0,
-          schematicY: view === 'schematic' ? y : dataset.busLayout[0]?.schematicY ?? 0,
+          lat: layout.mapY,
+          lng: layout.mapX,
+          schematicX: layout.schematicX,
+          schematicY: layout.schematicY,
         },
       ],
     };
@@ -125,10 +125,166 @@ export class GridViewerFacade {
     return id;
   }
 
-  private createBusNumericIndex(dataset: GridDataset): number {
+  addLoadAtBus(busId: string): string {
+    const dataset = this.datasetState();
+    const numericIndex = this.createNumericIndex(dataset.loads.map((item) => item.id), 'load-');
+    const id = this.createUniqueId(dataset.loads.map((item) => item.id), 'load-', numericIndex);
+    const newDataset: GridDataset = {
+      ...dataset,
+      loads: [
+        ...dataset.loads,
+        {
+          id,
+          busId,
+          name: `Load ${numericIndex}`,
+          activePowerMw: 25,
+          reactivePowerMvar: 8,
+          inService: true,
+          loadType: 'PQ',
+          scalingFactor: 1,
+        },
+      ],
+    };
+    this.datasetState.set(newDataset);
+    return id;
+  }
+
+  addGeneratorAtBus(busId: string): string {
+    const dataset = this.datasetState();
+    const numericIndex = this.createNumericIndex(dataset.generators.map((item) => item.id), 'gen-');
+    const id = this.createUniqueId(dataset.generators.map((item) => item.id), 'gen-', numericIndex);
+    const newDataset: GridDataset = {
+      ...dataset,
+      generators: [
+        ...dataset.generators,
+        {
+          id,
+          busId,
+          name: `Generator ${numericIndex}`,
+          activePowerMw: 20,
+          reactivePowerMvar: 5,
+          voltagePu: 1,
+          minMw: 0,
+          maxMw: 120,
+          inService: true,
+          minMvar: -40,
+          maxMvar: 60,
+          xdppPu: 0.2,
+          costA: 0.01,
+          costB: 1,
+          costC: 0,
+          rampRateMwPerMin: 10,
+        },
+      ],
+    };
+    this.datasetState.set(newDataset);
+    return id;
+  }
+
+  addShuntAtBus(busId: string): string {
+    const dataset = this.datasetState();
+    const numericIndex = this.createNumericIndex(
+      dataset.shuntCompensators.map((item) => item.id),
+      'shunt-',
+    );
+    const id = this.createUniqueId(
+      dataset.shuntCompensators.map((item) => item.id),
+      'shunt-',
+      numericIndex,
+    );
+    const newDataset: GridDataset = {
+      ...dataset,
+      shuntCompensators: [
+        ...dataset.shuntCompensators,
+        {
+          id,
+          busId,
+          name: `Shunt ${numericIndex}`,
+          shuntType: 'CAPACITOR',
+          qMvar: 5,
+          maxStep: 4,
+          currentStep: 1,
+          inService: true,
+        },
+      ],
+    };
+    this.datasetState.set(newDataset);
+    return id;
+  }
+
+  addLineBetweenBuses(fromBusId: string, toBusId: string): string {
+    const dataset = this.datasetState();
+    const numericIndex = this.createNumericIndex(dataset.lines.map((item) => item.id), 'line-');
+    const id = this.createUniqueId(dataset.lines.map((item) => item.id), 'line-', numericIndex);
+    const newDataset: GridDataset = {
+      ...dataset,
+      lines: [
+        ...dataset.lines,
+        {
+          id,
+          gridId: dataset.grid.id,
+          fromBusId,
+          toBusId,
+          name: `Line ${numericIndex}`,
+          resistancePu: 0.01,
+          reactancePu: 0.05,
+          susceptancePu: 0.001,
+          ratingMva: 100,
+          lengthKm: 1,
+          inService: true,
+          ratingMvaShortTerm: 110,
+          maxLoadingPercent: 100,
+          fromSwitchClosed: true,
+          toSwitchClosed: true,
+        },
+      ],
+    };
+    this.datasetState.set(newDataset);
+    return id;
+  }
+
+  addTransformerBetweenBuses(fromBusId: string, toBusId: string): string {
+    const dataset = this.datasetState();
+    const numericIndex = this.createNumericIndex(
+      dataset.transformers.map((item) => item.id),
+      'xfmr-',
+    );
+    const id = this.createUniqueId(dataset.transformers.map((item) => item.id), 'xfmr-', numericIndex);
+    const newDataset: GridDataset = {
+      ...dataset,
+      transformers: [
+        ...dataset.transformers,
+        {
+          id,
+          gridId: dataset.grid.id,
+          fromBusId,
+          toBusId,
+          name: `Transformer ${numericIndex}`,
+          resistancePu: 0.01,
+          reactancePu: 0.06,
+          magnetizingSusceptancePu: 0.001,
+          ratingMva: 80,
+          inService: true,
+          tapRatio: 1,
+          tapMin: 0.9,
+          tapMax: 1.1,
+          tapStepPercent: 1.25,
+          tapSide: 'HV',
+          windingType: 'TWO_WINDING',
+          maxLoadingPercent: 100,
+          fromSwitchClosed: true,
+          toSwitchClosed: true,
+        },
+      ],
+    };
+    this.datasetState.set(newDataset);
+    return id;
+  }
+
+  private createNumericIndex(ids: readonly string[], prefix: string): number {
     const used = new Set<number>();
-    for (const bus of dataset.buses) {
-      const suffix = Number.parseInt(bus.id.replace('bus-', ''), 10);
+    for (const id of ids) {
+      const suffix = Number.parseInt(id.replace(prefix, ''), 10);
       if (Number.isFinite(suffix)) {
         used.add(suffix);
       }
@@ -140,13 +296,13 @@ export class GridViewerFacade {
     return next;
   }
 
-  private createBusId(dataset: GridDataset, numericIndex: number): string {
-    const usedIds = new Set(dataset.buses.map((bus) => bus.id));
-    let id = `bus-${numericIndex}`;
+  private createUniqueId(ids: readonly string[], prefix: string, numericIndex: number): string {
+    const usedIds = new Set(ids);
+    let id = `${prefix}${numericIndex}`;
     let offset = numericIndex;
     while (usedIds.has(id)) {
       offset += 1;
-      id = `bus-${offset}`;
+      id = `${prefix}${offset}`;
     }
     return id;
   }

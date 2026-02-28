@@ -32,10 +32,12 @@ export type NormalizedGridGraph = {
 
 const COLOR_NODE_ACTIVE = [0, 0.831, 1, 1];
 const COLOR_NODE_OFFLINE = [0.42, 0.42, 0.45, 1];
-const COLOR_EDGE_ACTIVE = [0, 0.831, 1, 0.5];
+const COLOR_EDGE_ACTIVE = [0, 0.89, 1, 0.95];
 const COLOR_EDGE_ALERT = [1, 0.353, 0.353, 0.85];
 const COLOR_EDGE_OFFLINE = [0.33, 0.33, 0.35, 0.45];
-const COLOR_TRANSFORMER = [0, 1, 0.533, 0.7];
+const COLOR_TRANSFORMER = [0, 1, 0.533, 0.95];
+const COLOR_USER_LINE = [1, 0.94, 0.2, 1];
+const COLOR_USER_TRANSFORMER = [1, 0.71, 0.2, 1];
 
 const createEmptyBounds = (): Bounds => ({
   minX: Number.POSITIVE_INFINITY,
@@ -71,6 +73,9 @@ const colorForLine = (line: LineModel): number[] => {
   if (!line.inService || !line.fromSwitchClosed || !line.toSwitchClosed) {
     return COLOR_EDGE_OFFLINE;
   }
+  if (line.id.startsWith('line-')) {
+    return COLOR_USER_LINE;
+  }
   if (line.ratingMva > 0) {
     const loading = (line.lengthKm * 8) / line.ratingMva;
     if (loading > 0.45) {
@@ -83,6 +88,9 @@ const colorForLine = (line: LineModel): number[] => {
 const colorForTransformer = (transformer: TransformerModel): number[] => {
   if (!transformer.inService || !transformer.fromSwitchClosed || !transformer.toSwitchClosed) {
     return COLOR_EDGE_OFFLINE;
+  }
+  if (transformer.id.startsWith('xfmr-')) {
+    return COLOR_USER_TRANSFORMER;
   }
   return COLOR_TRANSFORMER;
 };
