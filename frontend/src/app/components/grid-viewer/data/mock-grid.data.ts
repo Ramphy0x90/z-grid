@@ -198,8 +198,7 @@ export const createSyntheticGridDataset = (
     name?: string;
   },
 ): GridDataset => {
-  const clampedBusCount = Math.max(24, Math.floor(busCount));
-  const ringSize = Math.max(12, Math.floor(Math.sqrt(clampedBusCount) * 2.2));
+  const normalizedBusCount = Math.floor(busCount);
 
   const grid: GridModel = {
     ...DEFAULT_GRID,
@@ -207,6 +206,23 @@ export const createSyntheticGridDataset = (
     projectId: options?.projectId ?? DEFAULT_GRID.projectId,
     name: options?.name ?? DEFAULT_GRID.name,
   };
+
+  if (normalizedBusCount <= 0) {
+    return {
+      grid,
+      buses: [],
+      lines: [],
+      transformers: [],
+      loads: [],
+      generators: [],
+      shuntCompensators: [],
+      busLayout: [],
+      edgeLayout: [],
+    };
+  }
+
+  const clampedBusCount = Math.max(24, normalizedBusCount);
+  const ringSize = Math.max(12, Math.floor(Math.sqrt(clampedBusCount) * 2.2));
 
   const buses = Array.from({ length: clampedBusCount }, (_, index) => buildBus(grid.id, index));
   const busLayout = buses.map((bus, index) => buildLayout(bus.id, index, ringSize));

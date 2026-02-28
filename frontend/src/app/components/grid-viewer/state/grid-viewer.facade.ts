@@ -1,6 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
 import type { GridDataset } from '../models/grid.models';
-import { mockGridDataset } from '../data/mock-grid.data';
 import { normalizeGridDataset } from '../data/grid-normalizer';
 
 export type ViewportState = {
@@ -18,7 +17,24 @@ export type PlacementTool = 'bus' | 'line' | 'transformer' | 'load' | 'generator
 
 @Injectable()
 export class GridViewerFacade {
-  private readonly datasetState = signal<GridDataset>(mockGridDataset);
+  private readonly datasetState = signal<GridDataset>({
+    grid: {
+      id: 'empty-grid',
+      projectId: 'empty-project',
+      name: 'Empty Grid',
+      description: '',
+      baseMva: 100,
+      frequencyHz: 50,
+    },
+    buses: [],
+    lines: [],
+    transformers: [],
+    loads: [],
+    generators: [],
+    shuntCompensators: [],
+    busLayout: [],
+    edgeLayout: [],
+  });
   private readonly mapViewportState = signal<ViewportState>({ centerX: 0, centerY: 0, zoom: 1 });
   private readonly schematicViewportState = signal<ViewportState>({ centerX: 0, centerY: 0, zoom: 1 });
   private readonly selectedElementState = signal<SelectedElement>(null);

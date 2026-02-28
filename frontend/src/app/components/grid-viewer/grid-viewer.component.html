@@ -33,103 +33,105 @@
       </button>
     </div>
 
-    <div class="left-toolbar" role="toolbar" aria-label="Grid element placement tools">
-      <button
-        type="button"
-        class="tool-button"
-        [class.tool-button-active]="placementMode() === 'bus'"
-        [attr.aria-pressed]="placementMode() === 'bus'"
-        (click)="togglePlacementMode('bus')"
-        aria-label="Place bus"
-        title="Bus"
-        data-tooltip="Bus"
-      >
-        <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-          <circle cx="12" cy="12" r="5"></circle>
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="tool-button"
-        [class.tool-button-active]="placementMode() === 'line'"
-        [attr.aria-pressed]="placementMode() === 'line'"
-        (click)="togglePlacementMode('line')"
-        aria-label="Place line"
-        title="Line"
-        data-tooltip="Line"
-      >
-        <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-          <line x1="5" y1="19" x2="19" y2="5"></line>
-          <circle cx="5" cy="19" r="2"></circle>
-          <circle cx="19" cy="5" r="2"></circle>
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="tool-button"
-        [class.tool-button-active]="placementMode() === 'transformer'"
-        [attr.aria-pressed]="placementMode() === 'transformer'"
-        (click)="togglePlacementMode('transformer')"
-        aria-label="Place transformer"
-        title="Transformer"
-        data-tooltip="Transformer"
-      >
-        <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-          <circle cx="9" cy="12" r="4"></circle>
-          <circle cx="15" cy="12" r="4"></circle>
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="tool-button"
-        [class.tool-button-active]="placementMode() === 'load'"
-        [attr.aria-pressed]="placementMode() === 'load'"
-        (click)="togglePlacementMode('load')"
-        aria-label="Place load"
-        title="Load"
-        data-tooltip="Load"
-      >
-        <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-          <line x1="12" y1="5" x2="12" y2="16"></line>
-          <polyline points="8,12 12,16 16,12"></polyline>
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="tool-button"
-        [class.tool-button-active]="placementMode() === 'generator'"
-        [attr.aria-pressed]="placementMode() === 'generator'"
-        (click)="togglePlacementMode('generator')"
-        aria-label="Place generator"
-        title="Generator"
-        data-tooltip="Generator"
-      >
-        <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-          <polygon points="12,4 7,13 11,13 9,20 17,10 13,10 15,4"></polygon>
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="tool-button"
-        [class.tool-button-active]="placementMode() === 'shunt'"
-        [attr.aria-pressed]="placementMode() === 'shunt'"
-        (click)="togglePlacementMode('shunt')"
-        aria-label="Place shunt compensator"
-        title="Shunt compensator"
-        data-tooltip="Shunt compensator"
-      >
-        <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-          <line x1="8" y1="6" x2="8" y2="18"></line>
-          <line x1="16" y1="6" x2="16" y2="18"></line>
-          <line x1="8" y1="12" x2="16" y2="12"></line>
-        </svg>
-      </button>
-    </div>
+    @if (editEnabled()) {
+      <div class="left-toolbar" role="toolbar" aria-label="Grid element placement tools">
+        <button
+          type="button"
+          class="tool-button"
+          [class.tool-button-active]="placementMode() === 'bus'"
+          [attr.aria-pressed]="placementMode() === 'bus'"
+          (click)="togglePlacementMode('bus')"
+          aria-label="Place bus"
+          title="Bus"
+          data-tooltip="Bus"
+        >
+          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"></circle>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="tool-button"
+          [class.tool-button-active]="placementMode() === 'line'"
+          [attr.aria-pressed]="placementMode() === 'line'"
+          (click)="togglePlacementMode('line')"
+          aria-label="Place line"
+          title="Line"
+          data-tooltip="Line"
+        >
+          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+            <line x1="5" y1="19" x2="19" y2="5"></line>
+            <circle cx="5" cy="19" r="2"></circle>
+            <circle cx="19" cy="5" r="2"></circle>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="tool-button"
+          [class.tool-button-active]="placementMode() === 'transformer'"
+          [attr.aria-pressed]="placementMode() === 'transformer'"
+          (click)="togglePlacementMode('transformer')"
+          aria-label="Place transformer"
+          title="Transformer"
+          data-tooltip="Transformer"
+        >
+          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+            <circle cx="9" cy="12" r="4"></circle>
+            <circle cx="15" cy="12" r="4"></circle>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="tool-button"
+          [class.tool-button-active]="placementMode() === 'load'"
+          [attr.aria-pressed]="placementMode() === 'load'"
+          (click)="togglePlacementMode('load')"
+          aria-label="Place load"
+          title="Load"
+          data-tooltip="Load"
+        >
+          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="16"></line>
+            <polyline points="8,12 12,16 16,12"></polyline>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="tool-button"
+          [class.tool-button-active]="placementMode() === 'generator'"
+          [attr.aria-pressed]="placementMode() === 'generator'"
+          (click)="togglePlacementMode('generator')"
+          aria-label="Place generator"
+          title="Generator"
+          data-tooltip="Generator"
+        >
+          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+            <polygon points="12,4 7,13 11,13 9,20 17,10 13,10 15,4"></polygon>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="tool-button"
+          [class.tool-button-active]="placementMode() === 'shunt'"
+          [attr.aria-pressed]="placementMode() === 'shunt'"
+          (click)="togglePlacementMode('shunt')"
+          aria-label="Place shunt compensator"
+          title="Shunt compensator"
+          data-tooltip="Shunt compensator"
+        >
+          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+            <line x1="8" y1="6" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="18"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    }
 
-    @if (placementMode()) {
+    @if (editEnabled() && placementMode()) {
       <p class="placement-hint" aria-live="polite">{{ placementHint() }}</p>
     }
-    @if (connectionPreview(); as preview) {
+    @if (editEnabled() && connectionPreview(); as preview) {
       <svg class="connection-preview" aria-hidden="true">
         <line [attr.x1]="preview.x1" [attr.y1]="preview.y1" [attr.x2]="preview.x2" [attr.y2]="preview.y2"></line>
       </svg>

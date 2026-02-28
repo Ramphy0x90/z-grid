@@ -86,7 +86,7 @@
 .top-toolbar {
   position: absolute;
   top: 8px;
-  left: calc(var(--left-bar-width) + 16px);
+  left: 8px;
   right: 8px;
   z-index: 4;
   display: flex;
@@ -102,7 +102,7 @@
 
 .left-toolbar {
   position: absolute;
-  top: 8px;
+  top: 56px;
   left: 8px;
   width: var(--left-bar-width);
   z-index: 4;

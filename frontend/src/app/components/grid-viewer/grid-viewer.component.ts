@@ -9,6 +9,7 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { GridViewerFacade, type PlacementTool, type SelectedElement } from './state/grid-viewer.facade';
@@ -39,6 +40,8 @@ export class GridViewerComponent implements AfterViewInit {
 
   protected readonly activeView = signal<ActiveView>('schematic');
   readonly dataset = input<GridDataset | null>(null);
+  readonly editEnabled = input(false);
+  readonly datasetChange = output<GridDataset>();
   protected readonly totalElements = this.facade.totalElements;
   protected readonly placementMode = this.facade.placementMode;
   protected readonly hoveredElement = this.facade.hoveredElement;
@@ -62,6 +65,13 @@ export class GridViewerComponent implements AfterViewInit {
     this.facade.setDataset(dataset);
     this.syncGraphToRenderers();
     this.resetViewport();
+    this.pendingConnectionBusId.set(null);
+  });
+  private readonly editModeSyncEffect = effect(() => {
+    if (this.editEnabled()) {
+      return;
+    }
+    this.facade.setPlacementMode(null);
     this.pendingConnectionBusId.set(null);
   });
 
@@ -133,6 +143,9 @@ export class GridViewerComponent implements AfterViewInit {
   }
 
   protected togglePlacementMode(tool: Exclude<PlacementTool, null>): void {
+    if (!this.editEnabled()) {
+      return;
+    }
     const isSameTool = this.facade.placementMode() === tool;
     this.pendingConnectionBusId.set(null);
     this.facade.setPlacementMode(isSameTool ? null : tool);
@@ -182,6 +195,9 @@ export class GridViewerComponent implements AfterViewInit {
   }
 
   private onCanvasBackgroundClick(view: ActiveView, x: number, y: number): void {
+    if (!this.editEnabled()) {
+      return;
+    }
     if (this.facade.placementMode() !== 'bus') {
       return;
     }
@@ -191,9 +207,14 @@ export class GridViewerComponent implements AfterViewInit {
     this.facade.selectElement({ kind: 'bus', id: newBusId });
     this.facade.setPlacementMode(null);
     this.pendingConnectionBusId.set(null);
+    this.emitDatasetChange();
   }
 
   private onCanvasSelect(element: SelectedElement): void {
+    if (!this.editEnabled()) {
+      this.facade.selectElement(element);
+      return;
+    }
     const mode = this.facade.placementMode();
     if (!mode) {
       this.facade.selectElement(element);
@@ -225,6 +246,7 @@ export class GridViewerComponent implements AfterViewInit {
     this.facade.selectElement(element);
     this.facade.setPlacementMode(null);
     this.pendingConnectionBusId.set(null);
+    this.emitDatasetChange();
   }
 
   private placeConnectionElement(mode: 'line' | 'transformer', element: SelectedElement): void {
@@ -249,6 +271,7 @@ export class GridViewerComponent implements AfterViewInit {
     this.facade.selectElement({ kind: 'edge', id: edgeId });
     this.facade.setPlacementMode(null);
     this.pendingConnectionBusId.set(null);
+    this.emitDatasetChange();
   }
 
   private adjustZoom(factor: number): void {
@@ -381,5 +404,9 @@ export class GridViewerComponent implements AfterViewInit {
       x2: (x2 - viewport.centerX) * viewport.zoom + halfW,
       y2: halfH - (y2 - viewport.centerY) * viewport.zoom * ySign,
     };
+  }
+
+  private emitDatasetChange(): void {
+    this.datasetChange.emit(this.facade.dataset());
   }
 }
