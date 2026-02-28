@@ -1,0 +1,13 @@
+<section class="projects-panel" aria-label="Projects">
+  <h2>Projects</h2>
+  <p class="subtitle">Choose a project to enable all available pages in the navbar.</p>
+  <div class="project-grid">
+    @for (project of projects(); track project.id) {
+      <button type="button" class="project-card" (click)="selectProject(project.id)">
+        <span class="project-name">{{ project.name }}</span>
+        <span class="project-description">{{ project.description }}</span>
+        <span class="project-meta">{{ project.region }}</span>
+      </button>
+    }
+  </div>
+</section>

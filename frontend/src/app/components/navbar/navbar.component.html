@@ -1,0 +1,152 @@
+<aside class="sidebar" [class.sidebar-collapsed]="collapsed()" aria-label="Main navigation">
+	<div class="logo-row">
+		<div class="logo-icon" aria-hidden="true">Z</div>
+		@if (!collapsed()) {
+			<span class="logo-text">Z-GRID</span>
+		}
+	</div>
+
+	<div class="nav-content">
+		@if (!collapsed()) {
+			<div class="sidebar-divider"></div>
+
+			<div class="sidebar-group">
+				<button type="button" class="group-toggle" (click)="toggleGroup('project')">
+					<span>Project selection</span>
+					<i
+						class="bi"
+						[class.bi-chevron-up]="isGroupExpanded('project')"
+						[class.bi-chevron-down]="!isGroupExpanded('project')"
+						aria-hidden="true"
+					></i>
+				</button>
+				@if (isGroupExpanded('project')) {
+					<div class="project-list" role="menu" aria-label="Project selection">
+						@for (project of projects(); track project.id) {
+							<button
+								type="button"
+								class="page-link"
+								[class.page-link-active]="selectedProjectId() === project.id"
+								(click)="onProjectSelect(project.id)"
+							>
+								{{ project.name }}
+							</button>
+						}
+					</div>
+				}
+			</div>
+
+			<div class="sidebar-group">
+				@if (hasProjectSelected()) {
+					@for (group of pageGroups; track group.id) {
+						<div class="page-section">
+							<button type="button" class="group-toggle" (click)="toggleGroup(group.id)">
+								<span>{{ group.label }}</span>
+								<i
+									class="bi"
+									[class.bi-chevron-up]="isGroupExpanded(group.id)"
+									[class.bi-chevron-down]="!isGroupExpanded(group.id)"
+									aria-hidden="true"
+								></i>
+							</button>
+							@if (isGroupExpanded(group.id)) {
+								<div class="page-list" role="tablist" [attr.aria-label]="group.label + ' pages'">
+									@for (page of group.children; track page.id) {
+										<button
+											type="button"
+											class="page-link"
+											[class.page-link-active]="selectedPageId() === page.id"
+											(click)="onPageClick(page.id)"
+											role="tab"
+											[attr.aria-selected]="selectedPageId() === page.id"
+										>
+											{{ page.label }}
+										</button>
+									}
+								</div>
+							}
+						</div>
+					}
+				}
+			</div>
+		} @else {
+			<div class="sidebar-group">
+				<button
+					type="button"
+					class="compact-icon-btn"
+					aria-label="Project selection"
+					title="Project selection"
+					[class.page-link-active]="floatingGroupId() === 'project' || hasProjectSelected()"
+					(click)="toggleFloatingGroup('project')"
+				>
+					<i class="bi bi-folder2-open" aria-hidden="true"></i>
+				</button>
+
+				@if (floatingGroupId() === 'project') {
+					<div class="floating-menu" role="menu" aria-label="Project selection menu">
+						@for (project of projects(); track project.id) {
+							<button
+								type="button"
+								class="floating-menu-item"
+								[class.page-link-active]="selectedProjectId() === project.id"
+								(click)="onProjectSelect(project.id)"
+							>
+								{{ project.name }}
+							</button>
+						}
+						@if (hasProjectSelected()) {
+							<button type="button" class="floating-menu-item" (click)="onClearSelection()">
+								Back to projects
+							</button>
+						}
+					</div>
+				}
+			</div>
+
+			@if (hasProjectSelected()) {
+				@for (group of pageGroups; track group.id) {
+					<div class="sidebar-group">
+						<button
+							type="button"
+							class="compact-icon-btn"
+							[class.page-link-active]="activeGroupByPage() === group.id"
+							[attr.aria-label]="group.label"
+							[attr.title]="group.label"
+							(click)="toggleFloatingGroup(group.id)"
+						>
+							<i [class]="'bi ' + group.icon" aria-hidden="true"></i>
+						</button>
+
+						@if (floatingGroupId() === group.id) {
+							<div
+								class="floating-menu"
+								role="menu"
+								[attr.aria-label]="group.label + ' pages menu'"
+							>
+								@for (page of group.children; track page.id) {
+									<button
+										type="button"
+										class="floating-menu-item"
+										[class.page-link-active]="selectedPageId() === page.id"
+										(click)="onPageClick(page.id)"
+									>
+										{{ page.label }}
+									</button>
+								}
+							</div>
+						}
+					</div>
+				}
+			}
+		}
+	</div>
+
+	<button
+		type="button"
+		class="collapse-btn"
+		[attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+		(click)="toggleCollapsed()"
+	>
+		<i class="bi" [class.bi-chevron-right]="collapsed()" [class.bi-chevron-left]="!collapsed()"></i>
+	</button>
+</aside>

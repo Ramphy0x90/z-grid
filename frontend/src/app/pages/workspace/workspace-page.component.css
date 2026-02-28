@@ -1,0 +1,20 @@
+.page-panel {
+  height: 100%;
+  padding: 24px;
+  overflow: auto;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+p {
+  margin: 0;
+}
+
+.subtitle {
+  margin-top: 12px;
+  color: #a1a1aa;
+  font-size: 14px;
+}
