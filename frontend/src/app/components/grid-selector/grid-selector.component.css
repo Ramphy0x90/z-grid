@@ -50,7 +50,7 @@
 .selector-input:focus-visible {
   outline: none;
   border-color: var(--accent-interactive);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
 }
 
 .selector-input:disabled {
@@ -94,7 +94,7 @@
 .menu-trigger:focus-visible {
   outline: none;
   border-color: var(--accent-interactive);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
 }
 
 .menu-trigger:disabled {

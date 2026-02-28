@@ -1,72 +1,72 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 :root {
-  /* Background layers */
-  --bg-base: #0a0a0b;
-  --bg-surface: #111115;
-  --bg-elevated: #151518;
-  --bg-sunken: #0f0f13;
-  --bg-input: #141419;
-  --bg-table-header: #18181d;
-  --bg-hover: #1d1d20;
-  --bg-active: #1e1e24;
+  /* Background layers — blue-slate undertone instead of pure gray */
+  --bg-base: #0c0e14;
+  --bg-surface: #12151c;
+  --bg-elevated: #181c25;
+  --bg-sunken: #0e1018;
+  --bg-input: #151820;
+  --bg-table-header: #1a1e28;
+  --bg-hover: #1e2230;
+  --bg-active: #232838;
 
-  /* Borders */
-  --border-default: #27272a;
-  --border-subtle: #24242a;
-  --border-input: #2f2f37;
-  --border-panel: #2a2a2f;
-  --border-hover: #3f3f46;
-  --border-strong: #474755;
+  /* Borders — tinted with blue */
+  --border-default: #252a38;
+  --border-subtle: #1f2433;
+  --border-input: #2c3245;
+  --border-panel: #272c3c;
+  --border-hover: #3a4158;
+  --border-strong: #4a5270;
 
-  /* Text hierarchy */
-  --text-primary: #fafafa;
-  --text-secondary: #e4e4e7;
-  --text-tertiary: #d4d4d8;
-  --text-muted: #a1a1aa;
-  --text-dim: #71717a;
-  --text-inverse: #0a0a0b;
+  /* Text hierarchy — slightly cool-white for clarity */
+  --text-primary: #f0f2f7;
+  --text-secondary: #c8cdd8;
+  --text-tertiary: #9ca3b8;
+  --text-muted: #717a94;
+  --text-dim: #505a72;
+  --text-inverse: #0c0e14;
 
   /* Accent - Energy (emerald green) */
   --accent-energy: #10b981;
   --accent-energy-hover: #0d9668;
   --accent-energy-muted: #065f46;
-  --accent-energy-subtle: rgba(16, 185, 129, 0.12);
+  --accent-energy-subtle: rgba(16, 185, 129, 0.10);
 
-  /* Accent - Interactive (cyan) */
-  --accent-interactive: #00d4ff;
+  /* Accent - Interactive (cyan-blue) */
+  --accent-interactive: #22d3ee;
   --accent-interactive-muted: #0e4a5c;
-  --accent-interactive-subtle: rgba(0, 212, 255, 0.10);
+  --accent-interactive-subtle: rgba(34, 211, 238, 0.08);
 
   /* Accent - Focus (blue) */
   --accent-focus: #4f8cff;
-  --accent-focus-subtle: rgba(79, 140, 255, 0.08);
+  --accent-focus-subtle: rgba(79, 140, 255, 0.06);
 
   /* Status - Warning (amber) */
   --status-warning: #f59e0b;
   --status-warning-muted: #78350f;
-  --status-warning-subtle: rgba(245, 158, 11, 0.12);
+  --status-warning-subtle: rgba(245, 158, 11, 0.10);
   --status-warning-text: #fbbf24;
 
   /* Status - Critical (red) */
   --status-critical: #ef4444;
   --status-critical-muted: #7f1d1d;
-  --status-critical-subtle: rgba(239, 68, 68, 0.10);
+  --status-critical-subtle: rgba(239, 68, 68, 0.08);
   --status-critical-text: #fda4af;
 
   /* Status - Offline (gray) */
-  --status-offline: #71717a;
-  --status-offline-muted: #27272a;
-  --status-offline-subtle: rgba(113, 113, 122, 0.10);
+  --status-offline: #717a94;
+  --status-offline-muted: #252a38;
+  --status-offline-subtle: rgba(113, 122, 148, 0.08);
 
   /* Status - Maintenance (purple) */
   --status-maintenance: #a78bfa;
   --status-maintenance-muted: #3b0764;
-  --status-maintenance-subtle: rgba(167, 139, 250, 0.10);
+  --status-maintenance-subtle: rgba(167, 139, 250, 0.08);
 
   /* Chart colors */
   --chart-1: #10b981;
-  --chart-2: #00d4ff;
+  --chart-2: #22d3ee;
   --chart-3: #f59e0b;
   --chart-4: #ef4444;
   --chart-5: #a78bfa;
@@ -74,12 +74,12 @@
   --chart-7: #38bdf8;
   --chart-8: #fbbf24;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45), 0 4px 8px rgba(0, 0, 0, 0.25);
-  --shadow-glow-energy: 0 0 12px rgba(16, 185, 129, 0.15), 0 0 4px rgba(16, 185, 129, 0.1);
-  --shadow-glow-interactive: 0 0 12px rgba(0, 212, 255, 0.15), 0 0 4px rgba(0, 212, 255, 0.1);
+  /* Shadows — tinted blue-black for depth */
+  --shadow-sm: 0 1px 3px rgba(4, 6, 16, 0.4), 0 1px 2px rgba(4, 6, 16, 0.25);
+  --shadow-md: 0 4px 14px rgba(4, 6, 16, 0.45), 0 2px 4px rgba(4, 6, 16, 0.3);
+  --shadow-lg: 0 12px 36px rgba(4, 6, 16, 0.55), 0 4px 8px rgba(4, 6, 16, 0.35);
+  --shadow-glow-energy: 0 0 14px rgba(16, 185, 129, 0.18), 0 0 4px rgba(16, 185, 129, 0.12);
+  --shadow-glow-interactive: 0 0 14px rgba(34, 211, 238, 0.18), 0 0 4px rgba(34, 211, 238, 0.12);
 
   /* Transitions */
   --transition-fast: 120ms ease;
@@ -90,74 +90,61 @@
    To activate: add `data-theme="light"` to <html> or <body>,
    then change the selector below from `.theme-light` to
    `[data-theme="light"]` or toggle via a class.
-   All component styles already use CSS variables so no other
-   changes are needed — only this block of overrides.
    ─────────────────────────────────────── */
 .theme-light {
-  /* Background layers */
-  --bg-base: #f4f4f5;
+  --bg-base: #f2f4f8;
   --bg-surface: #ffffff;
   --bg-elevated: #ffffff;
-  --bg-sunken: #ebebef;
-  --bg-input: #f8f8fa;
-  --bg-table-header: #f0f0f3;
-  --bg-hover: #e8e8ec;
-  --bg-active: #e0e0e6;
+  --bg-sunken: #e8ebf0;
+  --bg-input: #f5f7fa;
+  --bg-table-header: #edf0f5;
+  --bg-hover: #e2e6ee;
+  --bg-active: #d8dde8;
 
-  /* Borders */
-  --border-default: #d4d4d8;
-  --border-subtle: #e4e4e7;
-  --border-input: #c8c8ce;
-  --border-panel: #d8d8dd;
-  --border-hover: #a1a1aa;
-  --border-strong: #71717a;
+  --border-default: #cdd2de;
+  --border-subtle: #dde1ea;
+  --border-input: #bfc5d4;
+  --border-panel: #d0d5e0;
+  --border-hover: #9aa2b8;
+  --border-strong: #6b7494;
 
-  /* Text hierarchy */
-  --text-primary: #111115;
-  --text-secondary: #27272a;
-  --text-tertiary: #3f3f46;
-  --text-muted: #71717a;
-  --text-dim: #a1a1aa;
-  --text-inverse: #fafafa;
+  --text-primary: #0f1219;
+  --text-secondary: #252a38;
+  --text-tertiary: #3a4158;
+  --text-muted: #6b7494;
+  --text-dim: #9aa2b8;
+  --text-inverse: #f0f2f7;
 
-  /* Accent - Energy (emerald green, darkened for light bg contrast) */
   --accent-energy: #059669;
   --accent-energy-hover: #047857;
   --accent-energy-muted: #d1fae5;
-  --accent-energy-subtle: rgba(5, 150, 105, 0.08);
+  --accent-energy-subtle: rgba(5, 150, 105, 0.06);
 
-  /* Accent - Interactive (teal, darkened for readability) */
   --accent-interactive: #0891b2;
   --accent-interactive-muted: #cffafe;
-  --accent-interactive-subtle: rgba(8, 145, 178, 0.08);
+  --accent-interactive-subtle: rgba(8, 145, 178, 0.06);
 
-  /* Accent - Focus (blue) */
   --accent-focus: #2563eb;
-  --accent-focus-subtle: rgba(37, 99, 235, 0.06);
+  --accent-focus-subtle: rgba(37, 99, 235, 0.05);
 
-  /* Status - Warning (amber, darkened) */
   --status-warning: #d97706;
   --status-warning-muted: #fef3c7;
-  --status-warning-subtle: rgba(217, 119, 6, 0.08);
+  --status-warning-subtle: rgba(217, 119, 6, 0.06);
   --status-warning-text: #92400e;
 
-  /* Status - Critical (red, darkened) */
   --status-critical: #dc2626;
   --status-critical-muted: #fee2e2;
-  --status-critical-subtle: rgba(220, 38, 38, 0.06);
+  --status-critical-subtle: rgba(220, 38, 38, 0.05);
   --status-critical-text: #991b1b;
 
-  /* Status - Offline (gray) */
-  --status-offline: #a1a1aa;
-  --status-offline-muted: #e4e4e7;
-  --status-offline-subtle: rgba(161, 161, 170, 0.08);
+  --status-offline: #9aa2b8;
+  --status-offline-muted: #e2e6ee;
+  --status-offline-subtle: rgba(154, 162, 184, 0.06);
 
-  /* Status - Maintenance (purple, darkened) */
   --status-maintenance: #7c3aed;
   --status-maintenance-muted: #ede9fe;
-  --status-maintenance-subtle: rgba(124, 58, 237, 0.06);
+  --status-maintenance-subtle: rgba(124, 58, 237, 0.05);
 
-  /* Chart colors (slightly darkened for white bg contrast) */
   --chart-1: #059669;
   --chart-2: #0891b2;
   --chart-3: #d97706;
@@ -167,12 +154,11 @@
   --chart-7: #0284c7;
   --chart-8: #ca8a04;
 
-  /* Shadows (lighter, more diffused) */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
-  --shadow-glow-energy: 0 0 12px rgba(5, 150, 105, 0.1), 0 0 4px rgba(5, 150, 105, 0.06);
-  --shadow-glow-interactive: 0 0 12px rgba(8, 145, 178, 0.1), 0 0 4px rgba(8, 145, 178, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 18, 25, 0.06), 0 1px 2px rgba(15, 18, 25, 0.04);
+  --shadow-md: 0 4px 14px rgba(15, 18, 25, 0.08), 0 2px 4px rgba(15, 18, 25, 0.04);
+  --shadow-lg: 0 12px 36px rgba(15, 18, 25, 0.12), 0 4px 8px rgba(15, 18, 25, 0.06);
+  --shadow-glow-energy: 0 0 14px rgba(5, 150, 105, 0.1), 0 0 4px rgba(5, 150, 105, 0.06);
+  --shadow-glow-interactive: 0 0 14px rgba(8, 145, 178, 0.1), 0 0 4px rgba(8, 145, 178, 0.06);
 }
 
 html,
@@ -186,7 +172,7 @@ body {
 }
 
 ::selection {
-  background: rgba(0, 212, 255, 0.22);
+  background: rgba(34, 211, 238, 0.2);
   color: var(--text-primary);
 }
 

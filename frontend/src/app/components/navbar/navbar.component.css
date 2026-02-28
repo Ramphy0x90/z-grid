@@ -17,7 +17,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--bg-base);
+  background:
+    linear-gradient(180deg, rgba(16, 185, 129, 0.02) 0%, transparent 40%),
+    var(--bg-base);
   overflow: hidden;
   transition: width 0.2s ease;
 }
@@ -86,7 +88,7 @@
 }
 
 .logo-btn:hover .logo-icon {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 8px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.35), 0 0 8px rgba(16, 185, 129, 0.2);
   transform: scale(1.04);
 }
 
@@ -136,7 +138,12 @@
 
 .section-header-icon {
   font-size: 14px;
-  opacity: 0.7;
+  color: var(--accent-energy);
+  opacity: 0.6;
+}
+
+.section-header:hover .section-header-icon {
+  opacity: 0.9;
 }
 
 .section-header-label {
@@ -147,7 +154,7 @@
 
 .section-chevron {
   font-size: 10px;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 /* ── Nav items (expanded) ── */
@@ -163,7 +170,7 @@
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-dim);
+  color: var(--text-muted);
   padding: 8px 10px;
   text-align: left;
   font-size: 13px;
@@ -176,18 +183,18 @@
 
 .nav-item:hover {
   background: var(--bg-hover);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .nav-item-active {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.1);
   color: var(--accent-energy);
   font-weight: 600;
-  border-color: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.12);
 }
 
 .nav-item-active:hover {
-  background: rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.16);
   color: var(--accent-energy);
 }
 
@@ -196,11 +203,16 @@
   width: 18px;
   text-align: center;
   flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.nav-item:hover .nav-item-icon {
   opacity: 0.8;
 }
 
 .nav-item-active .nav-item-icon {
   opacity: 1;
+  color: var(--accent-energy);
 }
 
 .nav-item-label {
@@ -241,13 +253,13 @@
 }
 
 .rail-btn-active {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.1);
   color: var(--accent-energy);
-  border-color: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.12);
 }
 
 .rail-btn-active:hover {
-  background: rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.16);
 }
 
 .rail-btn:focus-visible {
@@ -255,7 +267,6 @@
   outline-offset: 2px;
 }
 
-/* Tooltip on hover */
 .rail-tooltip {
   position: absolute;
   left: calc(100% + 10px);
@@ -282,7 +293,6 @@
   visibility: visible;
 }
 
-/* Hide tooltip when flyout is open */
 .icon-rail:has(.flyout) .rail-tooltip {
   display: none;
 }
@@ -308,7 +318,7 @@
 .flyout-header {
   margin: 0;
   padding: 8px 10px 6px;
-  color: var(--text-muted);
+  color: var(--text-dim);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -342,13 +352,13 @@
 }
 
 .flyout-item-active {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.08);
   color: var(--accent-energy);
   font-weight: 600;
 }
 
 .flyout-item-active:hover {
-  background: rgba(16, 185, 129, 0.16);
+  background: rgba(16, 185, 129, 0.14);
   color: var(--accent-energy);
 }
 
@@ -361,7 +371,7 @@
   width: 16px;
   text-align: center;
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .flyout-item-active .flyout-item-icon {
