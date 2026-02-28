@@ -8,4 +8,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface GridRepository extends CrudRepository<Grid, UUID> {
     List<Grid> findByProjectId(UUID projectId);
     boolean existsByProjectIdAndName(UUID projectId, String name);
+    boolean existsByProjectIdAndNameAndIdNot(UUID projectId, String name, UUID id);
 }

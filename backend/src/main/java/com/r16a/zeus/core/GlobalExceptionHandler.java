@@ -1,6 +1,7 @@
 package com.r16a.zeus.core;
 
 import com.r16a.zeus.auth.exception.InvalidCredentialsException;
+import com.r16a.zeus.features.grid.exception.GridDatasetValidationException;
 import com.r16a.zeus.features.grid.exception.GridNotFoundException;
 import com.r16a.zeus.team.exception.TeamConflictException;
 import com.r16a.zeus.team.exception.TeamNotFoundException;
@@ -62,5 +63,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ProblemDetail handleGridNotFound(GridNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(GridDatasetValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleGridDatasetValidation(GridDatasetValidationException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }
