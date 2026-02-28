@@ -8,12 +8,20 @@
   height: 100%;
   min-height: 0;
   box-sizing: border-box;
-  padding: 24px;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+.page-header {
+  display: grid;
+  gap: 6px;
 }
 
 h2 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 18px;
 }
 
@@ -21,4 +29,131 @@ h2 {
   margin: 0;
   color: #a1a1aa;
   font-size: 14px;
+}
+
+.pane-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pane-button {
+  border: 1px solid #2f2f37;
+  background: #18181d;
+  color: #e4e4e7;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.pane-button:hover {
+  border-color: #474755;
+  background: #1e1e24;
+}
+
+.pane-button:focus-visible {
+  outline: 2px solid #4f8cff;
+  outline-offset: 2px;
+}
+
+.pane-button-active {
+  background: #00d4ff;
+  color: #041017;
+  border-color: #00d4ff;
+  font-weight: 600;
+}
+
+.pane-label {
+  font-weight: 600;
+}
+
+.pane-count {
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgb(228 228 231 / 28%);
+  background: rgb(6 7 13 / 38%);
+}
+
+.pane-button-active .pane-count {
+  border-color: rgb(4 16 23 / 22%);
+  background: rgb(4 16 23 / 14%);
+}
+
+.table-panel {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #2a2a2f;
+  border-radius: 10px;
+  background: #111115;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e4e4e7;
+}
+
+.table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid #24242a;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e5e7eb;
+  background: #18181d;
+  border-bottom: 1px solid #2f2f37;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #24242a;
+  color: #d4d4d8;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+tbody tr:hover td {
+  background: rgb(79 140 255 / 8%);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.empty-state {
+  margin: 0;
+  border: 1px dashed #2f2f37;
+  border-radius: 10px;
+  padding: 14px;
+  color: #a1a1aa;
+  background: rgb(24 24 29 / 35%);
 }

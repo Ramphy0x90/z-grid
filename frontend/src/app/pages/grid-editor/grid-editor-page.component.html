@@ -1,4 +1,58 @@
 <section class="base-page" aria-label="Grid Editor">
-  <h2>Grid Editor</h2>
-  <p class="subtitle">Base page ready. Implementation will be added next.</p>
+	@if (!selectedGrid()) {
+		<p class="empty-state">
+			No grid selected. Select one from the form above or click Create to add a new grid.
+		</p>
+	}
+
+	<div class="pane-selector" role="tablist" aria-label="Grid element types">
+		@for (pane of paneTabs; track pane.id) {
+			<button
+				type="button"
+				role="tab"
+				class="pane-button"
+				[class.pane-button-active]="activePaneId() === pane.id"
+				[attr.aria-selected]="activePaneId() === pane.id"
+				[attr.aria-controls]="'pane-panel-' + pane.id"
+				(click)="setActivePane(pane.id)"
+			>
+				<span class="pane-label">{{ pane.label }}</span>
+				<span class="pane-count">{{ getPaneCount(pane.id) }}</span>
+			</button>
+		}
+	</div>
+
+	<section
+		class="table-panel"
+		role="tabpanel"
+		[attr.id]="'pane-panel-' + activePane().id"
+		[attr.aria-label]="activePane().label + ' table'"
+	>
+		<h3>{{ activePane().label }}</h3>
+
+		@if (activePaneRows().length === 0) {
+			<p class="empty-state">No {{ activePane().label.toLocaleLowerCase() }} found in this grid.</p>
+		} @else {
+			<div class="table-scroll">
+				<table>
+					<thead>
+						<tr>
+							@for (column of activePaneColumns(); track column.key) {
+								<th scope="col">{{ column.label }}</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						@for (row of activePaneRows(); track row['id']) {
+							<tr>
+								@for (column of activePaneColumns(); track column.key) {
+									<td>{{ row[column.key] }}</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</section>
 </section>
