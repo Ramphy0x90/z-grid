@@ -5,7 +5,9 @@
 		(click)="onClearSelection()"
 		aria-label="Go to project overview"
 	>
-		<div class="logo-icon" aria-hidden="true">Z</div>
+		<div class="logo-icon" aria-hidden="true">
+			<i class="bi bi-lightning-charge-fill"></i>
+		</div>
 		@if (!collapsed()) {
 			<span class="logo-text">Z-GRID</span>
 		}
@@ -13,94 +15,105 @@
 
 	<div class="nav-content">
 		@if (!collapsed()) {
-			<div class="sidebar-divider"></div>
-
-			<div class="sidebar-group">
-				<button type="button" class="group-toggle" (click)="toggleGroup('project')">
-					<span>Project selection</span>
+			<!-- Project selection -->
+			<nav class="nav-section">
+				<button type="button" class="section-header" (click)="toggleGroup('project')">
+					<div class="section-header-left">
+						<i class="bi bi-folder2-open section-header-icon" aria-hidden="true"></i>
+						<span class="section-header-label">Projects</span>
+					</div>
 					<i
-						class="bi"
+						class="bi section-chevron"
 						[class.bi-chevron-up]="isGroupExpanded('project')"
 						[class.bi-chevron-down]="!isGroupExpanded('project')"
 						aria-hidden="true"
 					></i>
 				</button>
 				@if (isGroupExpanded('project')) {
-					<div class="project-list" role="menu" aria-label="Project selection">
+					<div class="nav-items" role="menu" aria-label="Project selection">
 						@for (project of projects(); track project.id) {
 							<button
 								type="button"
-								class="page-link"
-								[class.page-link-active]="selectedProjectId() === project.id"
+								class="nav-item"
+								[class.nav-item-active]="selectedProjectId() === project.id"
 								(click)="onProjectSelect(project.id)"
 							>
-								{{ project.name }}
+								<i class="bi bi-diagram-3 nav-item-icon" aria-hidden="true"></i>
+								<span class="nav-item-label">{{ project.name }}</span>
 							</button>
 						}
 					</div>
 				}
-			</div>
+			</nav>
 
-			<div class="sidebar-group">
-				@if (hasProjectSelected()) {
-					@for (group of pageGroups; track group.id) {
-						<div class="page-section">
-							<button type="button" class="group-toggle" (click)="toggleGroup(group.id)">
-								<span>{{ group.label }}</span>
-								<i
-									class="bi"
-									[class.bi-chevron-up]="isGroupExpanded(group.id)"
-									[class.bi-chevron-down]="!isGroupExpanded(group.id)"
-									aria-hidden="true"
-								></i>
-							</button>
-							@if (isGroupExpanded(group.id)) {
-								<div class="page-list" role="tablist" [attr.aria-label]="group.label + ' pages'">
-									@for (page of group.children; track page.id) {
-										<button
-											type="button"
-											class="page-link"
-											[class.page-link-active]="selectedPageId() === page.id"
-											(click)="onPageClick(page.id)"
-											role="tab"
-											[attr.aria-selected]="selectedPageId() === page.id"
-										>
-											{{ page.label }}
-										</button>
-									}
-								</div>
-							}
-						</div>
-					}
+			<!-- Page groups -->
+			@if (hasProjectSelected()) {
+				@for (group of pageGroups; track group.id) {
+					<nav class="nav-section">
+						<button type="button" class="section-header" (click)="toggleGroup(group.id)">
+							<div class="section-header-left">
+								<i [class]="'bi ' + group.icon + ' section-header-icon'" aria-hidden="true"></i>
+								<span class="section-header-label">{{ group.label }}</span>
+							</div>
+							<i
+								class="bi section-chevron"
+								[class.bi-chevron-up]="isGroupExpanded(group.id)"
+								[class.bi-chevron-down]="!isGroupExpanded(group.id)"
+								aria-hidden="true"
+							></i>
+						</button>
+						@if (isGroupExpanded(group.id)) {
+							<div class="nav-items" role="tablist" [attr.aria-label]="group.label + ' pages'">
+								@for (page of group.children; track page.id) {
+									<button
+										type="button"
+										class="nav-item"
+										[class.nav-item-active]="selectedPageId() === page.id"
+										(click)="onPageClick(page.id)"
+										role="tab"
+										[attr.aria-selected]="selectedPageId() === page.id"
+									>
+										<i [class]="'bi ' + page.icon + ' nav-item-icon'" aria-hidden="true"></i>
+										<span class="nav-item-label">{{ page.label }}</span>
+									</button>
+								}
+							</div>
+						}
+					</nav>
 				}
-			</div>
+			}
 		} @else {
-			<div class="sidebar-group">
+			<!-- Collapsed: icon rail -->
+			<div class="icon-rail">
 				<button
 					type="button"
-					class="compact-icon-btn"
+					class="rail-btn"
+					[class.rail-btn-active]="floatingGroupId() === 'project' || hasProjectSelected()"
 					aria-label="Project selection"
-					title="Project selection"
-					[class.page-link-active]="floatingGroupId() === 'project' || hasProjectSelected()"
 					(click)="toggleFloatingGroup('project')"
 				>
 					<i class="bi bi-folder2-open" aria-hidden="true"></i>
+					<span class="rail-tooltip">Projects</span>
 				</button>
 
 				@if (floatingGroupId() === 'project') {
-					<div class="floating-menu" role="menu" aria-label="Project selection menu">
+					<div class="flyout" role="menu" aria-label="Project selection menu">
+						<p class="flyout-header">Projects</p>
 						@for (project of projects(); track project.id) {
 							<button
 								type="button"
-								class="floating-menu-item"
-								[class.page-link-active]="selectedProjectId() === project.id"
+								class="flyout-item"
+								[class.flyout-item-active]="selectedProjectId() === project.id"
 								(click)="onProjectSelect(project.id)"
 							>
+								<i class="bi bi-diagram-3 flyout-item-icon" aria-hidden="true"></i>
 								{{ project.name }}
 							</button>
 						}
 						@if (hasProjectSelected()) {
-							<button type="button" class="floating-menu-item" (click)="onClearSelection()">
+							<div class="flyout-divider"></div>
+							<button type="button" class="flyout-item flyout-item-muted" (click)="onClearSelection()">
+								<i class="bi bi-arrow-left flyout-item-icon" aria-hidden="true"></i>
 								Back to projects
 							</button>
 						}
@@ -110,31 +123,33 @@
 
 			@if (hasProjectSelected()) {
 				@for (group of pageGroups; track group.id) {
-					<div class="sidebar-group">
+					<div class="icon-rail">
 						<button
 							type="button"
-							class="compact-icon-btn"
-							[class.page-link-active]="activeGroupByPage() === group.id"
+							class="rail-btn"
+							[class.rail-btn-active]="activeGroupByPage() === group.id"
 							[attr.aria-label]="group.label"
-							[attr.title]="group.label"
 							(click)="toggleFloatingGroup(group.id)"
 						>
 							<i [class]="'bi ' + group.icon" aria-hidden="true"></i>
+							<span class="rail-tooltip">{{ group.label }}</span>
 						</button>
 
 						@if (floatingGroupId() === group.id) {
 							<div
-								class="floating-menu"
+								class="flyout"
 								role="menu"
 								[attr.aria-label]="group.label + ' pages menu'"
 							>
+								<p class="flyout-header">{{ group.label }}</p>
 								@for (page of group.children; track page.id) {
 									<button
 										type="button"
-										class="floating-menu-item"
-										[class.page-link-active]="selectedPageId() === page.id"
+										class="flyout-item"
+										[class.flyout-item-active]="selectedPageId() === page.id"
 										(click)="onPageClick(page.id)"
 									>
+										<i [class]="'bi ' + page.icon + ' flyout-item-icon'" aria-hidden="true"></i>
 										{{ page.label }}
 									</button>
 								}
@@ -148,10 +163,13 @@
 
 	<button
 		type="button"
-		class="collapse-btn"
+		class="collapse-toggle"
 		[attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
 		(click)="toggleCollapsed()"
 	>
-		<i class="bi" [class.bi-chevron-right]="collapsed()" [class.bi-chevron-left]="!collapsed()"></i>
+		<i class="bi" [class.bi-layout-sidebar-inset]="collapsed()" [class.bi-layout-sidebar]="!collapsed()"></i>
+		@if (!collapsed()) {
+			<span class="collapse-label">Collapse</span>
+		}
 	</button>
 </aside>

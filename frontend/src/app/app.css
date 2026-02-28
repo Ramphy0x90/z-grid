@@ -62,10 +62,11 @@
   min-height: 0;
   min-width: 0;
   border: 1px solid var(--border-panel);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 20px;
   overflow: auto;
   background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -126,14 +127,15 @@ app-grid-viewer {
 }
 
 .topbar {
-  border: 1px solid var(--border-default);
-  border-radius: 10px;
-  padding: 12px 16px;
+  border: 1px solid var(--border-panel);
+  border-radius: 12px;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: var(--bg-surface);
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+  box-shadow: var(--shadow-sm);
 }
 
 .topbar-copy {
@@ -144,6 +146,7 @@ app-grid-viewer {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .topbar-actions {
@@ -153,8 +156,8 @@ app-grid-viewer {
 }
 
 .workspace-action-button {
-  border: 1px solid #30303a;
-  background: #16161d;
+  border: 1px solid var(--border-input);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   border-radius: 8px;
   height: 34px;
@@ -162,12 +165,13 @@ app-grid-viewer {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transition: all var(--transition-normal);
 }
 
 .workspace-action-button:hover {
-  background: #1d1d27;
+  background: var(--bg-active);
   border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
 }
 
 .workspace-action-button:focus-visible {
@@ -176,7 +180,7 @@ app-grid-viewer {
 }
 
 .workspace-action-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -184,13 +188,14 @@ app-grid-viewer {
   border: 1px solid var(--border-panel);
   border-radius: 10px;
   background: var(--bg-sunken);
-  padding: 12px;
+  padding: 14px;
 }
 
 .create-grid-form-title {
   margin: 0 0 10px;
   font-size: 14px;
   font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .create-grid-form form {
@@ -200,7 +205,8 @@ app-grid-viewer {
 
 .create-grid-label {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .create-grid-input,
@@ -211,12 +217,19 @@ app-grid-viewer {
   color: var(--text-primary);
   padding: 8px 10px;
   font: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.create-grid-input:hover,
+.create-grid-textarea:hover {
+  border-color: var(--border-hover);
 }
 
 .create-grid-input:focus-visible,
 .create-grid-textarea:focus-visible {
-  outline: 2px solid var(--accent-focus);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--accent-focus);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12);
 }
 
 .create-grid-error {

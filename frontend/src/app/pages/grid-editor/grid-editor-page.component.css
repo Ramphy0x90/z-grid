@@ -23,6 +23,8 @@
 h2 {
   margin: 0;
   font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
@@ -34,27 +36,28 @@ h2 {
 .pane-selector {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pane-button {
   border: 1px solid var(--border-input);
-  background: var(--bg-table-header);
-  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 7px 12px;
   cursor: pointer;
   font-size: 13px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transition: all var(--transition-fast);
 }
 
 .pane-button:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-active);
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
 
 .pane-button:focus-visible {
@@ -64,9 +67,16 @@ h2 {
 
 .pane-button-active {
   background: var(--accent-interactive);
-  color: #041017;
+  color: var(--text-inverse);
   border-color: var(--accent-interactive);
   font-weight: 600;
+  box-shadow: var(--shadow-glow-interactive);
+}
+
+.pane-button-active:hover {
+  background: var(--accent-interactive);
+  border-color: var(--accent-interactive);
+  color: var(--text-inverse);
 }
 
 .pane-label {
@@ -78,25 +88,26 @@ h2 {
   padding: 2px 7px;
   font-size: 12px;
   font-weight: 600;
-  border: 1px solid rgb(228 228 231 / 28%);
-  background: rgb(6 7 13 / 38%);
+  border: 1px solid rgba(228, 228, 231, 0.2);
+  background: rgba(6, 7, 13, 0.38);
 }
 
 .pane-button-active .pane-count {
-  border-color: rgb(4 16 23 / 22%);
-  background: rgb(4 16 23 / 14%);
+  border-color: rgba(4, 16, 23, 0.25);
+  background: rgba(4, 16, 23, 0.18);
 }
 
 .table-panel {
   flex: 1;
   min-height: 0;
   border: 1px solid var(--border-panel);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--bg-surface);
-  padding: 12px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: var(--shadow-sm);
 }
 
 h3 {
@@ -127,7 +138,9 @@ thead th {
   padding: 10px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   background: var(--bg-table-header);
   border-bottom: 1px solid var(--border-input);
   white-space: nowrap;
@@ -139,6 +152,7 @@ tbody td {
   color: var(--text-tertiary);
   font-size: 13px;
   white-space: nowrap;
+  transition: background var(--transition-fast);
 }
 
 tbody tr:hover td {
@@ -153,7 +167,9 @@ tbody tr:last-child td {
   margin: 0;
   border: 1px dashed var(--border-input);
   border-radius: 10px;
-  padding: 14px;
+  padding: 20px;
   color: var(--text-muted);
-  background: rgb(24 24 29 / 35%);
+  background: rgba(24, 24, 29, 0.35);
+  text-align: center;
+  font-size: 13px;
 }

@@ -14,6 +14,8 @@
 h2 {
   margin: 0 0 8px;
   font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .create-project-button {
@@ -23,12 +25,20 @@ h2 {
   color: #d1fae5;
   font-size: 13px;
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 8px 16px;
   cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-glow-energy);
 }
 
 .create-project-button:hover {
-  background: #134e3b;
+  background: var(--accent-energy-hover);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.2), 0 0 6px rgba(16, 185, 129, 0.12);
+}
+
+.create-project-button:focus-visible {
+  outline: 2px solid var(--accent-focus);
+  outline-offset: 2px;
 }
 
 .subtitle {
@@ -42,35 +52,47 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 320px));
   justify-content: start;
-  gap: 12px;
+  gap: 14px;
 }
 
 .project-card {
   width: 100%;
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
-  background: #111114;
+  border: 1px solid var(--border-panel);
+  border-radius: 12px;
+  background: var(--bg-elevated);
   color: inherit;
   display: flex;
   flex-direction: column;
   gap: 8px;
   text-align: left;
-  padding: 14px;
+  padding: 16px;
   cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .project-card:hover {
   border-color: var(--accent-energy);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-glow-energy);
+  transform: translateY(-1px);
+}
+
+.project-card:focus-visible {
+  outline: 2px solid var(--accent-focus);
+  outline-offset: 2px;
 }
 
 .project-name {
   font-size: 14px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .project-description {
   color: var(--text-muted);
   font-size: 13px;
+  line-height: 1.4;
 }
 
 .project-meta {
@@ -82,7 +104,9 @@ h2 {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 0.6);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 50;
 }
 
 .modal {
@@ -91,26 +115,28 @@ h2 {
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(520px, calc(100vw - 40px));
-  border: 1px solid var(--border-default);
-  border-radius: 10px;
-  background: #111114;
-  box-shadow: 0 20px 40px rgb(0 0 0 / 0.45);
+  border: 1px solid var(--border-panel);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+  z-index: 51;
 }
 
 .modal-header {
-  padding: 16px 18px 0;
+  padding: 20px 22px 0;
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 18px;
+  font-weight: 600;
 }
 
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px 18px 18px;
+  gap: 12px;
+  padding: 16px 22px 22px;
 }
 
 .modal-form label {
@@ -118,23 +144,31 @@ h2 {
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: var(--text-tertiary);
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .modal-form input,
 .modal-form textarea {
-  border: 1px solid var(--border-hover);
+  border: 1px solid var(--border-input);
   border-radius: 8px;
-  background: #0b0b0d;
-  color: #f4f4f5;
+  background: var(--bg-input);
+  color: var(--text-primary);
   padding: 10px 12px;
   font: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.modal-form input:hover,
+.modal-form textarea:hover {
+  border-color: var(--border-hover);
 }
 
 .modal-form input:focus,
 .modal-form textarea:focus {
-  outline: 2px solid var(--accent-energy);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--accent-energy);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 .field-error,
@@ -154,9 +188,11 @@ h2 {
 .modal-actions button {
   border-radius: 8px;
   border: 1px solid var(--border-hover);
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .modal-actions .secondary {
@@ -164,14 +200,25 @@ h2 {
   color: var(--text-secondary);
 }
 
+.modal-actions .secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
 .modal-actions .primary {
   background: var(--accent-energy);
   border-color: var(--accent-energy);
-  color: #032316;
+  color: var(--text-inverse);
   font-weight: 600;
+  box-shadow: var(--shadow-glow-energy);
+}
+
+.modal-actions .primary:hover {
+  background: var(--accent-energy-hover);
 }
 
 .modal-actions .primary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }

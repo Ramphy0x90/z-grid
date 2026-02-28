@@ -15,27 +15,33 @@
   display: grid;
   place-items: center;
   padding: 24px;
+  background:
+    radial-gradient(ellipse 600px 400px at 50% 40%, rgba(16, 185, 129, 0.04), transparent),
+    var(--bg-base);
 }
 
 .login-card {
   width: min(420px, 100%);
   display: grid;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid var(--border-panel);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--bg-surface);
-  padding: 24px;
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
 }
 
 .login-header h1 {
   margin: 0;
   font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
 .login-header p {
   margin: 6px 0 0;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 label {
@@ -44,40 +50,61 @@ label {
 }
 
 label span {
-  color: var(--text-tertiary);
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 input {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--border-hover);
+  border: 1px solid var(--border-input);
   border-radius: 8px;
-  background: #0f0f12;
+  background: var(--bg-input);
   color: var(--text-primary);
   padding: 10px 12px;
   outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+input:hover {
+  border-color: var(--border-hover);
 }
 
 input:focus-visible {
-  border-color: #22c55e;
+  border-color: var(--accent-energy);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 button {
   margin-top: 6px;
   border: none;
   border-radius: 8px;
-  background: #22c55e;
-  color: #052e16;
+  background: var(--accent-energy);
+  color: var(--text-inverse);
   font-weight: 600;
+  font-size: 14px;
   padding: 10px 12px;
   cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-glow-energy);
+}
+
+button:hover {
+  background: var(--accent-energy-hover);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.25), 0 0 6px rgba(16, 185, 129, 0.15);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent-focus);
+  outline-offset: 2px;
 }
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
+  box-shadow: none;
 }
 
 .field-error,

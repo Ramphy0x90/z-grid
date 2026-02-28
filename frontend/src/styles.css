@@ -73,6 +73,106 @@
   --chart-6: #f472b6;
   --chart-7: #38bdf8;
   --chart-8: #fbbf24;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45), 0 4px 8px rgba(0, 0, 0, 0.25);
+  --shadow-glow-energy: 0 0 12px rgba(16, 185, 129, 0.15), 0 0 4px rgba(16, 185, 129, 0.1);
+  --shadow-glow-interactive: 0 0 12px rgba(0, 212, 255, 0.15), 0 0 4px rgba(0, 212, 255, 0.1);
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-normal: 180ms ease;
+}
+
+/* ─── Light theme (not yet wired up) ───
+   To activate: add `data-theme="light"` to <html> or <body>,
+   then change the selector below from `.theme-light` to
+   `[data-theme="light"]` or toggle via a class.
+   All component styles already use CSS variables so no other
+   changes are needed — only this block of overrides.
+   ─────────────────────────────────────── */
+.theme-light {
+  /* Background layers */
+  --bg-base: #f4f4f5;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-sunken: #ebebef;
+  --bg-input: #f8f8fa;
+  --bg-table-header: #f0f0f3;
+  --bg-hover: #e8e8ec;
+  --bg-active: #e0e0e6;
+
+  /* Borders */
+  --border-default: #d4d4d8;
+  --border-subtle: #e4e4e7;
+  --border-input: #c8c8ce;
+  --border-panel: #d8d8dd;
+  --border-hover: #a1a1aa;
+  --border-strong: #71717a;
+
+  /* Text hierarchy */
+  --text-primary: #111115;
+  --text-secondary: #27272a;
+  --text-tertiary: #3f3f46;
+  --text-muted: #71717a;
+  --text-dim: #a1a1aa;
+  --text-inverse: #fafafa;
+
+  /* Accent - Energy (emerald green, darkened for light bg contrast) */
+  --accent-energy: #059669;
+  --accent-energy-hover: #047857;
+  --accent-energy-muted: #d1fae5;
+  --accent-energy-subtle: rgba(5, 150, 105, 0.08);
+
+  /* Accent - Interactive (teal, darkened for readability) */
+  --accent-interactive: #0891b2;
+  --accent-interactive-muted: #cffafe;
+  --accent-interactive-subtle: rgba(8, 145, 178, 0.08);
+
+  /* Accent - Focus (blue) */
+  --accent-focus: #2563eb;
+  --accent-focus-subtle: rgba(37, 99, 235, 0.06);
+
+  /* Status - Warning (amber, darkened) */
+  --status-warning: #d97706;
+  --status-warning-muted: #fef3c7;
+  --status-warning-subtle: rgba(217, 119, 6, 0.08);
+  --status-warning-text: #92400e;
+
+  /* Status - Critical (red, darkened) */
+  --status-critical: #dc2626;
+  --status-critical-muted: #fee2e2;
+  --status-critical-subtle: rgba(220, 38, 38, 0.06);
+  --status-critical-text: #991b1b;
+
+  /* Status - Offline (gray) */
+  --status-offline: #a1a1aa;
+  --status-offline-muted: #e4e4e7;
+  --status-offline-subtle: rgba(161, 161, 170, 0.08);
+
+  /* Status - Maintenance (purple, darkened) */
+  --status-maintenance: #7c3aed;
+  --status-maintenance-muted: #ede9fe;
+  --status-maintenance-subtle: rgba(124, 58, 237, 0.06);
+
+  /* Chart colors (slightly darkened for white bg contrast) */
+  --chart-1: #059669;
+  --chart-2: #0891b2;
+  --chart-3: #d97706;
+  --chart-4: #dc2626;
+  --chart-5: #7c3aed;
+  --chart-6: #db2777;
+  --chart-7: #0284c7;
+  --chart-8: #ca8a04;
+
+  /* Shadows (lighter, more diffused) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-glow-energy: 0 0 12px rgba(5, 150, 105, 0.1), 0 0 4px rgba(5, 150, 105, 0.06);
+  --shadow-glow-interactive: 0 0 12px rgba(8, 145, 178, 0.1), 0 0 4px rgba(8, 145, 178, 0.06);
 }
 
 html,
@@ -81,4 +181,30 @@ body {
   margin: 0;
   overflow: hidden;
   background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(0, 212, 255, 0.22);
+  color: var(--text-primary);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
 }

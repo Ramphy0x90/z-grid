@@ -6,6 +6,7 @@ export type AppPage = {
 	id: string;
 	label: string;
 	shortLabel: string;
+	icon: string;
 };
 
 export type AppPageGroup = {
@@ -34,8 +35,8 @@ export const PAGE_GROUPS: readonly AppPageGroup[] = [
 		shortLabel: 'G',
 		icon: 'bi-grid-3x3-gap',
 		children: [
-			{ id: 'grid-editor', label: 'Grid Editor', shortLabel: 'GE' },
-			{ id: 'grid-upgrade', label: 'Grid Upgrade', shortLabel: 'GU' },
+			{ id: 'grid-editor', label: 'Grid Editor', shortLabel: 'GE', icon: 'bi-pencil-square' },
+			{ id: 'grid-upgrade', label: 'Grid Upgrade', shortLabel: 'GU', icon: 'bi-arrow-up-circle' },
 		],
 	},
 	{
@@ -44,9 +45,9 @@ export const PAGE_GROUPS: readonly AppPageGroup[] = [
 		shortLabel: 'S',
 		icon: 'bi-calculator',
 		children: [
-			{ id: 'power-flow', label: 'Power Flow', shortLabel: 'PF' },
-			{ id: 'hosting-capacity', label: 'Hosting Capacity', shortLabel: 'HC' },
-			{ id: 'short-circuit', label: 'Short Circuit', shortLabel: 'SC' },
+			{ id: 'power-flow', label: 'Power Flow', shortLabel: 'PF', icon: 'bi-lightning-charge' },
+			{ id: 'hosting-capacity', label: 'Hosting Capacity', shortLabel: 'HC', icon: 'bi-bar-chart-line' },
+			{ id: 'short-circuit', label: 'Short Circuit', shortLabel: 'SC', icon: 'bi-exclamation-triangle' },
 		],
 	},
 ];
