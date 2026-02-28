@@ -14,7 +14,12 @@ import { GridActions } from './stores/grid/grid.actions';
 import { GridSelectors } from './stores/grid/grid.selectors';
 import { AuthService } from './services/auth.service';
 import { ProjectService } from './services/project.service';
-import { ROUTES } from './app.routes';
+import { PAGE_GROUPS, ROUTES } from './app.routes';
+
+type WorkspaceAction = {
+  id: 'save' | 'create' | 'run';
+  label: 'Save' | 'Create' | 'Run';
+};
 
 @Component({
   selector: 'app-root',
@@ -31,6 +36,15 @@ import { ROUTES } from './app.routes';
 })
 export class App {
   private static readonly LAYOUT_PRESETS = [25, 50, 75] as const;
+  private static readonly WORKSPACE_ACTIONS_BY_GROUP: Readonly<
+    Record<'grid' | 'static-calculation', readonly WorkspaceAction[]>
+  > = {
+    grid: [
+      { id: 'save', label: 'Save' },
+      { id: 'create', label: 'Create' },
+    ],
+    'static-calculation': [{ id: 'run', label: 'Run' }],
+  };
 
   private readonly router = inject(Router);
   private readonly store = inject(Store);
@@ -46,6 +60,7 @@ export class App {
   protected readonly selectedProjectGrids = this.store.selectSignal(GridSelectors.selectedProjectGrids);
   protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
   protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
+  protected readonly selectedPageId = this.store.selectSignal(NavigationSelectors.selectedPageId);
   protected readonly selectedGridDataset = computed(() => {
     const grid = this.selectedGrid();
     if (!grid) {
@@ -64,6 +79,17 @@ export class App {
   protected readonly shouldRenderWorkspace = computed(
     () => this.isWorkspaceRouteState() && this.authService.isAuthenticated(),
   );
+  protected readonly workspaceActions = computed<readonly WorkspaceAction[]>(() => {
+    const pageId = this.selectedPageId();
+    if (!pageId) {
+      return [];
+    }
+    const pageGroup = PAGE_GROUPS.find((group) => group.children.some((page) => page.id === pageId));
+    if (!pageGroup) {
+      return [];
+    }
+    return App.WORKSPACE_ACTIONS_BY_GROUP[pageGroup.id];
+  });
   protected readonly layoutColumns = computed(() => {
     const left = this.layoutSplitPercentState();
     return `minmax(0, ${left}%) var(--divider-width, 10px) minmax(0, ${100 - left}%)`;
@@ -140,5 +166,15 @@ export class App {
       ? this.projectService.getGridsByProjectId(projectId)[0]?.id ?? null
       : null;
     this.store.dispatch(GridActions.gridDeleted({ gridId, nextSelectedGridId }));
+  }
+
+  protected onWorkspaceAction(actionId: WorkspaceAction['id']): void {
+    if (actionId === 'create') {
+      const sourceGridId = this.selectedGridId();
+      if (!sourceGridId) {
+        return;
+      }
+      this.onGridDuplicate(sourceGridId);
+    }
   }
 }

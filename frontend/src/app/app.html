@@ -6,6 +6,26 @@
 	<main class="main-content">
 		@if (shouldRenderWorkspace()) {
 			<section class="workspace-layout" aria-live="polite">
+				<header class="topbar" aria-label="Workspace header">
+					<div class="topbar-copy">
+						<h1>{{ topbarTitle() }}</h1>
+					</div>
+
+					@if (workspaceActions().length > 0) {
+						<div class="topbar-actions" aria-label="Workspace actions">
+							@for (action of workspaceActions(); track action.id) {
+								<button
+									type="button"
+									class="workspace-action-button"
+									(click)="onWorkspaceAction(action.id)"
+								>
+									{{ action.label }}
+								</button>
+							}
+						</div>
+					}
+				</header>
+
 				<div
 					class="workspace-panels"
 					#workspacePanels
