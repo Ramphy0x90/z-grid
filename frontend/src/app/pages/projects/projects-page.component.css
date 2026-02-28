@@ -4,9 +4,31 @@
   overflow: auto;
 }
 
+.projects-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 h2 {
   margin: 0 0 8px;
   font-size: 18px;
+}
+
+.create-project-button {
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  background: #0f2f25;
+  color: #d1fae5;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.create-project-button:hover {
+  background: #134e3b;
 }
 
 .subtitle {
@@ -18,11 +40,13 @@ h2 {
 .project-grid {
   margin-top: 18px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 320px));
+  justify-content: start;
   gap: 12px;
 }
 
 .project-card {
+  width: 100%;
   border: 1px solid #27272a;
   border-radius: 8px;
   background: #111114;
@@ -53,4 +77,101 @@ h2 {
   color: #10b981;
   font-size: 12px;
   font-weight: 600;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100vw - 40px));
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #111114;
+  box-shadow: 0 20px 40px rgb(0 0 0 / 0.45);
+}
+
+.modal-header {
+  padding: 16px 18px 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px 18px;
+}
+
+.modal-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #d4d4d8;
+}
+
+.modal-form input,
+.modal-form textarea {
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: #0b0b0d;
+  color: #f4f4f5;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.modal-form input:focus,
+.modal-form textarea:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 1px;
+}
+
+.field-error,
+.submit-error {
+  margin: 0;
+  color: #fda4af;
+  font-size: 12px;
+}
+
+.modal-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-actions button {
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modal-actions .secondary {
+  background: transparent;
+  color: #e4e4e7;
+}
+
+.modal-actions .primary {
+  background: #10b981;
+  border-color: #10b981;
+  color: #032316;
+  font-weight: 600;
+}
+
+.modal-actions .primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

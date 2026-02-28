@@ -1,5 +1,6 @@
 package com.r16a.zeus.core;
 
+import com.r16a.zeus.auth.exception.InvalidCredentialsException;
 import com.r16a.zeus.team.exception.TeamConflictException;
 import com.r16a.zeus.team.exception.TeamNotFoundException;
 import com.r16a.zeus.project.exception.ProjectConflictException;
@@ -14,6 +15,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(InvalidCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ProblemDetail handleUserNotFound(UserNotFoundException ex) {

@@ -73,7 +73,6 @@ public class ProjectController {
     })
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody CreateProjectRequest request) {
         Project projectToCreate = Project.builder()
-                .teamId(request.teamId())
                 .name(request.name())
                 .description(request.description())
                 .build();

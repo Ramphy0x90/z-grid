@@ -1,12 +1,15 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { createSyntheticGridDataset } from '../components/grid-viewer/data/mock-grid.data';
 import type { GridDataset } from '../components/grid-viewer/models/grid.models';
+import { map, Observable, tap } from 'rxjs';
 
 export type Project = {
   id: string;
+  teamId: string;
   name: string;
   description: string;
-  region: string;
 };
 
 export type ProjectGrid = {
@@ -17,37 +20,25 @@ export type ProjectGrid = {
   busCount: number;
 };
 
+export type CreateProjectRequest = {
+  name: string;
+  description: string;
+};
+
+type ProjectApiModel = {
+  id: string;
+  teamId: string;
+  name: string;
+  description: string | null;
+};
+
 @Injectable({
   providedIn: 'root',
 })
 export class ProjectService {
-  // Mocked backend response until API integration is wired.
-  private readonly projectsState = signal<Project[]>([
-    {
-      id: 'vienna-mv',
-      name: 'Vienna District 3 - MV Network',
-      description: 'Urban medium-voltage feeder with distributed generation and EV loads.',
-      region: 'Austria',
-    },
-    {
-      id: 'madrid-rural',
-      name: 'Madrid South - Rural Grid',
-      description: 'Long radial lines with high seasonal demand and sparse switching points.',
-      region: 'Spain',
-    },
-    {
-      id: 'hamburg-port',
-      name: 'Hamburg Port - Industrial Grid',
-      description: 'Industrial network with heavy motors and strict voltage profile constraints.',
-      region: 'Germany',
-    },
-    {
-      id: 'porto-residential',
-      name: 'Porto East - Residential Expansion',
-      description: 'Fast-growing residential area with planned rooftop PV integration.',
-      region: 'Portugal',
-    },
-  ]);
+  private readonly http = inject(HttpClient);
+  private readonly projectsApiPath = `${environment.apiBaseUrl}/api/project`;
+  private readonly projectsState = signal<Project[]>([]);
   private readonly gridsState = signal<ProjectGrid[]>([
     {
       id: 'vienna-operational',
@@ -97,6 +88,20 @@ export class ProjectService {
   readonly projects = this.projectsState.asReadonly();
   readonly grids = this.gridsState.asReadonly();
 
+  loadProjects(): Observable<Project[]> {
+    return this.http.get<ProjectApiModel[]>(this.projectsApiPath).pipe(
+      map((projects) => projects.map((project) => this.toProject(project))),
+      tap((projects) => this.projectsState.set(projects)),
+    );
+  }
+
+  createProject(request: CreateProjectRequest): Observable<Project> {
+    return this.http.post<ProjectApiModel>(this.projectsApiPath, request).pipe(
+      map((project) => this.toProject(project)),
+      tap((project) => this.projectsState.update((projects) => [project, ...projects])),
+    );
+  }
+
   getProjectById(projectId: string): Project | null {
     return this.projects().find((project) => project.id === projectId) ?? null;
   }
@@ -141,5 +146,14 @@ export class ProjectService {
 
     this.gridDatasetCache.set(gridId, dataset);
     return dataset;
+  }
+
+  private toProject(project: ProjectApiModel): Project {
+    return {
+      id: project.id,
+      teamId: project.teamId,
+      name: project.name,
+      description: project.description ?? '',
+    };
   }
 }

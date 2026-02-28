@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { GridSelectorComponent } from './components/grid-selector/grid-selector.component';
@@ -10,6 +10,7 @@ import { NavigationActions } from './stores/navigation/navigation.actions';
 import { NavigationSelectors } from './stores/navigation/navigation.selectors';
 import { ProjectActions } from './stores/project/project.actions';
 import { ProjectSelectors } from './stores/project/project.selectors';
+import { AuthService } from './services/auth.service';
 import { ProjectService } from './services/project.service';
 import { ROUTES } from './app.routes';
 
@@ -31,10 +32,12 @@ export class App {
 
   private readonly router = inject(Router);
   private readonly store = inject(Store);
+  private readonly authService = inject(AuthService);
   private readonly projectService = inject(ProjectService);
   private readonly layoutSplitPercentState = signal(50);
   private readonly isDividerDraggingState = signal(false);
-  private readonly isProjectsRouteState = signal(true);
+  private readonly isLoginRouteState = signal(false);
+  private readonly isWorkspaceRouteState = signal(false);
 
   protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
   protected readonly selectedProjectGrids = this.store.selectSignal(ProjectSelectors.selectedProjectGrids);
@@ -50,17 +53,22 @@ export class App {
   protected readonly layoutSplitPercent = this.layoutSplitPercentState.asReadonly();
   protected readonly isDividerDragging = this.isDividerDraggingState.asReadonly();
   protected readonly layoutPresets = App.LAYOUT_PRESETS;
-  protected readonly isProjectsRoute = this.isProjectsRouteState.asReadonly();
+  protected readonly isLoginRoute = this.isLoginRouteState.asReadonly();
+  protected readonly isWorkspaceRoute = this.isWorkspaceRouteState.asReadonly();
+  protected readonly shouldShowNavbar = computed(
+    () => this.authService.isAuthenticated() && !this.isLoginRouteState(),
+  );
+  protected readonly shouldRenderWorkspace = computed(
+    () => this.isWorkspaceRouteState() && this.authService.isAuthenticated(),
+  );
   protected readonly layoutColumns = computed(() => {
     const left = this.layoutSplitPercentState();
     return `minmax(0, ${left}%) var(--divider-width, 10px) minmax(0, ${100 - left}%)`;
   });
 
   constructor() {
-    this.store.dispatch(
-      ProjectActions.projectsLoaded({ projects: this.projectService.projects() }),
-    );
     this.store.dispatch(ProjectActions.gridsLoaded({ grids: this.projectService.grids() }));
+    void this.syncProjectsFromBackend();
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.syncRoute();
@@ -69,16 +77,29 @@ export class App {
     this.syncRoute();
   }
 
+  private async syncProjectsFromBackend(): Promise<void> {
+    try {
+      const projects = await firstValueFrom(this.projectService.loadProjects());
+      this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
+    } catch {
+      this.store.dispatch(ProjectActions.projectsLoaded({ projects: [] }));
+    }
+  }
+
   private syncRoute(): void {
     const urlTree = this.router.parseUrl(this.router.url);
     const segments =
       urlTree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
     const [firstSegment, secondSegment] = segments;
-    const isProjectsRoute = !firstSegment || firstSegment === ROUTES.PROJECTS;
-    const projectId = !firstSegment || firstSegment === ROUTES.PROJECTS ? null : firstSegment;
+    const isLoginRoute = firstSegment === ROUTES.LOGIN;
+    const hasPrimarySegment = typeof firstSegment === 'string' && firstSegment.length > 0;
+    const isWorkspaceRoute =
+      hasPrimarySegment && !isLoginRoute && firstSegment !== ROUTES.PROJECTS;
+    const projectId = isWorkspaceRoute ? firstSegment : null;
     const pageId = secondSegment ?? null;
 
-    this.isProjectsRouteState.set(isProjectsRoute);
+    this.isLoginRouteState.set(isLoginRoute);
+    this.isWorkspaceRouteState.set(isWorkspaceRoute);
     this.store.dispatch(ProjectActions.selectedProjectSynced({ projectId }));
     this.store.dispatch(NavigationActions.routeSynced({ pageId }));
   }

@@ -4,15 +4,13 @@ import com.r16a.zeus.project.Project;
 import com.r16a.zeus.project.exception.ProjectConflictException;
 import com.r16a.zeus.project.exception.ProjectNotFoundException;
 import com.r16a.zeus.project.repository.ProjectRepository;
+import com.r16a.zeus.team.Team;
 import com.r16a.zeus.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +40,11 @@ public class ProjectService {
     @Transactional
     public Project createProject(Project project) {
         UUID teamId = project.getTeamId();
+        if (teamId == null) {
+            Iterator<Team> teams = teamRepository.findAll().iterator();
+            teamId = teams.hasNext() ? teams.next().getId() : null;
+            project.setTeamId(teamId);
+        }
 
         if (teamId == null || !teamRepository.existsById(teamId)) {
             throw new ProjectConflictException("Project must belong to an existing team");

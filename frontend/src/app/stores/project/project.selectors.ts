@@ -10,7 +10,7 @@ export const ProjectSelectors = {
   selectedGridId: createSelector(selectProjectState, (state) => state.selectedGridId),
   hasProjectSelected: createSelector(
     selectProjectState,
-    (state) => state.selectedProjectId !== null,
+    (state) => typeof state.selectedProjectId === 'string' && state.selectedProjectId.length > 0,
   ),
   selectedProject: createSelector(selectProjectState, (state) =>
     state.selectedProjectId

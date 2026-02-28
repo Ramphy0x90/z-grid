@@ -1,0 +1,33 @@
+<section class="login-page" aria-label="Login">
+	<form class="login-card" [formGroup]="loginForm" (ngSubmit)="login()">
+		<header class="login-header">
+			<h1>Welcome back</h1>
+		</header>
+
+		<label>
+			<span>Username</span>
+			<input type="text" formControlName="username" autocomplete="username" />
+		</label>
+
+		@if (loginForm.controls.username.invalid && loginForm.controls.username.touched) {
+			<p class="field-error">Username is required.</p>
+		}
+
+		<label>
+			<span>Password</span>
+			<input type="password" formControlName="password" autocomplete="current-password" />
+		</label>
+
+		@if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
+			<p class="field-error">Password is required.</p>
+		}
+
+		@if (submitError()) {
+			<p class="submit-error">{{ submitError() }}</p>
+		}
+
+		<button type="submit" [disabled]="isSubmitting()">
+			{{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
+		</button>
+	</form>
+</section>

@@ -1,5 +1,6 @@
 import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth.guard';
 
 export type AppPage = {
 	id: string;
@@ -16,6 +17,7 @@ export type AppPageGroup = {
 };
 
 export const enum ROUTES {
+	LOGIN = 'login',
 	PROJECTS = 'projects',
 }
 
@@ -88,7 +90,15 @@ export const routes: Routes = [
 		redirectTo: ROUTES.PROJECTS,
 	},
 	{
+		path: ROUTES.LOGIN,
+		loadComponent: () =>
+			import('./pages/login/login-page.component').then(
+				(module) => module.LoginPageComponent,
+			),
+	},
+	{
 		path: ROUTES.PROJECTS,
+		canActivate: [authGuard],
 		loadComponent: () =>
 			import('./pages/projects/projects-page.component').then(
 				(module) => module.ProjectsPageComponent,
@@ -96,6 +106,7 @@ export const routes: Routes = [
 	},
 	{
 		path: `:${ROUTE_PARAMS.PROJECT_ID}`,
+		canActivate: [authGuard],
 		children: [
 			{
 				path: '',

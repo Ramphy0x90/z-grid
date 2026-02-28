@@ -5,8 +5,10 @@ import com.r16a.zeus.user.User;
 import com.r16a.zeus.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +16,7 @@ import java.time.Instant;
 
 @Slf4j
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DefaultAdminInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
@@ -29,7 +32,7 @@ public class DefaultAdminInitializer implements CommandLineRunner {
     private boolean bootstrapEnabled;
 
     @Override
-    public void run(String... args) {
+    public void run(String @NonNull ... args) {
         if (!bootstrapEnabled) {
             log.info("Default admin bootstrap is disabled");
             return;
