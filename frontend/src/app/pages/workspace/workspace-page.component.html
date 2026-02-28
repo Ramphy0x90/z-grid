@@ -1,41 +1,5 @@
 <section class="workspace-layout" aria-live="polite">
-  <header class="layout-toolbar" aria-label="Workspace layout controls">
-    <span class="layout-toolbar-label">Layout</span>
-    <div class="layout-switch" role="tablist" aria-label="Page and grid viewer width">
-      <button
-        type="button"
-        role="tab"
-        class="layout-button"
-        [class.layout-button-active]="layoutPreset() === '1-3'"
-        [attr.aria-selected]="layoutPreset() === '1-3'"
-        (click)="setLayoutPreset('1-3')"
-      >
-        1/4 - 3/4
-      </button>
-      <button
-        type="button"
-        role="tab"
-        class="layout-button"
-        [class.layout-button-active]="layoutPreset() === '2-2'"
-        [attr.aria-selected]="layoutPreset() === '2-2'"
-        (click)="setLayoutPreset('2-2')"
-      >
-        2/4 - 2/4
-      </button>
-      <button
-        type="button"
-        role="tab"
-        class="layout-button"
-        [class.layout-button-active]="layoutPreset() === '3-1'"
-        [attr.aria-selected]="layoutPreset() === '3-1'"
-        (click)="setLayoutPreset('3-1')"
-      >
-        3/4 - 1/4
-      </button>
-    </div>
-  </header>
-
-  <div class="workspace-panels" [style.grid-template-columns]="layoutColumns()">
+  <div class="workspace-panels" #workspacePanels [style.grid-template-columns]="layoutColumns()">
     <article class="page-panel">
       <h2>{{ page()?.label }}</h2>
       <p>
@@ -46,6 +10,27 @@
         Page workspace content stays on the left while the grid viewer remains docked to the right.
       </p>
     </article>
+
+    <button
+      #layoutDivider
+      type="button"
+      class="layout-divider"
+      [class.layout-divider-dragging]="isDividerDragging()"
+      role="separator"
+      aria-label="Resize page and grid viewer panels"
+      aria-orientation="vertical"
+      [attr.aria-valuemin]="25"
+      [attr.aria-valuemax]="75"
+      [attr.aria-valuenow]="layoutSplitPercent()"
+      [attr.aria-valuetext]="layoutValueText()"
+      (pointerdown)="startDividerDrag($event)"
+      (pointermove)="dragDivider($event)"
+      (pointerup)="endDividerDrag($event)"
+      (pointercancel)="endDividerDrag($event)"
+      (keydown)="onDividerKeydown($event)"
+    >
+      <span class="layout-divider-handle" aria-hidden="true"></span>
+    </button>
 
     <aside class="grid-viewer-panel" aria-label="Grid viewer panel">
       <app-grid-viewer />

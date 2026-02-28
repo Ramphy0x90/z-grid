@@ -11,60 +11,18 @@
   height: 100%;
   min-height: 0;
   padding: 12px;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
+  display: block;
   overflow: hidden;
-}
-
-.layout-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid #2a2a2f;
-  border-radius: 10px;
-  background: #111115;
-  padding: 8px 10px;
-}
-
-.layout-toolbar-label {
-  font-size: 12px;
-  color: #a1a1aa;
-}
-
-.layout-switch {
-  display: inline-flex;
-  border: 1px solid #303036;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.layout-button {
-  border: 0;
-  background: #1a1a1f;
-  color: #d4d4d8;
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.layout-button-active {
-  background: #00d4ff;
-  color: #041017;
-  font-weight: 600;
-}
-
-.layout-button:focus-visible {
-  outline: 2px solid #00d4ff;
-  outline-offset: 2px;
 }
 
 .workspace-panels {
+  --divider-width: 10px;
   box-sizing: border-box;
+  height: 100%;
   min-height: 0;
   min-width: 0;
   display: grid;
-  gap: 12px;
+  gap: 0;
   overflow: hidden;
 }
 
@@ -77,6 +35,53 @@
   padding: 24px;
   overflow: auto;
   background: #111115;
+}
+
+.layout-divider {
+  box-sizing: border-box;
+  width: var(--divider-width);
+  min-width: var(--divider-width);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.layout-divider::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #303036;
+  transition: background-color 120ms ease;
+}
+
+.layout-divider-handle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #575766;
+}
+
+.layout-divider:hover::before,
+.layout-divider:focus-visible::before,
+.layout-divider-dragging::before {
+  background: #00d4ff;
+}
+
+.layout-divider:focus-visible {
+  outline: none;
 }
 
 .grid-viewer-panel {
@@ -108,7 +113,11 @@ p {
 
 @media (max-width: 1200px) {
   .workspace-panels {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+
+  .layout-divider {
+    display: none;
   }
 
   .grid-viewer-panel {

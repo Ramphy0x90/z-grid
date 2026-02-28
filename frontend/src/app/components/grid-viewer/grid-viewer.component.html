@@ -30,11 +30,7 @@
     <div class="toolbar-row">
       <button type="button" class="toolbar-button" (click)="loadDataset(1200)">Load 1200 buses</button>
       <button type="button" class="toolbar-button" (click)="loadDataset(2500)">Load 2500 buses</button>
-      <span class="chip">Buses: {{ stats().buses }}</span>
-      <span class="chip">Lines: {{ stats().lines }}</span>
-      <span class="chip">Transformers: {{ stats().transformers }}</span>
       <span class="chip">Selected: {{ selectedLabel() }}</span>
-      <span class="chip">Hover: {{ hoveredLabel() }}</span>
     </div>
   </header>
 

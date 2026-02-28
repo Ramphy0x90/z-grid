@@ -40,11 +40,8 @@ export class GridViewerComponent implements AfterViewInit {
   private readonly viewerBodyRef?: ElementRef<HTMLElement>;
 
   protected readonly activeView = signal<ActiveView>('schematic');
-  protected readonly stats = this.facade.stats;
   protected readonly selectedElement = this.facade.selectedElement;
-  protected readonly hoveredElement = this.facade.hoveredElement;
   protected readonly selectedLabel = computed(() => this.toLabel(this.selectedElement()));
-  protected readonly hoveredLabel = computed(() => this.toLabel(this.hoveredElement()));
 
   private mapRenderer: MapWebglRenderer | null = null;
   private schematicRenderer: SchematicWebglRenderer | null = null;
