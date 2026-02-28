@@ -41,41 +41,43 @@
 							(deleteRequested)="onGridDelete($event)"
 						/>
 
-						<section class="create-grid-form" aria-label="Grid form">
-							<h2 class="create-grid-form-title">
-								@if (gridPageMode() === 'edit') {
-									Update Grid
-								} @else if (gridPageMode() === 'create') {
-									Create Grid
-								} @else {
-									Grid Metadata
-								}
-							</h2>
-							<form [formGroup]="createGridForm" (ngSubmit)="onCreateGridSubmit()">
-								<label class="create-grid-label" for="create-grid-name">Name</label>
-								<input
-									id="create-grid-name"
-									class="create-grid-input"
-									type="text"
-									formControlName="name"
-									[readonly]="isViewMode()"
-									placeholder="Enter grid name"
-								/>
-								@if (createGridForm.controls.name.invalid && createGridForm.controls.name.touched) {
-									<p class="create-grid-error">Name is required.</p>
-								}
+						@if (isGridEditorPage()) {
+							<section class="create-grid-form" aria-label="Grid form">
+								<h2 class="create-grid-form-title">
+									@if (gridPageMode() === 'edit') {
+										Update Grid
+									} @else if (gridPageMode() === 'create') {
+										Create Grid
+									} @else {
+										Grid Metadata
+									}
+								</h2>
+								<form [formGroup]="createGridForm" (ngSubmit)="onCreateGridSubmit()">
+									<label class="create-grid-label" for="create-grid-name">Name</label>
+									<input
+										id="create-grid-name"
+										class="create-grid-input"
+										type="text"
+										formControlName="name"
+										[readonly]="isViewMode()"
+										placeholder="Enter grid name"
+									/>
+									@if (createGridForm.controls.name.invalid && createGridForm.controls.name.touched) {
+										<p class="create-grid-error">Name is required.</p>
+									}
 
-								<label class="create-grid-label" for="create-grid-description">Description</label>
-								<textarea
-									id="create-grid-description"
-									class="create-grid-textarea"
-									rows="3"
-									formControlName="description"
-									[readonly]="isViewMode()"
-									placeholder="Enter grid description"
-								></textarea>
-							</form>
-						</section>
+									<label class="create-grid-label" for="create-grid-description">Description</label>
+									<textarea
+										id="create-grid-description"
+										class="create-grid-textarea"
+										rows="3"
+										formControlName="description"
+										[readonly]="isViewMode()"
+										placeholder="Enter grid description"
+									></textarea>
+								</form>
+							</section>
+						}
 
 						<div class="page-content">
 							<router-outlet />

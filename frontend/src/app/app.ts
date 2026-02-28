@@ -46,6 +46,7 @@ type WorkspaceAction = {
 })
 export class App {
   private static readonly LAYOUT_PRESETS = [25, 50, 75] as const;
+  private static readonly GRID_EDITOR_PAGE_ID = 'grid-editor' as const;
   private static readonly STATIC_CALCULATION_ACTIONS: readonly WorkspaceAction[] = [
     { id: 'run', label: 'Run' },
   ];
@@ -70,6 +71,9 @@ export class App {
     const selectedGridId = this.selectedGridId();
     return this.projectService.getCurrentEditorDataset(selectedGridId);
   });
+  protected readonly isGridEditorPage = computed(
+    () => this.selectedPageId() === App.GRID_EDITOR_PAGE_ID,
+  );
   protected readonly layoutSplitPercent = this.layoutSplitPercentState.asReadonly();
   protected readonly isDividerDragging = this.isDividerDraggingState.asReadonly();
   protected readonly layoutPresets = App.LAYOUT_PRESETS;
@@ -110,6 +114,9 @@ export class App {
     }
     if (pageGroup.id === 'static-calculation') {
       return App.STATIC_CALCULATION_ACTIONS;
+    }
+    if (pageId !== App.GRID_EDITOR_PAGE_ID) {
+      return [];
     }
     if (this.gridPageModeState() === 'view') {
       return [
