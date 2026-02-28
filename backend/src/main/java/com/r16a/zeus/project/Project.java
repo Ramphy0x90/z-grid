@@ -1,20 +1,19 @@
 package com.r16a.zeus.project;
 
-import java.time.Instant;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-@Getter
-@Setter
+import java.time.Instant;
+import java.util.UUID;
+
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

@@ -1,9 +1,6 @@
-package com.r16a.zeus.team;
+package com.r16a.zeus.features.grid.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -17,19 +14,26 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("teams")
-public class Team {
+@Table("grids")
+public class Grid {
     @Id
     private UUID id;
+
+    @Column("project_id")
+    private UUID projectId;
 
     private String name;
     private String description;
 
-    @CreatedDate
-    @Column("created_at")
+    @Column("base_mva")
+    private Double baseMva;
+
+    @Column("frequency_hz")
+    private Double frequencyHz;
+
+    @CreatedDate @Column("created_at")
     private Instant createdAt;
 
-    @LastModifiedDate
-    @Column("updated_at")
+    @LastModifiedDate @Column("updated_at")
     private Instant updatedAt;
 }
