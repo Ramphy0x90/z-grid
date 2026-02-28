@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
@@ -10,14 +10,17 @@ import {
   toProjectPageCommands,
 } from '../../app.routes';
 import { ProjectSelectors } from '../../stores/project/project.selectors';
+import { GridViewerComponent } from '../../components/grid-viewer/grid-viewer.component';
 
 @Component({
   selector: 'app-workspace-page',
+  imports: [GridViewerComponent],
   templateUrl: './workspace-page.component.html',
   styleUrl: './workspace-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkspacePageComponent {
+  private readonly layoutPresetState = signal<'1-3' | '2-2' | '3-1'>('2-2');
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly store = inject(Store);
@@ -36,6 +39,17 @@ export class WorkspacePageComponent {
     () => this.projects().find((project) => project.id === this.projectId()) ?? null,
   );
   protected readonly page = computed(() => PAGES.find((page) => page.id === this.pageId()) ?? null);
+  protected readonly layoutPreset = this.layoutPresetState.asReadonly();
+  protected readonly layoutColumns = computed(() => {
+    const preset = this.layoutPresetState();
+    if (preset === '1-3') {
+      return 'minmax(0, 1fr) minmax(0, 3fr)';
+    }
+    if (preset === '3-1') {
+      return 'minmax(0, 3fr) minmax(0, 1fr)';
+    }
+    return 'minmax(0, 2fr) minmax(0, 2fr)';
+  });
 
   constructor() {
     const currentProjectId = this.route.snapshot.paramMap.get(ROUTE_PARAMS.PROJECT_ID) ?? '';
@@ -51,5 +65,9 @@ export class WorkspacePageComponent {
     if (!pageExists) {
       this.router.navigate([...toProjectPageCommands(currentProjectId, DEFAULT_PROJECT_PAGE)]);
     }
+  }
+
+  protected setLayoutPreset(preset: '1-3' | '2-2' | '3-1'): void {
+    this.layoutPresetState.set(preset);
   }
 }

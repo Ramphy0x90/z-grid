@@ -1,0 +1,57 @@
+<section class="grid-viewer" aria-label="Grid viewer">
+  <header class="toolbar">
+    <div class="toolbar-row">
+      <div class="view-switch" role="tablist" aria-label="Grid view mode">
+        <button
+          type="button"
+          role="tab"
+          class="view-toggle"
+          [class.view-toggle-active]="activeView() === 'schematic'"
+          [attr.aria-selected]="activeView() === 'schematic'"
+          (click)="setActiveView('schematic')"
+        >
+          Schematic
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="view-toggle"
+          [class.view-toggle-active]="activeView() === 'map'"
+          [attr.aria-selected]="activeView() === 'map'"
+          (click)="setActiveView('map')"
+        >
+          GIS Map
+        </button>
+      </div>
+      <button type="button" class="toolbar-button" (click)="resetViewport()">Fit view</button>
+      <button type="button" class="toolbar-button" (click)="clearSelection()">Clear selection</button>
+    </div>
+
+    <div class="toolbar-row">
+      <button type="button" class="toolbar-button" (click)="loadDataset(1200)">Load 1200 buses</button>
+      <button type="button" class="toolbar-button" (click)="loadDataset(2500)">Load 2500 buses</button>
+      <span class="chip">Buses: {{ stats().buses }}</span>
+      <span class="chip">Lines: {{ stats().lines }}</span>
+      <span class="chip">Transformers: {{ stats().transformers }}</span>
+      <span class="chip">Selected: {{ selectedLabel() }}</span>
+      <span class="chip">Hover: {{ hoveredLabel() }}</span>
+    </div>
+  </header>
+
+  <div class="viewer-body" #viewerBody>
+    <canvas
+      #schematicCanvas
+      class="viewer-canvas"
+      [class.viewer-canvas-hidden]="activeView() !== 'schematic'"
+      role="img"
+      aria-label="Grid schematic canvas. Use drag to pan and wheel to zoom."
+    ></canvas>
+    <canvas
+      #mapCanvas
+      class="viewer-canvas"
+      [class.viewer-canvas-hidden]="activeView() !== 'map'"
+      role="img"
+      aria-label="Grid map canvas. Use drag to pan and wheel to zoom."
+    ></canvas>
+  </div>
+</section>

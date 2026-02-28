@@ -27,6 +27,13 @@
   overflow: hidden;
 }
 
+/* Only the routed component host should consume remaining height. */
+.main-content > router-outlet + * {
+  flex: 1;
+  min-height: 0;
+  display: block;
+}
+
 .topbar {
   border-bottom: 1px solid #27272a;
   padding: 16px 24px;
