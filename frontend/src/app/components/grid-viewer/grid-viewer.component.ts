@@ -13,6 +13,11 @@ import {
 	signal,
 } from '@angular/core';
 import {
+	map as createLeafletMap,
+	tileLayer,
+	type Map as LeafletMap,
+} from 'leaflet';
+import {
 	GridViewerFacade,
 	type PlacementTool,
 	type SelectedElement,
@@ -21,6 +26,7 @@ import { MapWebglRenderer } from './renderers/map-webgl.renderer';
 import { SchematicWebglRenderer } from './renderers/schematic-webgl.renderer';
 import { GridInteractionController } from './renderers/grid-interaction.controller';
 import type { GridDataset } from './models/grid.models';
+import { environment } from '../../../environments/environment';
 
 type ActiveView = 'map' | 'schematic';
 
@@ -37,6 +43,8 @@ export class GridViewerComponent implements AfterViewInit {
 
 	@ViewChild('mapCanvas', { static: true })
 	private readonly mapCanvasRef?: ElementRef<HTMLCanvasElement>;
+	@ViewChild('mapHost', { static: true })
+	private readonly mapHostRef?: ElementRef<HTMLElement>;
 	@ViewChild('schematicCanvas', { static: true })
 	private readonly schematicCanvasRef?: ElementRef<HTMLCanvasElement>;
 	@ViewChild('viewerBody', { static: true })
@@ -57,6 +65,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private schematicRenderer: SchematicWebglRenderer | null = null;
 	private mapController: GridInteractionController | null = null;
 	private schematicController: GridInteractionController | null = null;
+	private leafletMap: LeafletMap | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private animationFrameId = 0;
 	private lastDatasetGridId: string | null = null;
@@ -84,15 +93,20 @@ export class GridViewerComponent implements AfterViewInit {
 		this.facade.setPlacementMode(null);
 		this.pendingConnectionBusId.set(null);
 	});
+	private readonly mapViewportSyncEffect = effect(() => {
+		this.syncLeafletViewToViewport(this.facade.mapViewport());
+	});
 
 	ngAfterViewInit(): void {
 		const mapCanvas = this.mapCanvasRef?.nativeElement;
+		const mapHost = this.mapHostRef?.nativeElement;
 		const schematicCanvas = this.schematicCanvasRef?.nativeElement;
 		const viewerBody = this.viewerBodyRef?.nativeElement;
-		if (!mapCanvas || !schematicCanvas || !viewerBody) {
+		if (!mapCanvas || !mapHost || !schematicCanvas || !viewerBody) {
 			return;
 		}
 
+		this.initializeLeafletMap(mapHost);
 		this.mapRenderer = new MapWebglRenderer(mapCanvas);
 		this.schematicRenderer = new SchematicWebglRenderer(schematicCanvas);
 		this.syncGraphToRenderers();
@@ -128,12 +142,18 @@ export class GridViewerComponent implements AfterViewInit {
 			this.resizeObserver?.disconnect();
 			this.mapRenderer?.dispose();
 			this.schematicRenderer?.dispose();
+			this.leafletMap?.remove();
+			this.leafletMap = null;
 		});
 	}
 
 	protected setActiveView(view: ActiveView): void {
 		this.activeView.set(view);
 		this.resizeAndFitCanvases();
+		if (view === 'map') {
+			this.leafletMap?.invalidateSize(false);
+			this.syncLeafletViewToViewport(this.facade.mapViewport());
+		}
 	}
 
 	protected resetViewport(): void {
@@ -191,6 +211,7 @@ export class GridViewerComponent implements AfterViewInit {
 		});
 		this.mapRenderer.resize(viewerBody.clientWidth, viewerBody.clientHeight);
 		this.schematicRenderer.resize(viewerBody.clientWidth, viewerBody.clientHeight);
+		this.leafletMap?.invalidateSize(false);
 		this.resetViewport();
 	}
 
@@ -309,6 +330,40 @@ export class GridViewerComponent implements AfterViewInit {
 			return;
 		}
 		this.facade.setSchematicViewport(this.schematicRenderer.zoomAt(screenX, screenY, factor));
+	}
+
+	private initializeLeafletMap(container: HTMLElement): void {
+		const map = createLeafletMap(container, {
+			zoomControl: false,
+			attributionControl: true,
+			dragging: false,
+			scrollWheelZoom: false,
+			doubleClickZoom: false,
+			boxZoom: false,
+			keyboard: false,
+			touchZoom: false,
+		});
+		const tiles = tileLayer(environment.map.tileUrl, {
+			attribution: environment.map.attribution,
+			maxZoom: 19,
+		});
+		tiles.addTo(map);
+		this.leafletMap = map;
+		this.syncLeafletViewToViewport(this.facade.mapViewport());
+	}
+
+	private syncLeafletViewToViewport(viewport: { centerX: number; centerY: number; zoom: number }): void {
+		if (!this.leafletMap) {
+			return;
+		}
+		const zoom = this.toLeafletZoom(viewport.zoom);
+		this.leafletMap.setView([viewport.centerY, viewport.centerX], zoom, { animate: false });
+	}
+
+	private toLeafletZoom(viewportZoom: number): number {
+		const safeZoom = Math.max(Number.EPSILON, viewportZoom);
+		const rawZoom = Math.log2((360 * safeZoom) / 256);
+		return Math.min(19, Math.max(0, rawZoom));
 	}
 
 	private getPlacementHint(): string {

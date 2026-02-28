@@ -259,6 +259,13 @@
   opacity: 0.9;
 }
 
+.map-host {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .viewer-canvas {
   position: absolute;
   inset: 0;
@@ -266,10 +273,15 @@
   height: 100%;
   display: block;
   cursor: crosshair;
+  z-index: 1;
 }
 
 .viewer-body-placement .viewer-canvas {
   cursor: copy;
+}
+
+.viewer-canvas-map {
+  background: transparent;
 }
 
 .viewer-canvas-hidden {

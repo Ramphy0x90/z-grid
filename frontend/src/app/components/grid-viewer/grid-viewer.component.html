@@ -147,6 +147,12 @@
       }
     </svg>
 
+    <div
+      #mapHost
+      class="map-host"
+      [class.viewer-canvas-hidden]="activeView() !== 'map'"
+      aria-hidden="true"
+    ></div>
     <canvas
       #schematicCanvas
       class="viewer-canvas"
@@ -156,7 +162,7 @@
     ></canvas>
     <canvas
       #mapCanvas
-      class="viewer-canvas"
+      class="viewer-canvas viewer-canvas-map"
       [class.viewer-canvas-hidden]="activeView() !== 'map'"
       role="img"
       aria-label="Grid map canvas. Use drag to pan and wheel to zoom."

@@ -248,7 +248,11 @@ export class WebglGridRenderer {
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.clearColor(0.06, 0.06, 0.07, 1);
+    if (renderSpace === 'map') {
+      gl.clearColor(0, 0, 0, 0);
+    } else {
+      gl.clearColor(0.06, 0.06, 0.07, 1);
+    }
   }
 
   setGraph(graph: NormalizedGridGraph): void {
