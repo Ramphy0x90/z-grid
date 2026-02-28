@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.r16a.zeus.project.repository.ProjectRepository;
+import com.r16a.zeus.project.exception.ProjectConflictException;
 import com.r16a.zeus.project.service.ProjectService;
 import com.r16a.zeus.team.repository.TeamRepository;
 import java.util.Optional;
@@ -34,7 +35,7 @@ class ProjectServiceTest {
 
         when(teamRepository.existsById(teamId)).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class, () -> projectService.createProject(project));
+        assertThrows(ProjectConflictException.class, () -> projectService.createProject(project));
     }
 
     @Test
@@ -46,7 +47,7 @@ class ProjectServiceTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(projectRepository.countByTeamId(teamId)).thenReturn(1L);
 
-        assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
+        assertThrows(ProjectConflictException.class, () -> projectService.deleteProject(projectId));
         verify(projectRepository, never()).deleteById(projectId);
     }
 }
