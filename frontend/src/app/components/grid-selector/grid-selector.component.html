@@ -1,20 +1,47 @@
 <section class="grid-selector" aria-label="Grid selector">
-  @if (hasAvailableGrids()) {
-    <label class="selector-label" for="workspace-grid-selector">{{ label() }}</label>
+  <label class="selector-label" for="workspace-grid-selector">{{ label() }}</label>
+  <div class="controls-row" (focusout)="onMenuFocusOut($event)">
     <div class="select-wrapper">
       <select
         id="workspace-grid-selector"
         class="selector-input"
         [value]="selectedGridId()"
+        [disabled]="!hasAvailableGrids()"
         (change)="onGridChange($event)"
       >
-        @for (grid of grids(); track grid.id) {
-          <option [value]="grid.id">{{ grid.name }}</option>
+        @if (!hasAvailableGrids()) {
+          <option value="">No grids available</option>
+        } @else {
+          @for (grid of grids(); track grid.id) {
+            <option [value]="grid.id">{{ grid.name }}</option>
+          }
         }
       </select>
       <i class="bi bi-chevron-down selector-icon" aria-hidden="true"></i>
     </div>
-  } @else {
-    <p class="selector-empty">No grids available for the selected project.</p>
-  }
+
+    <div class="menu-wrapper">
+      <button
+        type="button"
+        class="menu-trigger"
+        aria-label="Grid actions"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="isMenuOpen()"
+        [disabled]="!hasAvailableGrids()"
+        (click)="toggleMenu()"
+      >
+        <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
+      </button>
+      @if (isMenuOpen()) {
+        <div class="action-menu" role="menu" aria-label="Grid actions menu">
+          <button type="button" class="action-menu-item" role="menuitem" (click)="onDuplicateClick()">
+            Duplicate
+          </button>
+          <button type="button" class="action-menu-item action-menu-item-danger" role="menuitem" (click)="onDeleteClick()">
+            Delete
+          </button>
+        </div>
+      }
+    </div>
+  </div>
 </section>

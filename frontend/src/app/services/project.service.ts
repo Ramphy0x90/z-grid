@@ -118,6 +118,30 @@ export class ProjectService {
     return this.grids().filter((grid) => grid.projectId === projectId);
   }
 
+  duplicateGrid(sourceGridId: string): ProjectGrid | null {
+    const sourceGrid = this.getGridById(sourceGridId);
+    if (!sourceGrid) {
+      return null;
+    }
+    const duplicatedGrid: ProjectGrid = {
+      ...sourceGrid,
+      id: this.getUniqueGridId(`${sourceGrid.id}-copy`),
+      name: this.getUniqueGridName(sourceGrid.projectId, `${sourceGrid.name} Copy`),
+    };
+    this.gridsState.update((grids) => [duplicatedGrid, ...grids]);
+    return duplicatedGrid;
+  }
+
+  deleteGrid(gridId: string): boolean {
+    const exists = this.grids().some((grid) => grid.id === gridId);
+    if (!exists) {
+      return false;
+    }
+    this.gridsState.update((grids) => grids.filter((grid) => grid.id !== gridId));
+    this.gridDatasetCache.delete(gridId);
+    return true;
+  }
+
   getGridDatasetById(gridId: string): GridDataset | null {
     const cached = this.gridDatasetCache.get(gridId);
     if (cached) {
@@ -155,5 +179,37 @@ export class ProjectService {
       name: project.name,
       description: project.description ?? '',
     };
+  }
+
+  private getUniqueGridId(baseId: string): string {
+    const existingIds = new Set(this.grids().map((grid) => grid.id));
+    if (!existingIds.has(baseId)) {
+      return baseId;
+    }
+    let suffix = 2;
+    let candidate = `${baseId}-${suffix}`;
+    while (existingIds.has(candidate)) {
+      suffix += 1;
+      candidate = `${baseId}-${suffix}`;
+    }
+    return candidate;
+  }
+
+  private getUniqueGridName(projectId: string, baseName: string): string {
+    const existingNames = new Set(
+      this.grids()
+        .filter((grid) => grid.projectId === projectId)
+        .map((grid) => grid.name.toLocaleLowerCase()),
+    );
+    if (!existingNames.has(baseName.toLocaleLowerCase())) {
+      return baseName;
+    }
+    let suffix = 2;
+    let candidate = `${baseName} ${suffix}`;
+    while (existingNames.has(candidate.toLocaleLowerCase())) {
+      suffix += 1;
+      candidate = `${baseName} ${suffix}`;
+    }
+    return candidate;
   }
 }

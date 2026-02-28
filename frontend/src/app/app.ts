@@ -10,6 +10,8 @@ import { NavigationActions } from './stores/navigation/navigation.actions';
 import { NavigationSelectors } from './stores/navigation/navigation.selectors';
 import { ProjectActions } from './stores/project/project.actions';
 import { ProjectSelectors } from './stores/project/project.selectors';
+import { GridActions } from './stores/grid/grid.actions';
+import { GridSelectors } from './stores/grid/grid.selectors';
 import { AuthService } from './services/auth.service';
 import { ProjectService } from './services/project.service';
 import { ROUTES } from './app.routes';
@@ -40,9 +42,10 @@ export class App {
   private readonly isWorkspaceRouteState = signal(false);
 
   protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
-  protected readonly selectedProjectGrids = this.store.selectSignal(ProjectSelectors.selectedProjectGrids);
-  protected readonly selectedGrid = this.store.selectSignal(ProjectSelectors.selectedGrid);
-  protected readonly selectedGridId = computed(() => this.selectedGrid()?.id ?? '');
+  protected readonly selectedProjectId = this.store.selectSignal(ProjectSelectors.selectedProjectId);
+  protected readonly selectedProjectGrids = this.store.selectSignal(GridSelectors.selectedProjectGrids);
+  protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
+  protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
   protected readonly selectedGridDataset = computed(() => {
     const grid = this.selectedGrid();
     if (!grid) {
@@ -67,7 +70,7 @@ export class App {
   });
 
   constructor() {
-    this.store.dispatch(ProjectActions.gridsLoaded({ grids: this.projectService.grids() }));
+    this.store.dispatch(GridActions.gridsLoaded({ grids: this.projectService.grids() }));
     void this.syncProjectsFromBackend();
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
@@ -101,6 +104,7 @@ export class App {
     this.isLoginRouteState.set(isLoginRoute);
     this.isWorkspaceRouteState.set(isWorkspaceRoute);
     this.store.dispatch(ProjectActions.selectedProjectSynced({ projectId }));
+    this.store.dispatch(GridActions.selectedProjectSynced({ projectId }));
     this.store.dispatch(NavigationActions.routeSynced({ pageId }));
   }
 
@@ -116,6 +120,25 @@ export class App {
     if (!gridId) {
       return;
     }
-    this.store.dispatch(ProjectActions.gridSelected({ gridId }));
+    this.store.dispatch(GridActions.gridSelected({ gridId }));
+  }
+
+  protected onGridDuplicate(gridId: string): void {
+    const duplicatedGrid = this.projectService.duplicateGrid(gridId);
+    if (!duplicatedGrid) {
+      return;
+    }
+    this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid }));
+  }
+
+  protected onGridDelete(gridId: string): void {
+    if (!this.projectService.deleteGrid(gridId)) {
+      return;
+    }
+    const projectId = this.selectedProjectId();
+    const nextSelectedGridId = projectId
+      ? this.projectService.getGridsByProjectId(projectId)[0]?.id ?? null
+      : null;
+    this.store.dispatch(GridActions.gridDeleted({ gridId, nextSelectedGridId }));
   }
 }

@@ -9,6 +9,8 @@ import { navigationFeatureKey } from './stores/navigation/navigation.state';
 import { navigationReducer } from './stores/navigation/navigation.reducer';
 import { projectFeatureKey } from './stores/project/project.state';
 import { projectReducer } from './stores/project/project.reducer';
+import { gridFeatureKey } from './stores/grid/grid.state';
+import { gridReducer } from './stores/grid/grid.reducer';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,5 +20,6 @@ export const appConfig: ApplicationConfig = {
     provideStore(),
     provideState(navigationFeatureKey, navigationReducer),
     provideState(projectFeatureKey, projectReducer),
+    provideState(gridFeatureKey, gridReducer),
   ],
 };
