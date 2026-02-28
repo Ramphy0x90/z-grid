@@ -72,7 +72,17 @@ export class GridViewerFacade {
   });
 
   setDataset(dataset: GridDataset): void {
-    this.datasetState.set(dataset);
+    this.datasetState.set({
+      ...dataset,
+      buses: Array.isArray(dataset.buses) ? dataset.buses : [],
+      lines: Array.isArray(dataset.lines) ? dataset.lines : [],
+      transformers: Array.isArray(dataset.transformers) ? dataset.transformers : [],
+      loads: Array.isArray(dataset.loads) ? dataset.loads : [],
+      generators: Array.isArray(dataset.generators) ? dataset.generators : [],
+      shuntCompensators: Array.isArray(dataset.shuntCompensators) ? dataset.shuntCompensators : [],
+      busLayout: Array.isArray(dataset.busLayout) ? dataset.busLayout : [],
+      edgeLayout: Array.isArray(dataset.edgeLayout) ? dataset.edgeLayout : [],
+    });
     this.selectedElementState.set(null);
     this.hoveredElementState.set(null);
     this.placementModeState.set(null);

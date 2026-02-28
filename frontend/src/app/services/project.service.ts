@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { createSyntheticGridDataset } from '../components/grid-viewer/data/mock-grid.data';
 import type { GridDataset } from '../components/grid-viewer/models/grid.models';
 import { map, Observable, tap } from 'rxjs';
 
@@ -25,11 +24,24 @@ export type CreateProjectRequest = {
   description: string;
 };
 
+export type CreateGridRequest = {
+  name: string;
+  description: string;
+};
+
 type ProjectApiModel = {
   id: string;
   teamId: string;
   name: string;
   description: string | null;
+};
+
+type GridApiModel = {
+  id: string;
+  projectId: string;
+  name: string;
+  description: string | null;
+  busCount?: number | null;
 };
 
 @Injectable({
@@ -38,55 +50,16 @@ type ProjectApiModel = {
 export class ProjectService {
   private readonly http = inject(HttpClient);
   private readonly projectsApiPath = `${environment.apiBaseUrl}/api/project`;
+  private readonly gridsApiPath = `${environment.apiBaseUrl}/api/grid`;
   private readonly projectsState = signal<Project[]>([]);
-  private readonly gridsState = signal<ProjectGrid[]>([
-    {
-      id: 'vienna-operational',
-      projectId: 'vienna-mv',
-      name: 'Operational Grid',
-      description: 'Primary operational model used for day-ahead studies.',
-      busCount: 320,
-    },
-    {
-      id: 'vienna-planning',
-      projectId: 'vienna-mv',
-      name: 'Planning Grid',
-      description: 'Topology candidate including planned reinforcement assets.',
-      busCount: 280,
-    },
-    {
-      id: 'madrid-base',
-      projectId: 'madrid-rural',
-      name: 'Base Rural Grid',
-      description: 'Baseline radial model for normal loading conditions.',
-      busCount: 240,
-    },
-    {
-      id: 'madrid-peak',
-      projectId: 'madrid-rural',
-      name: 'Peak Season Grid',
-      description: 'Peak-season scenario with high agricultural consumption.',
-      busCount: 300,
-    },
-    {
-      id: 'hamburg-industrial',
-      projectId: 'hamburg-port',
-      name: 'Industrial Core Grid',
-      description: 'High-load industrial topology around port facilities.',
-      busCount: 360,
-    },
-    {
-      id: 'porto-residential',
-      projectId: 'porto-residential',
-      name: 'Residential Expansion Grid',
-      description: 'Expansion scenario with increased distributed generation.',
-      busCount: 260,
-    },
-  ]);
-  private readonly gridDatasetCache = new Map<string, GridDataset>();
+  private readonly gridsState = signal<ProjectGrid[]>([]);
+  private readonly gridDatasetsState = signal<Record<string, GridDataset>>({});
+  private readonly gridEditorModeState = signal<'view' | 'edit' | 'create'>('view');
+  private readonly createDraftDatasetState = signal<GridDataset | null>(null);
 
   readonly projects = this.projectsState.asReadonly();
   readonly grids = this.gridsState.asReadonly();
+  readonly gridEditorMode = this.gridEditorModeState.asReadonly();
 
   loadProjects(): Observable<Project[]> {
     return this.http.get<ProjectApiModel[]>(this.projectsApiPath).pipe(
@@ -118,58 +91,181 @@ export class ProjectService {
     return this.grids().filter((grid) => grid.projectId === projectId);
   }
 
-  duplicateGrid(sourceGridId: string): ProjectGrid | null {
-    const sourceGrid = this.getGridById(sourceGridId);
-    if (!sourceGrid) {
-      return null;
-    }
-    const duplicatedGrid: ProjectGrid = {
-      ...sourceGrid,
-      id: this.getUniqueGridId(`${sourceGrid.id}-copy`),
-      name: this.getUniqueGridName(sourceGrid.projectId, `${sourceGrid.name} Copy`),
-    };
-    this.gridsState.update((grids) => [duplicatedGrid, ...grids]);
-    return duplicatedGrid;
+  loadGridsByProjectId(projectId: string): Observable<ProjectGrid[]> {
+    return this.http.get<GridApiModel[]>(`${this.gridsApiPath}/project/${projectId}`).pipe(
+      map((grids) => grids.map((grid) => this.toGrid(grid))),
+      tap((grids) => this.gridsState.set(grids)),
+    );
   }
 
-  deleteGrid(gridId: string): boolean {
-    const exists = this.grids().some((grid) => grid.id === gridId);
-    if (!exists) {
-      return false;
-    }
-    this.gridsState.update((grids) => grids.filter((grid) => grid.id !== gridId));
-    this.gridDatasetCache.delete(gridId);
-    return true;
+  duplicateGrid(sourceGridId: string): Observable<ProjectGrid> {
+    return this.http.post<GridApiModel>(`${this.gridsApiPath}/${sourceGridId}/duplicate`, {}).pipe(
+      map((grid) => this.toGrid(grid)),
+      tap((duplicatedGrid) => this.gridsState.update((grids) => [duplicatedGrid, ...grids])),
+    );
+  }
+
+  createGrid(projectId: string, request: CreateGridRequest): Observable<ProjectGrid> {
+    return this.http
+      .post<GridApiModel>(this.gridsApiPath, {
+        projectId,
+        name: request.name,
+        description: request.description,
+      })
+      .pipe(
+        map((grid) => this.toGrid(grid)),
+        tap((createdGrid) => this.gridsState.update((grids) => [createdGrid, ...grids])),
+      );
+  }
+
+  updateGrid(gridId: string, request: CreateGridRequest): Observable<ProjectGrid> {
+    return this.http
+      .put<GridApiModel>(`${this.gridsApiPath}/${gridId}`, {
+        name: request.name,
+        description: request.description,
+      })
+      .pipe(
+        map((grid) => this.toGrid(grid)),
+        tap((updatedGrid) => {
+          this.gridsState.update((grids) =>
+            grids.map((grid) => (grid.id === gridId ? updatedGrid : grid)),
+          );
+          this.gridDatasetsState.update((datasets) => {
+            const dataset = datasets[gridId];
+            if (!dataset) {
+              return datasets;
+            }
+            return {
+              ...datasets,
+              [gridId]: {
+                ...dataset,
+                grid: {
+                  ...dataset.grid,
+                  name: updatedGrid.name,
+                  description: updatedGrid.description,
+                },
+              },
+            };
+          });
+        }),
+      );
+  }
+
+  deleteGrid(gridId: string): Observable<void> {
+    return this.http.delete<void>(`${this.gridsApiPath}/${gridId}`).pipe(
+      tap(() => {
+        this.gridsState.update((grids) => grids.filter((grid) => grid.id !== gridId));
+        this.gridDatasetsState.update((datasets) => {
+          const { [gridId]: _removed, ...rest } = datasets;
+          return rest;
+        });
+      }),
+    );
   }
 
   getGridDatasetById(gridId: string): GridDataset | null {
-    const cached = this.gridDatasetCache.get(gridId);
-    if (cached) {
-      return cached;
-    }
+    return this.gridDatasetsState()[gridId] ?? null;
+  }
 
-    const grid = this.getGridById(gridId);
-    if (!grid) {
+  getCurrentEditorDataset(selectedGridId: string | null): GridDataset | null {
+    if (this.gridEditorModeState() === 'create') {
+      return this.createDraftDatasetState();
+    }
+    if (!selectedGridId) {
       return null;
     }
+    return this.getGridDatasetById(selectedGridId);
+  }
 
-    const syntheticDataset = createSyntheticGridDataset(grid.busCount, {
-      projectId: grid.projectId,
-      name: grid.name,
-    });
-    const dataset: GridDataset = {
-      ...syntheticDataset,
+  setGridEditorMode(mode: 'view' | 'edit' | 'create'): void {
+    this.gridEditorModeState.set(mode);
+  }
+
+  beginCreateDraft(projectId: string): GridDataset {
+    const draft: GridDataset = {
       grid: {
-        ...syntheticDataset.grid,
-        id: grid.id,
-        projectId: grid.projectId,
-        name: grid.name,
-        description: grid.description,
+        id: 'draft-grid',
+        projectId,
+        name: 'New Grid',
+        description: '',
+        baseMva: 100,
+        frequencyHz: 50,
       },
+      buses: [],
+      lines: [],
+      transformers: [],
+      loads: [],
+      generators: [],
+      shuntCompensators: [],
+      busLayout: [],
+      edgeLayout: [],
     };
+    this.createDraftDatasetState.set(draft);
+    return draft;
+  }
 
-    this.gridDatasetCache.set(gridId, dataset);
-    return dataset;
+  clearCreateDraft(): void {
+    this.createDraftDatasetState.set(null);
+  }
+
+  loadGridDatasetById(gridId: string): Observable<GridDataset> {
+    return this.http.get<GridDataset>(`${this.gridsApiPath}/${gridId}/dataset`).pipe(
+      map((dataset) => this.normalizeDatasetPayload(dataset, gridId)),
+      tap((dataset) => {
+        this.gridDatasetsState.update((datasets) => ({
+          ...datasets,
+          [gridId]: dataset,
+        }));
+      }),
+    );
+  }
+
+  saveGridDataset(gridId: string, dataset: GridDataset): Observable<GridDataset> {
+    const normalizedRequest = this.normalizeDatasetPayload(dataset, gridId);
+    return this.http.put<GridDataset>(`${this.gridsApiPath}/${gridId}/dataset`, normalizedRequest).pipe(
+      map((savedDataset) => this.normalizeDatasetPayload(savedDataset, gridId)),
+      tap((savedDataset) => {
+        this.gridDatasetsState.update((datasets) => ({
+          ...datasets,
+          [gridId]: savedDataset,
+        }));
+      }),
+    );
+  }
+
+  updateGridDataset(gridId: string, dataset: GridDataset): void {
+    const normalizedDataset = this.normalizeDatasetPayload(dataset, gridId);
+    this.gridDatasetsState.update((datasets) => ({
+      ...datasets,
+      [gridId]: normalizedDataset,
+    }));
+  }
+
+  updateCreateDraftDataset(dataset: GridDataset): void {
+    const currentDraft = this.createDraftDatasetState();
+    if (!currentDraft) {
+      return;
+    }
+    this.createDraftDatasetState.set({
+      ...dataset,
+      grid: {
+        ...dataset.grid,
+        id: currentDraft.grid.id,
+        projectId: currentDraft.grid.projectId,
+      },
+      buses: Array.isArray(dataset.buses) ? dataset.buses : [],
+      lines: Array.isArray(dataset.lines) ? dataset.lines : [],
+      transformers: Array.isArray(dataset.transformers) ? dataset.transformers : [],
+      loads: Array.isArray(dataset.loads) ? dataset.loads : [],
+      generators: Array.isArray(dataset.generators) ? dataset.generators : [],
+      shuntCompensators: Array.isArray(dataset.shuntCompensators) ? dataset.shuntCompensators : [],
+      busLayout: Array.isArray(dataset.busLayout) ? dataset.busLayout : [],
+      edgeLayout: Array.isArray(dataset.edgeLayout) ? dataset.edgeLayout : [],
+    });
+  }
+
+  getCreateDraftDataset(): GridDataset | null {
+    return this.createDraftDatasetState();
   }
 
   private toProject(project: ProjectApiModel): Project {
@@ -181,35 +277,47 @@ export class ProjectService {
     };
   }
 
-  private getUniqueGridId(baseId: string): string {
-    const existingIds = new Set(this.grids().map((grid) => grid.id));
-    if (!existingIds.has(baseId)) {
-      return baseId;
-    }
-    let suffix = 2;
-    let candidate = `${baseId}-${suffix}`;
-    while (existingIds.has(candidate)) {
-      suffix += 1;
-      candidate = `${baseId}-${suffix}`;
-    }
-    return candidate;
+  private toGrid(grid: GridApiModel): ProjectGrid {
+    return {
+      id: grid.id,
+      projectId: grid.projectId,
+      name: grid.name,
+      description: grid.description ?? '',
+      busCount: grid.busCount ?? 0,
+    };
   }
 
-  private getUniqueGridName(projectId: string, baseName: string): string {
-    const existingNames = new Set(
-      this.grids()
-        .filter((grid) => grid.projectId === projectId)
-        .map((grid) => grid.name.toLocaleLowerCase()),
-    );
-    if (!existingNames.has(baseName.toLocaleLowerCase())) {
-      return baseName;
-    }
-    let suffix = 2;
-    let candidate = `${baseName} ${suffix}`;
-    while (existingNames.has(candidate.toLocaleLowerCase())) {
-      suffix += 1;
-      candidate = `${baseName} ${suffix}`;
-    }
-    return candidate;
+  private normalizeDatasetPayload(dataset: GridDataset, gridId: string): GridDataset {
+    const grid = this.getGridById(gridId);
+    const safeGrid = dataset?.grid ?? {
+      id: gridId,
+      projectId: grid?.projectId ?? '',
+      name: grid?.name ?? 'Grid',
+      description: grid?.description ?? '',
+      baseMva: 100,
+      frequencyHz: 50,
+    };
+    return {
+      ...dataset,
+      grid: {
+        ...safeGrid,
+        id: gridId,
+        projectId: safeGrid.projectId ?? grid?.projectId ?? '',
+        name: safeGrid.name ?? grid?.name ?? 'Grid',
+        description: safeGrid.description ?? grid?.description ?? '',
+        baseMva: typeof safeGrid.baseMva === 'number' ? safeGrid.baseMva : 100,
+        frequencyHz: typeof safeGrid.frequencyHz === 'number' ? safeGrid.frequencyHz : 50,
+      },
+      buses: Array.isArray(dataset?.buses) ? dataset.buses : [],
+      lines: Array.isArray(dataset?.lines) ? dataset.lines : [],
+      transformers: Array.isArray(dataset?.transformers) ? dataset.transformers : [],
+      loads: Array.isArray(dataset?.loads) ? dataset.loads : [],
+      generators: Array.isArray(dataset?.generators) ? dataset.generators : [],
+      shuntCompensators: Array.isArray(dataset?.shuntCompensators)
+        ? dataset.shuntCompensators
+        : [],
+      busLayout: Array.isArray(dataset?.busLayout) ? dataset.busLayout : [],
+      edgeLayout: Array.isArray(dataset?.edgeLayout) ? dataset.edgeLayout : [],
+    };
   }
 }

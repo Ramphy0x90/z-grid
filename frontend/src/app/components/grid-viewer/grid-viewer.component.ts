@@ -55,16 +55,22 @@ export class GridViewerComponent implements AfterViewInit {
   private schematicController: GridInteractionController | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private animationFrameId = 0;
+  private lastDatasetGridId: string | null = null;
   private readonly pendingConnectionBusId = signal<string | null>(null);
   private readonly viewerSize = signal({ width: 1, height: 1 });
   private readonly datasetSyncEffect = effect(() => {
     const dataset = this.dataset();
     if (!dataset) {
+      this.lastDatasetGridId = null;
       return;
     }
+    const shouldResetViewport = this.lastDatasetGridId !== dataset.grid.id;
+    this.lastDatasetGridId = dataset.grid.id;
     this.facade.setDataset(dataset);
     this.syncGraphToRenderers();
-    this.resetViewport();
+    if (shouldResetViewport) {
+      this.resetViewport();
+    }
     this.pendingConnectionBusId.set(null);
   });
   private readonly editModeSyncEffect = effect(() => {

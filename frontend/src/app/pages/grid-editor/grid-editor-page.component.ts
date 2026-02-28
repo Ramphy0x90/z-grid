@@ -46,12 +46,9 @@ export class GridEditorPageComponent {
   private readonly activePaneIdState = signal<PaneId>('buses');
 
   protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
+  protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
   protected readonly selectedDataset = computed(() => {
-    const grid = this.selectedGrid();
-    if (!grid) {
-      return null;
-    }
-    return this.projectService.getGridDatasetById(grid.id);
+    return this.projectService.getCurrentEditorDataset(this.selectedGridId());
   });
 
   protected readonly paneTabs = PANE_TABS;

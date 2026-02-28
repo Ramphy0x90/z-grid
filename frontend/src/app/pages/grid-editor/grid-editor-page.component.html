@@ -1,10 +1,4 @@
 <section class="base-page" aria-label="Grid Editor">
-	@if (!selectedGrid()) {
-		<p class="empty-state">
-			No grid selected. Select one from the form above or click Create to add a new grid.
-		</p>
-	}
-
 	<div class="pane-selector" role="tablist" aria-label="Grid element types">
 		@for (pane of paneTabs; track pane.id) {
 			<button
