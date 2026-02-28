@@ -34,6 +34,9 @@
       </button>
       @if (isMenuOpen()) {
         <div class="action-menu" role="menu" aria-label="Grid actions menu">
+          <button type="button" class="action-menu-item" role="menuitem" (click)="onExportClick()">
+            Export JSON
+          </button>
           <button type="button" class="action-menu-item" role="menuitem" (click)="onDuplicateClick()">
             Duplicate
           </button>

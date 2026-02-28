@@ -12,6 +12,7 @@ export class GridSelectorComponent {
   readonly selectedGridId = input<string>('');
   readonly label = input('Grid');
   readonly selectionChange = output<string>();
+  readonly exportRequested = output<string>();
   readonly duplicateRequested = output<string>();
   readonly deleteRequested = output<string>();
   protected readonly hasAvailableGrids = computed(() => this.grids().length > 0);
@@ -42,6 +43,15 @@ export class GridSelectorComponent {
       return;
     }
     this.duplicateRequested.emit(selectedGridId);
+    this.isMenuOpen.set(false);
+  }
+
+  protected onExportClick(): void {
+    const selectedGridId = this.selectedGridId();
+    if (!selectedGridId) {
+      return;
+    }
+    this.exportRequested.emit(selectedGridId);
     this.isMenuOpen.set(false);
   }
 

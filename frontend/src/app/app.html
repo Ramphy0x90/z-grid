@@ -37,6 +37,7 @@
 							[grids]="selectedProjectGrids()"
 							[selectedGridId]="selectedGridId() ?? ''"
 							(selectionChange)="onGridSelected($event)"
+							(exportRequested)="onGridExport($event)"
 							(duplicateRequested)="onGridDuplicate($event)"
 							(deleteRequested)="onGridDelete($event)"
 						/>

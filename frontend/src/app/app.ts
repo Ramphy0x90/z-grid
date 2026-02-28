@@ -293,6 +293,23 @@ export class App {
 		void this.onGridDuplicateAsync(gridId);
 	}
 
+	protected onGridExport(gridId: string): void {
+		void this.onGridExportAsync(gridId);
+	}
+
+	private async onGridExportAsync(gridId: string): Promise<void> {
+		let dataset: GridDataset;
+		try {
+			dataset = await firstValueFrom(this.projectService.loadGridDatasetById(gridId));
+		} catch {
+			return;
+		}
+		const grid = this.projectService.getGridById(gridId);
+		const filenameBase = this.toSafeFileName(grid?.name ?? '') || `grid-${gridId}`;
+		const serializedDataset = JSON.stringify(dataset, null, 2);
+		this.downloadTextFile(`${filenameBase}.json`, serializedDataset, 'application/json;charset=utf-8');
+	}
+
 	private async onGridDuplicateAsync(gridId: string): Promise<void> {
 		try {
 			const duplicatedGrid = await firstValueFrom(this.projectService.duplicateGrid(gridId));
@@ -470,5 +487,26 @@ export class App {
 			name: selectedGrid.name,
 			description: selectedGrid.description,
 		});
+	}
+
+	private toSafeFileName(value: string): string {
+		return value
+			.trim()
+			.replace(/[^a-zA-Z0-9_-]+/g, '-')
+			.replace(/-+/g, '-')
+			.replace(/^-|-$/g, '');
+	}
+
+	private downloadTextFile(filename: string, content: string, mimeType: string): void {
+		const blob = new Blob([content], { type: mimeType });
+		const objectUrl = URL.createObjectURL(blob);
+		const anchor = document.createElement('a');
+		anchor.href = objectUrl;
+		anchor.download = filename;
+		anchor.style.display = 'none';
+		document.body.append(anchor);
+		anchor.click();
+		anchor.remove();
+		URL.revokeObjectURL(objectUrl);
 	}
 }
