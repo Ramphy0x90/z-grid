@@ -1,16 +1,15 @@
 package com.r16a.zeus.user;
 
 import com.r16a.zeus.core.security.authorization.Role;
-import java.time.Instant;
-import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -37,9 +36,11 @@ public class User {
     @Column("is_active")
     private boolean active;
 
+    @CreatedDate
     @Column("created_at")
     private Instant createdAt;
 
+    @LastModifiedDate
     @Column("updated_at")
     private Instant updatedAt;
 }

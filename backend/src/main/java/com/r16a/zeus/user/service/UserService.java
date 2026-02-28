@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -52,21 +51,11 @@ public class UserService {
             throw new IllegalArgumentException("User must belong to at least one team");
         }
 
-        Instant now = Instant.now();
         if (user.getRole() == null) {
             user.setRole(Role.USER);
         }
 
-        if (user.getCreatedAt() == null) {
-            user.setCreatedAt(now);
-        }
-
-        user.setUpdatedAt(now);
-
         User saved = userRepository.save(user);
-        if (saved.getId() == null) {
-            throw new IllegalStateException("User insert did not return an ID");
-        }
         teamIds.forEach(teamId -> teamMembershipService.addUserToTeam(saved.getId(), teamId));
         return saved;
     }
@@ -80,7 +69,6 @@ public class UserService {
         existing.setFullName(update.getFullName());
         existing.setRole(update.getRole());
         existing.setActive(update.isActive());
-        existing.setUpdatedAt(Instant.now());
 
         return userRepository.save(existing);
     }
