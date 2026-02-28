@@ -1,6 +1,7 @@
 package com.r16a.zeus.core;
 
 import com.r16a.zeus.auth.exception.InvalidCredentialsException;
+import com.r16a.zeus.features.grid.exception.GridNotFoundException;
 import com.r16a.zeus.team.exception.TeamConflictException;
 import com.r16a.zeus.team.exception.TeamNotFoundException;
 import com.r16a.zeus.project.exception.ProjectConflictException;
@@ -55,5 +56,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ProblemDetail handleProjectConflict(ProjectConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(GridNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ProblemDetail handleGridNotFound(GridNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 }

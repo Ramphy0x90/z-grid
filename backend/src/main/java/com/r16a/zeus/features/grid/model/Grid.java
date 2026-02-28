@@ -31,6 +31,9 @@ public class Grid {
     @Column("frequency_hz")
     private Double frequencyHz;
 
+    @Column("dataset_json")
+    private String datasetJson;
+
     @CreatedDate @Column("created_at")
     private Instant createdAt;
 
