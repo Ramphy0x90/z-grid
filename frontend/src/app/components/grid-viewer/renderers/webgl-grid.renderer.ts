@@ -322,7 +322,7 @@ export class WebglGridRenderer {
     this.viewport = {
       ...this.viewport,
       centerX: this.viewport.centerX - deltaScreenX / this.viewport.zoom,
-      centerY: this.viewport.centerY - deltaScreenY / (this.viewport.zoom * this.ySign),
+      centerY: this.viewport.centerY + deltaScreenY / (this.viewport.zoom * this.ySign),
     };
     return this.viewport;
   }
