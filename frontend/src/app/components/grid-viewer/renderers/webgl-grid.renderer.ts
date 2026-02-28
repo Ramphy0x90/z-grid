@@ -306,10 +306,10 @@ export class WebglGridRenderer {
   }
 
   zoomAt(screenX: number, screenY: number, zoomFactor: number): ViewportState {
-    const worldBefore = this.screenToWorld(screenX, screenY);
+    const worldBefore = this.toWorldCoordinates(screenX, screenY);
     const nextZoom = clampZoom(this.viewport.zoom * zoomFactor);
     this.viewport = { ...this.viewport, zoom: nextZoom };
-    const worldAfter = this.screenToWorld(screenX, screenY);
+    const worldAfter = this.toWorldCoordinates(screenX, screenY);
     this.viewport = {
       ...this.viewport,
       centerX: this.viewport.centerX + (worldBefore.x - worldAfter.x),
@@ -385,7 +385,7 @@ export class WebglGridRenderer {
     if (!this.graph) {
       return null;
     }
-    const point = this.screenToWorld(screenX, screenY);
+    const point = this.toWorldCoordinates(screenX, screenY);
     const positions = this.renderSpace === 'map' ? this.graph.mapNodePositions : this.graph.schematicNodePositions;
 
     let nodeHit: SelectedElement = null;
@@ -480,7 +480,7 @@ export class WebglGridRenderer {
     gl.deleteProgram(this.handles.nodeProgram);
   }
 
-  private screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
+  toWorldCoordinates(screenX: number, screenY: number): { x: number; y: number } {
     const halfW = this.canvasWidth / 2;
     const halfH = this.canvasHeight / 2;
     return {

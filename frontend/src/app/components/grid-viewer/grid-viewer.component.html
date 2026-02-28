@@ -1,6 +1,6 @@
 <section class="grid-viewer" aria-label="Grid viewer">
-  <header class="toolbar">
-    <div class="toolbar-row">
+  <div class="viewer-body" #viewerBody [class.viewer-body-placement]="placementMode() === 'bus'">
+    <div class="top-toolbar" role="toolbar" aria-label="Grid viewer controls">
       <div class="view-switch" role="tablist" aria-label="Grid view mode">
         <button
           type="button"
@@ -20,21 +20,36 @@
           [attr.aria-selected]="activeView() === 'map'"
           (click)="setActiveView('map')"
         >
-          GIS Map
+          Map
         </button>
       </div>
       <button type="button" class="toolbar-button" (click)="resetViewport()">Fit view</button>
-      <button type="button" class="toolbar-button" (click)="clearSelection()">Clear selection</button>
+      <span class="chip" aria-live="polite">Total elements: {{ totalElements() }}</span>
+      <button type="button" class="toolbar-button" (click)="zoomOut()" aria-label="Zoom out">
+        -
+      </button>
+      <button type="button" class="toolbar-button" (click)="zoomIn()" aria-label="Zoom in">
+        +
+      </button>
     </div>
 
-    <div class="toolbar-row">
-      <button type="button" class="toolbar-button" (click)="loadDataset(1200)">Load 1200 buses</button>
-      <button type="button" class="toolbar-button" (click)="loadDataset(2500)">Load 2500 buses</button>
-      <span class="chip">Selected: {{ selectedLabel() }}</span>
+    <div class="left-toolbar" role="toolbar" aria-label="Grid element placement tools">
+      <button
+        type="button"
+        class="tool-button"
+        [class.tool-button-active]="placementMode() === 'bus'"
+        [attr.aria-pressed]="placementMode() === 'bus'"
+        (click)="toggleBusPlacement()"
+        aria-label="Place bus"
+      >
+        B
+      </button>
     </div>
-  </header>
 
-  <div class="viewer-body" #viewerBody>
+    @if (placementMode() === 'bus') {
+      <p class="placement-hint" aria-live="polite">Click the grid to place one bus.</p>
+    }
+
     <canvas
       #schematicCanvas
       class="viewer-canvas"

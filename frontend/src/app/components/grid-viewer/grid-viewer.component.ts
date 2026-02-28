@@ -5,19 +5,13 @@ import {
   DestroyRef,
   ElementRef,
   ViewChild,
-  computed,
   inject,
   signal,
 } from '@angular/core';
-import {
-  GridViewerFacade,
-  type SelectedElement,
-  type ViewportState,
-} from './state/grid-viewer.facade';
+import { GridViewerFacade } from './state/grid-viewer.facade';
 import { MapWebglRenderer } from './renderers/map-webgl.renderer';
 import { SchematicWebglRenderer } from './renderers/schematic-webgl.renderer';
 import { GridInteractionController } from './renderers/grid-interaction.controller';
-import { createPerfGridDataset } from './dev/perf-harness';
 
 type ActiveView = 'map' | 'schematic';
 
@@ -40,8 +34,8 @@ export class GridViewerComponent implements AfterViewInit {
   private readonly viewerBodyRef?: ElementRef<HTMLElement>;
 
   protected readonly activeView = signal<ActiveView>('schematic');
-  protected readonly selectedElement = this.facade.selectedElement;
-  protected readonly selectedLabel = computed(() => this.toLabel(this.selectedElement()));
+  protected readonly totalElements = this.facade.totalElements;
+  protected readonly placementMode = this.facade.placementMode;
 
   private mapRenderer: MapWebglRenderer | null = null;
   private schematicRenderer: SchematicWebglRenderer | null = null;
@@ -66,11 +60,13 @@ export class GridViewerComponent implements AfterViewInit {
       onViewportChange: (viewport) => this.facade.setMapViewport(viewport),
       onHoverChange: (element) => this.facade.hoverElement(element),
       onSelect: (element) => this.facade.selectElement(element),
+      onBackgroundClick: (point) => this.onCanvasBackgroundClick('map', point.x, point.y),
     });
     this.schematicController = new GridInteractionController(schematicCanvas, this.schematicRenderer, {
       onViewportChange: (viewport) => this.facade.setSchematicViewport(viewport),
       onHoverChange: (element) => this.facade.hoverElement(element),
       onSelect: (element) => this.facade.selectElement(element),
+      onBackgroundClick: (point) => this.onCanvasBackgroundClick('schematic', point.x, point.y),
     });
 
     this.resizeObserver = new ResizeObserver(() => this.resizeAndFitCanvases());
@@ -107,14 +103,16 @@ export class GridViewerComponent implements AfterViewInit {
     this.facade.setSchematicViewport(this.schematicRenderer.fitToBounds(graph.schematicBounds));
   }
 
-  protected clearSelection(): void {
-    this.facade.clearSelection();
+  protected zoomIn(): void {
+    this.adjustZoom(1.12);
   }
 
-  protected loadDataset(busCount: number): void {
-    this.facade.setDataset(createPerfGridDataset(busCount));
-    this.syncGraphToRenderers();
-    this.resizeAndFitCanvases();
+  protected zoomOut(): void {
+    this.adjustZoom(0.89);
+  }
+
+  protected toggleBusPlacement(): void {
+    this.facade.setPlacementMode(this.facade.placementMode() === 'bus' ? null : 'bus');
   }
 
   private syncGraphToRenderers(): void {
@@ -159,14 +157,28 @@ export class GridViewerComponent implements AfterViewInit {
     this.animationFrameId = requestAnimationFrame(frame);
   }
 
-  private toLabel(element: SelectedElement): string {
-    if (!element) {
-      return 'None';
+  private onCanvasBackgroundClick(view: ActiveView, x: number, y: number): void {
+    if (this.facade.placementMode() !== 'bus') {
+      return;
     }
-    if (element.kind === 'bus') {
-      const bus = this.facade.normalizedGraph().busById.get(element.id);
-      return bus ? `${bus.name} (${bus.id})` : element.id;
-    }
-    return element.id;
+    const newBusId = this.facade.addBusAt(view, x, y);
+    this.syncGraphToRenderers();
+    this.facade.selectElement({ kind: 'bus', id: newBusId });
+    this.facade.setPlacementMode(null);
   }
+
+  private adjustZoom(factor: number): void {
+    const body = this.viewerBodyRef?.nativeElement;
+    if (!body || !this.mapRenderer || !this.schematicRenderer) {
+      return;
+    }
+    const screenX = body.clientWidth / 2;
+    const screenY = body.clientHeight / 2;
+    if (this.activeView() === 'map') {
+      this.facade.setMapViewport(this.mapRenderer.zoomAt(screenX, screenY, factor));
+      return;
+    }
+    this.facade.setSchematicViewport(this.schematicRenderer.zoomAt(screenX, screenY, factor));
+  }
+
 }

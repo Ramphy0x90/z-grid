@@ -5,6 +5,7 @@ export type InteractionCallbacks = {
   onViewportChange: (viewport: ViewportState) => void;
   onHoverChange: (element: SelectedElement) => void;
   onSelect: (element: SelectedElement) => void;
+  onBackgroundClick?: (point: { x: number; y: number }) => void;
 };
 
 export class GridInteractionController {
@@ -90,6 +91,10 @@ export class GridInteractionController {
   };
 
   private readonly onClick = (event: MouseEvent): void => {
-    this.callbacks.onSelect(this.renderer.hitTest(event.offsetX, event.offsetY));
+    const hit = this.renderer.hitTest(event.offsetX, event.offsetY);
+    this.callbacks.onSelect(hit);
+    if (!hit) {
+      this.callbacks.onBackgroundClick?.(this.renderer.toWorldCoordinates(event.offsetX, event.offsetY));
+    }
   };
 }
