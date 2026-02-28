@@ -70,6 +70,7 @@ export class NavbarComponent {
 
   protected onClearSelection(): void {
     this.router.navigate([...toProjectsCommands()]);
+    this.floatingGroupId.set(null);
   }
 
   protected toggleCollapsed(): void {

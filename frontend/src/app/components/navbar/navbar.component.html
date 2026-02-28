@@ -1,10 +1,15 @@
 <aside class="sidebar" [class.sidebar-collapsed]="collapsed()" aria-label="Main navigation">
-	<div class="logo-row">
+	<button
+		type="button"
+		class="logo-row logo-btn"
+		(click)="onClearSelection()"
+		aria-label="Go to project overview"
+	>
 		<div class="logo-icon" aria-hidden="true">Z</div>
 		@if (!collapsed()) {
 			<span class="logo-text">Z-GRID</span>
 		}
-	</div>
+	</button>
 
 	<div class="nav-content">
 		@if (!collapsed()) {
