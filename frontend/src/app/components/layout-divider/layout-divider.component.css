@@ -43,7 +43,7 @@
 .layout-divider:hover::before,
 .layout-divider:focus-visible::before,
 .layout-divider-dragging::before {
-  background: #00d4ff;
+  background: var(--accent-interactive);
 }
 
 .layout-divider:focus-visible {

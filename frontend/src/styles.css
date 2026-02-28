@@ -1,9 +1,84 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
+:root {
+  /* Background layers */
+  --bg-base: #0a0a0b;
+  --bg-surface: #111115;
+  --bg-elevated: #151518;
+  --bg-sunken: #0f0f13;
+  --bg-input: #141419;
+  --bg-table-header: #18181d;
+  --bg-hover: #1d1d20;
+  --bg-active: #1e1e24;
+
+  /* Borders */
+  --border-default: #27272a;
+  --border-subtle: #24242a;
+  --border-input: #2f2f37;
+  --border-panel: #2a2a2f;
+  --border-hover: #3f3f46;
+  --border-strong: #474755;
+
+  /* Text hierarchy */
+  --text-primary: #fafafa;
+  --text-secondary: #e4e4e7;
+  --text-tertiary: #d4d4d8;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
+  --text-inverse: #0a0a0b;
+
+  /* Accent - Energy (emerald green) */
+  --accent-energy: #10b981;
+  --accent-energy-hover: #0d9668;
+  --accent-energy-muted: #065f46;
+  --accent-energy-subtle: rgba(16, 185, 129, 0.12);
+
+  /* Accent - Interactive (cyan) */
+  --accent-interactive: #00d4ff;
+  --accent-interactive-muted: #0e4a5c;
+  --accent-interactive-subtle: rgba(0, 212, 255, 0.10);
+
+  /* Accent - Focus (blue) */
+  --accent-focus: #4f8cff;
+  --accent-focus-subtle: rgba(79, 140, 255, 0.08);
+
+  /* Status - Warning (amber) */
+  --status-warning: #f59e0b;
+  --status-warning-muted: #78350f;
+  --status-warning-subtle: rgba(245, 158, 11, 0.12);
+  --status-warning-text: #fbbf24;
+
+  /* Status - Critical (red) */
+  --status-critical: #ef4444;
+  --status-critical-muted: #7f1d1d;
+  --status-critical-subtle: rgba(239, 68, 68, 0.10);
+  --status-critical-text: #fda4af;
+
+  /* Status - Offline (gray) */
+  --status-offline: #71717a;
+  --status-offline-muted: #27272a;
+  --status-offline-subtle: rgba(113, 113, 122, 0.10);
+
+  /* Status - Maintenance (purple) */
+  --status-maintenance: #a78bfa;
+  --status-maintenance-muted: #3b0764;
+  --status-maintenance-subtle: rgba(167, 139, 250, 0.10);
+
+  /* Chart colors */
+  --chart-1: #10b981;
+  --chart-2: #00d4ff;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #a78bfa;
+  --chart-6: #f472b6;
+  --chart-7: #38bdf8;
+  --chart-8: #fbbf24;
+}
+
 html,
 body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #0a0a0b;
+  background: var(--bg-base);
 }

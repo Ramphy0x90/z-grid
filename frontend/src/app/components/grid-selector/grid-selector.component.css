@@ -33,7 +33,7 @@
 .selector-input {
   width: 100%;
   appearance: none;
-  border: 1px solid #2f3541;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   background: #15181f;
   color: #f8fafc;
@@ -77,7 +77,7 @@
   align-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #2f3541;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   background: #15181f;
   color: #cbd5e1;
@@ -107,7 +107,7 @@
   flex-direction: column;
   min-width: 140px;
   padding: 6px;
-  border: 1px solid #2f3541;
+  border: 1px solid var(--border-input);
   border-radius: 8px;
   background: #0f1319;
   box-shadow: 0 10px 25px rgb(2 6 23 / 35%);
@@ -132,5 +132,5 @@
 }
 
 .action-menu-item-danger {
-  color: #fca5a5;
+  color: var(--status-critical-text);
 }

@@ -12,7 +12,7 @@
   min-height: 0;
   display: block;
   padding: 10px;
-  border: 1px solid #2a2a2f;
+  border: 1px solid var(--border-panel);
   border-radius: 10px;
   background: #101013;
   overflow: hidden;
@@ -20,22 +20,22 @@
 
 .view-switch {
   display: inline-flex;
-  border: 1px solid #2f2f37;
+  border: 1px solid var(--border-input);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .view-toggle {
   border: 0;
-  background: #18181d;
-  color: #d4d4d8;
+  background: var(--bg-table-header);
+  color: var(--text-tertiary);
   padding: 6px 10px;
   font-size: 12px;
   cursor: pointer;
 }
 
 .view-toggle-active {
-  background: #00d4ff;
+  background: var(--accent-interactive);
   color: #041017;
   font-weight: 600;
 }
@@ -57,7 +57,7 @@
 
 .toolbar-button:focus-visible,
 .view-toggle:focus-visible {
-  outline: 2px solid #00d4ff;
+  outline: 2px solid var(--accent-interactive);
   outline-offset: 2px;
 }
 
@@ -66,7 +66,7 @@
   border-radius: 999px;
   padding: 4px 9px;
   font-size: 12px;
-  color: #d4d4d8;
+  color: var(--text-tertiary);
   background: #17171b;
 }
 
@@ -77,7 +77,7 @@
   min-width: 0;
   min-height: 0;
   position: relative;
-  border: 1px solid #24242a;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   overflow: hidden;
   background: #0f0f10;
@@ -134,9 +134,9 @@
 }
 
 .tool-button-active {
-  background: #00d4ff;
+  background: var(--accent-interactive);
   color: #041017;
-  border-color: #00d4ff;
+  border-color: var(--accent-interactive);
 }
 
 .tool-button:hover {
@@ -144,7 +144,7 @@
 }
 
 .tool-button:focus-visible {
-  outline: 2px solid #00d4ff;
+  outline: 2px solid var(--accent-interactive);
   outline-offset: 2px;
 }
 
@@ -199,7 +199,7 @@
   border-radius: 7px;
   padding: 6px 10px;
   font-size: 12px;
-  color: #d4d4d8;
+  color: var(--text-tertiary);
   background: rgb(23 23 27 / 95%);
   pointer-events: none;
 }

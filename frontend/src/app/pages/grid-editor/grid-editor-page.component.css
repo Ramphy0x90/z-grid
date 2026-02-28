@@ -27,7 +27,7 @@ h2 {
 
 .subtitle {
   margin: 0;
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -38,9 +38,9 @@ h2 {
 }
 
 .pane-button {
-  border: 1px solid #2f2f37;
-  background: #18181d;
-  color: #e4e4e7;
+  border: 1px solid var(--border-input);
+  background: var(--bg-table-header);
+  color: var(--text-secondary);
   border-radius: 8px;
   padding: 6px 10px;
   cursor: pointer;
@@ -53,19 +53,19 @@ h2 {
 }
 
 .pane-button:hover {
-  border-color: #474755;
-  background: #1e1e24;
+  border-color: var(--border-strong);
+  background: var(--bg-active);
 }
 
 .pane-button:focus-visible {
-  outline: 2px solid #4f8cff;
+  outline: 2px solid var(--accent-focus);
   outline-offset: 2px;
 }
 
 .pane-button-active {
-  background: #00d4ff;
+  background: var(--accent-interactive);
   color: #041017;
-  border-color: #00d4ff;
+  border-color: var(--accent-interactive);
   font-weight: 600;
 }
 
@@ -90,9 +90,9 @@ h2 {
 .table-panel {
   flex: 1;
   min-height: 0;
-  border: 1px solid #2a2a2f;
+  border: 1px solid var(--border-panel);
   border-radius: 10px;
-  background: #111115;
+  background: var(--bg-surface);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -103,14 +103,14 @@ h3 {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #e4e4e7;
+  color: var(--text-secondary);
 }
 
 .table-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  border: 1px solid #24242a;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
 }
 
@@ -127,22 +127,22 @@ thead th {
   padding: 10px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #e5e7eb;
-  background: #18181d;
-  border-bottom: 1px solid #2f2f37;
+  color: var(--text-secondary);
+  background: var(--bg-table-header);
+  border-bottom: 1px solid var(--border-input);
   white-space: nowrap;
 }
 
 tbody td {
   padding: 10px 12px;
-  border-bottom: 1px solid #24242a;
-  color: #d4d4d8;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
   font-size: 13px;
   white-space: nowrap;
 }
 
 tbody tr:hover td {
-  background: rgb(79 140 255 / 8%);
+  background: var(--accent-focus-subtle);
 }
 
 tbody tr:last-child td {
@@ -151,9 +151,9 @@ tbody tr:last-child td {
 
 .empty-state {
   margin: 0;
-  border: 1px dashed #2f2f37;
+  border: 1px dashed var(--border-input);
   border-radius: 10px;
   padding: 14px;
-  color: #a1a1aa;
+  color: var(--text-muted);
   background: rgb(24 24 29 / 35%);
 }

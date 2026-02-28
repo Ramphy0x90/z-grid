@@ -17,9 +17,9 @@ h2 {
 }
 
 .create-project-button {
-  border: 1px solid #10b981;
+  border: 1px solid var(--accent-energy);
   border-radius: 8px;
-  background: #0f2f25;
+  background: var(--accent-energy-muted);
   color: #d1fae5;
   font-size: 13px;
   font-weight: 600;
@@ -33,7 +33,7 @@ h2 {
 
 .subtitle {
   margin: 0;
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -47,7 +47,7 @@ h2 {
 
 .project-card {
   width: 100%;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   background: #111114;
   color: inherit;
@@ -60,7 +60,7 @@ h2 {
 }
 
 .project-card:hover {
-  border-color: #10b981;
+  border-color: var(--accent-energy);
 }
 
 .project-name {
@@ -69,12 +69,12 @@ h2 {
 }
 
 .project-description {
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 .project-meta {
-  color: #10b981;
+  color: var(--accent-energy);
   font-size: 12px;
   font-weight: 600;
 }
@@ -91,7 +91,7 @@ h2 {
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(520px, calc(100vw - 40px));
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   background: #111114;
   box-shadow: 0 20px 40px rgb(0 0 0 / 0.45);
@@ -118,12 +118,12 @@ h2 {
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: #d4d4d8;
+  color: var(--text-tertiary);
 }
 
 .modal-form input,
 .modal-form textarea {
-  border: 1px solid #3f3f46;
+  border: 1px solid var(--border-hover);
   border-radius: 8px;
   background: #0b0b0d;
   color: #f4f4f5;
@@ -133,14 +133,14 @@ h2 {
 
 .modal-form input:focus,
 .modal-form textarea:focus {
-  outline: 2px solid #10b981;
+  outline: 2px solid var(--accent-energy);
   outline-offset: 1px;
 }
 
 .field-error,
 .submit-error {
   margin: 0;
-  color: #fda4af;
+  color: var(--status-critical-text);
   font-size: 12px;
 }
 
@@ -153,7 +153,7 @@ h2 {
 
 .modal-actions button {
   border-radius: 8px;
-  border: 1px solid #3f3f46;
+  border: 1px solid var(--border-hover);
   padding: 8px 12px;
   font-size: 13px;
   cursor: pointer;
@@ -161,12 +161,12 @@ h2 {
 
 .modal-actions .secondary {
   background: transparent;
-  color: #e4e4e7;
+  color: var(--text-secondary);
 }
 
 .modal-actions .primary {
-  background: #10b981;
-  border-color: #10b981;
+  background: var(--accent-energy);
+  border-color: var(--accent-energy);
   color: #032316;
   font-weight: 600;
 }

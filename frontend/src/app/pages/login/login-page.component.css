@@ -21,16 +21,16 @@
   width: min(420px, 100%);
   display: grid;
   gap: 12px;
-  border: 1px solid #2a2a2f;
+  border: 1px solid var(--border-panel);
   border-radius: 12px;
-  background: #111115;
+  background: var(--bg-surface);
   padding: 24px;
 }
 
 .login-header h1 {
   margin: 0;
   font-size: 24px;
-  color: #fafafa;
+  color: var(--text-primary);
 }
 
 .login-header p {
@@ -44,7 +44,7 @@ label {
 }
 
 label span {
-  color: #d4d4d8;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 
@@ -52,10 +52,10 @@ input {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  border: 1px solid #3f3f46;
+  border: 1px solid var(--border-hover);
   border-radius: 8px;
   background: #0f0f12;
-  color: #fafafa;
+  color: var(--text-primary);
   padding: 10px 12px;
   outline: none;
 }
@@ -83,6 +83,6 @@ button:disabled {
 .field-error,
 .submit-error {
   margin: 0;
-  color: #fca5a5;
+  color: var(--status-critical-text);
   font-size: 13px;
 }
