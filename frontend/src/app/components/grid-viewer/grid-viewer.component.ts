@@ -405,7 +405,11 @@ export class GridViewerComponent implements AfterViewInit {
 		this.syncLeafletViewToViewport(this.facade.mapViewport());
 	}
 
-	private syncLeafletViewToViewport(viewport: { centerX: number; centerY: number; zoom: number }): void {
+	private syncLeafletViewToViewport(viewport: {
+		centerX: number;
+		centerY: number;
+		zoom: number;
+	}): void {
 		if (!this.leafletMap) {
 			return;
 		}
