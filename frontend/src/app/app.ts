@@ -32,7 +32,7 @@ export class App {
   private readonly router = inject(Router);
   private readonly store = inject(Store);
   private readonly projectService = inject(ProjectService);
-  private readonly layoutSplitPercentState = signal(60);
+  private readonly layoutSplitPercentState = signal(50);
   private readonly isDividerDraggingState = signal(false);
   private readonly isProjectsRouteState = signal(true);
 
