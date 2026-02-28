@@ -2,10 +2,50 @@
   <app-navbar />
 
   <main class="main-content">
-    <header class="topbar">
-      <h1>{{ topbarTitle() }}</h1>
-    </header>
+    @if (isProjectsRoute()) {
+      <router-outlet />
+    } @else {
+      <section class="workspace-layout" aria-live="polite">
+        <div class="workspace-panels" #workspacePanels [style.grid-template-columns]="layoutColumns()">
+          <article class="page-panel">
+            <app-grid-selector
+              [grids]="selectedProjectGrids()"
+              [selectedGridId]="selectedGridId()"
+              (selectionChange)="onGridSelected($event)"
+            />
+            <div class="page-content">
+              <router-outlet />
+            </div>
+          </article>
 
-    <router-outlet />
+          <app-layout-divider
+            [trackElement]="workspacePanels"
+            [value]="layoutSplitPercent()"
+            [min]="25"
+            [max]="75"
+            [presets]="layoutPresets"
+            [leftPanelLabel]="'page'"
+            [rightPanelLabel]="'grid viewer'"
+            [ariaLabel]="'Resize page and grid viewer panels'"
+            (valueChange)="onLayoutSplitChange($event)"
+            (draggingChange)="onDividerDraggingChange($event)"
+          />
+
+          <aside class="grid-viewer-panel" aria-label="Grid viewer panel">
+            <app-grid-viewer [dataset]="selectedGridDataset()" />
+          </aside>
+
+          @if (isDividerDragging()) {
+            <div class="layout-drag-overlay" aria-hidden="true">
+              <div class="layout-drag-ghost layout-drag-ghost-left" [style.width.%]="layoutSplitPercent()"></div>
+              <div
+                class="layout-drag-ghost layout-drag-ghost-right"
+                [style.width.%]="100 - layoutSplitPercent()"
+              ></div>
+            </div>
+          }
+        </div>
+      </section>
+    }
   </main>
 </div>

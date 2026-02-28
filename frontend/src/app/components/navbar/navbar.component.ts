@@ -49,7 +49,6 @@ export class NavbarComponent {
       null
     );
   });
-
   protected onProjectSelect(projectId: string): void {
     if (!projectId) {
       this.onClearSelection();

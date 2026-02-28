@@ -2,17 +2,20 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  effect,
   DestroyRef,
   ElementRef,
   ViewChild,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { GridViewerFacade, type PlacementTool, type SelectedElement } from './state/grid-viewer.facade';
 import { MapWebglRenderer } from './renderers/map-webgl.renderer';
 import { SchematicWebglRenderer } from './renderers/schematic-webgl.renderer';
 import { GridInteractionController } from './renderers/grid-interaction.controller';
+import type { GridDataset } from './models/grid.models';
 
 type ActiveView = 'map' | 'schematic';
 
@@ -35,6 +38,7 @@ export class GridViewerComponent implements AfterViewInit {
   private readonly viewerBodyRef?: ElementRef<HTMLElement>;
 
   protected readonly activeView = signal<ActiveView>('schematic');
+  readonly dataset = input<GridDataset | null>(null);
   protected readonly totalElements = this.facade.totalElements;
   protected readonly placementMode = this.facade.placementMode;
   protected readonly hoveredElement = this.facade.hoveredElement;
@@ -50,6 +54,16 @@ export class GridViewerComponent implements AfterViewInit {
   private animationFrameId = 0;
   private readonly pendingConnectionBusId = signal<string | null>(null);
   private readonly viewerSize = signal({ width: 1, height: 1 });
+  private readonly datasetSyncEffect = effect(() => {
+    const dataset = this.dataset();
+    if (!dataset) {
+      return;
+    }
+    this.facade.setDataset(dataset);
+    this.syncGraphToRenderers();
+    this.resetViewport();
+    this.pendingConnectionBusId.set(null);
+  });
 
   ngAfterViewInit(): void {
     const mapCanvas = this.mapCanvasRef?.nativeElement;

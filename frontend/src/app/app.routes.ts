@@ -1,3 +1,4 @@
+import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
 
 export type AppPage = {
@@ -50,6 +51,29 @@ export const PAGE_GROUPS: readonly AppPageGroup[] = [
 
 export const PAGES: readonly AppPage[] = PAGE_GROUPS.flatMap((group) => group.children);
 
+const pageLoaders: Readonly<Record<string, () => Promise<Type<unknown>>>> = {
+	'grid-editor': () =>
+		import('./pages/grid-editor/grid-editor-page.component').then(
+			(module) => module.GridEditorPageComponent,
+		),
+	'grid-upgrade': () =>
+		import('./pages/grid-upgrade/grid-upgrade-page.component').then(
+			(module) => module.GridUpgradePageComponent,
+		),
+	'power-flow': () =>
+		import('./pages/power-flow/power-flow-page.component').then(
+			(module) => module.PowerFlowPageComponent,
+		),
+	'hosting-capacity': () =>
+		import('./pages/hosting-capacity/hosting-capacity-page.component').then(
+			(module) => module.HostingCapacityPageComponent,
+		),
+	'short-circuit': () =>
+		import('./pages/short-circuit/short-circuit-page.component').then(
+			(module) => module.ShortCircuitPageComponent,
+		),
+};
+
 export const toProjectsCommands = (): readonly [string, ROUTES.PROJECTS] => ['/', ROUTES.PROJECTS];
 
 export const toProjectPageCommands = (
@@ -80,10 +104,7 @@ export const routes: Routes = [
 			},
 			...PAGES.map((page) => ({
 				path: page.id,
-				loadComponent: () =>
-					import('./pages/workspace/workspace-page.component').then(
-						(module) => module.WorkspacePageComponent,
-					),
+				loadComponent: pageLoaders[page.id] ?? pageLoaders[DEFAULT_PROJECT_PAGE],
 				data: { pageId: page.id },
 			})),
 		],
