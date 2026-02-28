@@ -3,6 +3,8 @@ package com.r16a.zeus.core;
 import com.r16a.zeus.auth.exception.InvalidCredentialsException;
 import com.r16a.zeus.features.grid.exception.GridDatasetValidationException;
 import com.r16a.zeus.features.grid.exception.GridNotFoundException;
+import com.r16a.zeus.features.simulation.exception.PowerFlowCalculationException;
+import com.r16a.zeus.features.simulation.exception.SimulationRunNotFoundException;
 import com.r16a.zeus.team.exception.TeamConflictException;
 import com.r16a.zeus.team.exception.TeamNotFoundException;
 import com.r16a.zeus.project.exception.ProjectConflictException;
@@ -68,6 +70,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(GridDatasetValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleGridDatasetValidation(GridDatasetValidationException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(SimulationRunNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ProblemDetail handleSimulationRunNotFound(SimulationRunNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(PowerFlowCalculationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handlePowerFlowCalculation(PowerFlowCalculationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }

@@ -29,6 +29,83 @@ export type CreateGridRequest = {
   description: string;
 };
 
+export type PowerFlowRunOptions = {
+  maxIterations?: number;
+  tolerance?: number;
+};
+
+export type PowerFlowSummary = {
+  totalLoadMw: number;
+  totalGenerationMw: number;
+  lossesMw: number;
+};
+
+export type PowerFlowBusResult = {
+  busId: string;
+  busName: string;
+  voltageMagnitudePu: number;
+  voltageAngleDeg: number;
+};
+
+export type PowerFlowBranchResult = {
+  elementId: string;
+  elementType: string;
+  name: string;
+  loadingPercent: number;
+  pFromMw: number;
+  qFromMvar: number;
+  pToMw: number;
+  qToMvar: number;
+};
+
+export type PowerFlowVoltageViolation = {
+  busId: string;
+  busName: string;
+  valuePu: number;
+  minPu: number;
+  maxPu: number;
+};
+
+export type PowerFlowThermalViolation = {
+  elementId: string;
+  elementType: string;
+  name: string;
+  loadingPercent: number;
+  maxPercent: number;
+};
+
+export type PowerFlowResult = {
+  converged: boolean;
+  iterations: number;
+  summary: PowerFlowSummary;
+  busResults: PowerFlowBusResult[];
+  branchResults: PowerFlowBranchResult[];
+  violations: {
+    voltage: PowerFlowVoltageViolation[];
+    thermal: PowerFlowThermalViolation[];
+  };
+  warnings: string[];
+};
+
+export type PowerFlowRunStatus = {
+  runId: string;
+  gridId: string;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  solver: string;
+  errorMessage: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  result: PowerFlowResult | null;
+};
+
+export type StartPowerFlowRunResponse = {
+  runId: string;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  reusedExisting: boolean;
+  createdAt: string;
+};
+
 type ProjectApiModel = {
   id: string;
   teamId: string;
@@ -56,10 +133,13 @@ export class ProjectService {
   private readonly gridDatasetsState = signal<Record<string, GridDataset>>({});
   private readonly gridEditorModeState = signal<'view' | 'edit' | 'create'>('view');
   private readonly createDraftDatasetState = signal<GridDataset | null>(null);
+  private readonly latestPowerFlowRunByGridState = signal<Record<string, PowerFlowRunStatus>>({});
+  private readonly powerFlowRunRefreshState = signal(0);
 
   readonly projects = this.projectsState.asReadonly();
   readonly grids = this.gridsState.asReadonly();
   readonly gridEditorMode = this.gridEditorModeState.asReadonly();
+  readonly powerFlowRunRefreshToken = this.powerFlowRunRefreshState.asReadonly();
 
   loadProjects(): Observable<Project[]> {
     return this.http.get<ProjectApiModel[]>(this.projectsApiPath).pipe(
@@ -266,6 +346,65 @@ export class ProjectService {
 
   getCreateDraftDataset(): GridDataset | null {
     return this.createDraftDatasetState();
+  }
+
+  getLatestPowerFlowRun(gridId: string | null): PowerFlowRunStatus | null {
+    if (!gridId) {
+      return null;
+    }
+    return this.latestPowerFlowRunByGridState()[gridId] ?? null;
+  }
+
+  startPowerFlowRun(
+    gridId: string,
+    options?: PowerFlowRunOptions,
+  ): Observable<StartPowerFlowRunResponse> {
+    return this.http
+      .post<StartPowerFlowRunResponse>(`${this.gridsApiPath}/${gridId}/power-flow/runs`, { options })
+      .pipe(
+        tap((response) => {
+          const existing = this.latestPowerFlowRunByGridState()[gridId];
+          this.latestPowerFlowRunByGridState.update((state) => ({
+            ...state,
+            [gridId]: {
+              runId: response.runId,
+              gridId,
+              status: response.status,
+              solver: existing?.solver ?? 'AC_NEWTON_RAPHSON',
+              errorMessage: null,
+              createdAt: response.createdAt,
+              startedAt: existing?.startedAt ?? null,
+              finishedAt: null,
+              result: existing?.runId === response.runId ? existing.result : null,
+            },
+          }));
+          this.powerFlowRunRefreshState.update((value) => value + 1);
+        }),
+      );
+  }
+
+  getPowerFlowRun(gridId: string, runId: string): Observable<PowerFlowRunStatus> {
+    return this.http
+      .get<PowerFlowRunStatus>(`${this.gridsApiPath}/${gridId}/power-flow/runs/${runId}`)
+      .pipe(tap((status) => this.setLatestPowerFlowRun(status)));
+  }
+
+  listPowerFlowRuns(gridId: string): Observable<PowerFlowRunStatus[]> {
+    return this.http.get<PowerFlowRunStatus[]>(`${this.gridsApiPath}/${gridId}/power-flow/runs`).pipe(
+      tap((runs) => {
+        const latest = runs[0] ?? null;
+        if (latest) {
+          this.setLatestPowerFlowRun(latest);
+        }
+      }),
+    );
+  }
+
+  private setLatestPowerFlowRun(status: PowerFlowRunStatus): void {
+    this.latestPowerFlowRunByGridState.update((state) => ({
+      ...state,
+      [status.gridId]: status,
+    }));
   }
 
   private toProject(project: ProjectApiModel): Project {

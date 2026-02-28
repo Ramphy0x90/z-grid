@@ -1,8 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { provideState, provideStore } from '@ngrx/store';
 import { App } from './app';
 import { routes } from './app.routes';
+import { gridFeatureKey } from './stores/grid/grid.state';
+import { gridReducer } from './stores/grid/grid.reducer';
 import { navigationFeatureKey } from './stores/navigation/navigation.state';
 import { navigationReducer } from './stores/navigation/navigation.reducer';
 import { projectFeatureKey } from './stores/project/project.state';
@@ -13,10 +17,13 @@ describe('App', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter(routes),
         provideStore(),
         provideState(navigationFeatureKey, navigationReducer),
         provideState(projectFeatureKey, projectReducer),
+        provideState(gridFeatureKey, gridReducer),
       ],
     }).compileComponents();
   });

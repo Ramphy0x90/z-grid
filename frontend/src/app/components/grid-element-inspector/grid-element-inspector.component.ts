@@ -111,7 +111,7 @@ export class GridElementInspectorComponent {
 			const rawElement = selection.element as Record<string, unknown>;
 			const controls: Record<string, FormControl<unknown>> = {};
 			for (const field of fields) {
-				const initial = rawElement[field.key];
+				const initial = this.resolveInitialFieldValue(field, rawElement[field.key]);
 				controls[field.key] = new FormControl(initial, {
 					nonNullable: true,
 					validators: field.inputType === 'number' ? [Validators.required] : [],
@@ -119,6 +119,22 @@ export class GridElementInspectorComponent {
 			}
 			this.formState.set(new FormGroup(controls));
 		});
+	}
+
+	private resolveInitialFieldValue(field: FieldDescriptor, rawValue: unknown): unknown {
+		if (field.inputType === 'number') {
+			return typeof rawValue === 'number' && Number.isFinite(rawValue) ? rawValue : 0;
+		}
+		if (field.inputType === 'boolean') {
+			return typeof rawValue === 'boolean' ? rawValue : false;
+		}
+		if (field.inputType === 'select') {
+			if (typeof rawValue === 'string') {
+				return rawValue;
+			}
+			return field.options?.[0]?.value ?? '';
+		}
+		return typeof rawValue === 'string' ? rawValue : '';
 	}
 
 	protected onApply(): void {

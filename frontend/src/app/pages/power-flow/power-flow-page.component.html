@@ -1,4 +1,194 @@
 <section class="base-page" aria-label="Power Flow">
-  <h2>Power Flow</h2>
-  <p class="subtitle">Base page ready. Implementation will be added next.</p>
+	@if (loading()) {
+		<p class="subtitle">Loading latest runs...</p>
+	}
+
+	@if (error()) {
+		<p class="error">{{ error() }}</p>
+	}
+
+	@if (run()) {
+		<section class="status-card" aria-label="Run status">
+			<div class="status-card-top">
+				<span
+					class="status-badge"
+					[class.status-badge-queued]="run()!.status === 'QUEUED'"
+					[class.status-badge-running]="run()!.status === 'RUNNING'"
+					[class.status-badge-succeeded]="run()!.status === 'SUCCEEDED'"
+					[class.status-badge-failed]="run()!.status === 'FAILED'"
+				>
+					{{ run()!.status }}
+				</span>
+			</div>
+			<div class="status-row">
+				<span class="status-key">Solver</span>
+				<span class="status-value">{{ run()!.solver }}</span>
+			</div>
+			<div class="status-row">
+				<span class="status-key">Created</span>
+				<span class="status-value">{{ run()!.createdAt || '-' }}</span>
+			</div>
+			<div class="status-row">
+				<span class="status-key">Started</span>
+				<span class="status-value">{{ run()!.startedAt || '-' }}</span>
+			</div>
+			<div class="status-row">
+				<span class="status-key">Finished</span>
+				<span class="status-value">{{ run()!.finishedAt || '-' }}</span>
+			</div>
+			@if (run()!.errorMessage) {
+				<div class="status-row status-row-error">
+					<span class="status-key">Error</span>
+					<span class="status-value error">{{ run()!.errorMessage }}</span>
+				</div>
+			}
+		</section>
+	}
+
+	@if (hasResult() && result()) {
+		<section class="summary-grid" aria-label="Run summary">
+			<article class="summary-item">
+				<h3>Converged</h3>
+				<p>{{ result()!.converged ? 'Yes' : 'No' }}</p>
+			</article>
+			<article class="summary-item">
+				<h3>Iterations</h3>
+				<p>{{ result()!.iterations }}</p>
+			</article>
+			<article class="summary-item">
+				<h3>Total Load (MW)</h3>
+				<p>{{ result()!.summary.totalLoadMw.toFixed(3) }}</p>
+			</article>
+			<article class="summary-item">
+				<h3>Total Generation (MW)</h3>
+				<p>{{ result()!.summary.totalGenerationMw.toFixed(3) }}</p>
+			</article>
+			<article class="summary-item">
+				<h3>Losses (MW)</h3>
+				<p>{{ result()!.summary.lossesMw.toFixed(3) }}</p>
+			</article>
+		</section>
+
+		<section class="result-pane" aria-label="Power flow result details">
+			<div class="pane-tabs" role="tablist" aria-label="Power flow result panes">
+				<button
+					type="button"
+					class="pane-tab"
+					role="tab"
+					[attr.aria-selected]="activePane() === 'buses'"
+					[class.pane-tab-active]="activePane() === 'buses'"
+					(click)="setActivePane('buses')"
+				>
+					Buses ({{ result()!.busResults.length }})
+				</button>
+				<button
+					type="button"
+					class="pane-tab"
+					role="tab"
+					[attr.aria-selected]="activePane() === 'branches'"
+					[class.pane-tab-active]="activePane() === 'branches'"
+					(click)="setActivePane('branches')"
+				>
+					Branches ({{ result()!.branchResults.length }})
+				</button>
+				<button
+					type="button"
+					class="pane-tab"
+					role="tab"
+					[attr.aria-selected]="activePane() === 'violations'"
+					[class.pane-tab-active]="activePane() === 'violations'"
+					(click)="setActivePane('violations')"
+				>
+					Violations
+				</button>
+			</div>
+
+			<div class="table-shell">
+				@if (activePane() === 'buses') {
+					<table class="result-table">
+						<thead>
+							<tr>
+								<th>Bus</th>
+								<th>Voltage (pu)</th>
+								<th>Angle (deg)</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for (bus of result()!.busResults; track bus.busId) {
+								<tr>
+									<td>{{ bus.busName }}</td>
+									<td>{{ bus.voltageMagnitudePu.toFixed(4) }}</td>
+									<td>{{ bus.voltageAngleDeg.toFixed(3) }}</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+
+				@if (activePane() === 'branches') {
+					<table class="result-table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Loading (%)</th>
+								<th>P From (MW)</th>
+								<th>P To (MW)</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for (branch of result()!.branchResults; track branch.elementId) {
+								<tr>
+									<td>{{ branch.name }}</td>
+									<td>{{ branch.elementType }}</td>
+									<td>{{ branch.loadingPercent.toFixed(2) }}</td>
+									<td>{{ branch.pFromMw.toFixed(3) }}</td>
+									<td>{{ branch.pToMw.toFixed(3) }}</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+
+				@if (activePane() === 'violations') {
+					<table class="result-table">
+						<thead>
+							<tr>
+								<th>Kind</th>
+								<th>Element</th>
+								<th>Value</th>
+								<th>Limit</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for (v of result()!.violations.voltage; track v.busId) {
+								<tr>
+									<td>Voltage</td>
+									<td>{{ v.busName }}</td>
+									<td>{{ v.valuePu.toFixed(4) }} pu</td>
+									<td>{{ v.minPu }} - {{ v.maxPu }} pu</td>
+								</tr>
+							}
+							@for (v of result()!.violations.thermal; track v.elementId) {
+								<tr>
+									<td>Thermal</td>
+									<td>{{ v.name }}</td>
+									<td>{{ v.loadingPercent.toFixed(2) }}%</td>
+									<td>max {{ v.maxPercent.toFixed(2) }}%</td>
+								</tr>
+							}
+							@if (
+								result()!.violations.voltage.length === 0 &&
+								result()!.violations.thermal.length === 0
+							) {
+								<tr>
+									<td colspan="4">No violations detected.</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+			</div>
+		</section>
+	}
 </section>

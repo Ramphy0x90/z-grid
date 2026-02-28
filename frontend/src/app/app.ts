@@ -67,6 +67,7 @@ export class App {
 	private readonly isLoginRouteState = signal(false);
 	private readonly isWorkspaceRouteState = signal(false);
 	private readonly gridPageModeState = signal<'view' | 'edit' | 'create'>('view');
+	private readonly runInProgressState = signal(false);
 
 	protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
 	protected readonly selectedProjectId = this.store.selectSignal(
@@ -91,6 +92,7 @@ export class App {
 	protected readonly isLoginRoute = this.isLoginRouteState.asReadonly();
 	protected readonly isWorkspaceRoute = this.isWorkspaceRouteState.asReadonly();
 	protected readonly gridPageMode = this.gridPageModeState.asReadonly();
+	protected readonly runInProgress = this.runInProgressState.asReadonly();
 	protected readonly isViewMode = computed(() => this.gridPageModeState() === 'view');
 	protected readonly isEditingGrid = computed(
 		() => this.gridPageModeState() === 'edit' && this.selectedGrid() !== null,
@@ -126,7 +128,10 @@ export class App {
 			return [];
 		}
 		if (pageGroup.id === 'static-calculation') {
-			return App.STATIC_CALCULATION_ACTIONS;
+			return App.STATIC_CALCULATION_ACTIONS.map((action) => ({
+				...action,
+				disabled: !this.selectedGridId() || this.runInProgressState(),
+			}));
 		}
 		if (pageId !== App.GRID_EDITOR_PAGE_ID) {
 			return [];
@@ -363,6 +368,31 @@ export class App {
 		}
 		if (actionId === 'create') {
 			this.openCreateGridForm();
+			return;
+		}
+		if (actionId === 'run') {
+			void this.onRunPowerFlowAsync();
+		}
+	}
+
+	private async onRunPowerFlowAsync(): Promise<void> {
+		const projectId = this.selectedProjectId();
+		const gridId = this.selectedGridId();
+		if (!projectId || !gridId) {
+			return;
+		}
+		this.runInProgressState.set(true);
+		try {
+			const dataset = this.projectService.getGridDatasetById(gridId);
+			if (dataset) {
+				await firstValueFrom(this.projectService.saveGridDataset(gridId, dataset));
+			}
+			await firstValueFrom(this.projectService.startPowerFlowRun(gridId));
+			await this.router.navigate([...toProjectPageCommands(projectId, 'power-flow')]);
+		} catch {
+			// Run state and detailed errors are surfaced in the power-flow page.
+		} finally {
+			this.runInProgressState.set(false);
 		}
 	}
 
