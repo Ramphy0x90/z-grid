@@ -1,5 +1,7 @@
 package com.r16a.zeus.core;
 
+import com.r16a.zeus.team.exception.TeamConflictException;
+import com.r16a.zeus.team.exception.TeamNotFoundException;
 import com.r16a.zeus.user.exception.UserConflictException;
 import com.r16a.zeus.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ProblemDetail handleUserConflict(UserConflictException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(TeamNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ProblemDetail handleTeamNotFound(TeamNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(TeamConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ProblemDetail handleTeamConflict(TeamConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }
