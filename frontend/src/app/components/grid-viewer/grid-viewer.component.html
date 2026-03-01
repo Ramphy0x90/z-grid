@@ -47,6 +47,18 @@
 				></line>
 			}
 		</svg>
+		<svg class="transformer-icons-overlay" aria-hidden="true">
+			@for (icon of transformerIconOverlays(); track icon.id) {
+				<g
+					class="transformer-icon"
+					[class.transformer-icon-highlighted]="icon.highlighted"
+					[attr.transform]="'translate(' + icon.x + ' ' + icon.y + ') rotate(' + icon.angle + ')'"
+				>
+					<circle cx="-4" cy="0" r="4.5"></circle>
+					<circle cx="4" cy="0" r="4.5"></circle>
+				</g>
+			}
+		</svg>
 		<svg class="attached-icons-overlay" aria-hidden="true">
 			@for (icon of attachedElementIconOverlays(); track icon.id) {
 				<g
@@ -64,19 +76,50 @@
 						></line>
 						<polyline
 							[attr.points]="
-								(icon.x - 4) + ',' + icon.y + ' ' + icon.x + ',' + (icon.y + 4) + ' ' + (icon.x + 4) + ',' + icon.y
+								icon.x -
+								4 +
+								',' +
+								icon.y +
+								' ' +
+								icon.x +
+								',' +
+								(icon.y + 4) +
+								' ' +
+								(icon.x + 4) +
+								',' +
+								icon.y
 							"
 						></polyline>
 					} @else {
 						<polygon
 							[attr.points]="
-								icon.x + ',' + (icon.y - 8) + ' ' +
-								(icon.x - 5) + ',' + (icon.y + 1) + ' ' +
-								(icon.x - 1) + ',' + (icon.y + 1) + ' ' +
-								(icon.x - 3) + ',' + (icon.y + 8) + ' ' +
-								(icon.x + 5) + ',' + (icon.y - 2) + ' ' +
-								(icon.x + 1) + ',' + (icon.y - 2) + ' ' +
-								(icon.x + 3) + ',' + (icon.y - 8)
+								icon.x +
+								',' +
+								(icon.y - 8) +
+								' ' +
+								(icon.x - 5) +
+								',' +
+								(icon.y + 1) +
+								' ' +
+								(icon.x - 1) +
+								',' +
+								(icon.y + 1) +
+								' ' +
+								(icon.x - 3) +
+								',' +
+								(icon.y + 8) +
+								' ' +
+								(icon.x + 5) +
+								',' +
+								(icon.y - 2) +
+								' ' +
+								(icon.x + 1) +
+								',' +
+								(icon.y - 2) +
+								' ' +
+								(icon.x + 3) +
+								',' +
+								(icon.y - 8)
 							"
 						></polygon>
 					}

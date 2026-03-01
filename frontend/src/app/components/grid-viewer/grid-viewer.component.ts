@@ -61,6 +61,14 @@ type AttachedElementIconOverlay = {
 	highlighted: boolean;
 };
 
+type TransformerIconOverlay = {
+	id: string;
+	x: number;
+	y: number;
+	angle: number;
+	highlighted: boolean;
+};
+
 @Component({
 	selector: 'app-grid-viewer',
 	imports: [GridElementInspectorComponent, GridViewerToolbarComponent],
@@ -96,6 +104,7 @@ export class GridViewerComponent implements AfterViewInit {
 	protected readonly placementHint = computed(() => this.getPlacementHint());
 	protected readonly connectionPreview = computed(() => this.getConnectionPreview());
 	protected readonly placedConnectionOverlays = computed(() => this.getPlacedConnectionOverlays());
+	protected readonly transformerIconOverlays = computed(() => this.getTransformerIconOverlays());
 	protected readonly attachedElementIconOverlays = computed(() => this.getAttachedElementIconOverlays());
 	protected readonly inspectorSelection = computed<GridElementInspectorSelection | null>(() => {
 		const placementMode = this.facade.placementMode();
@@ -600,6 +609,36 @@ export class GridViewerComponent implements AfterViewInit {
 			const isHovered = hovered?.id === id && hovered.kind === kind;
 			const point = this.worldPointToScreen(positions[index * 2], positions[index * 2 + 1]);
 			overlays.push({ id, kind, x: point.x, y: point.y, highlighted: isSelected || isHovered });
+		}
+		return overlays;
+	}
+
+	private getTransformerIconOverlays(): TransformerIconOverlay[] {
+		const graph = this.facade.normalizedGraph();
+		const segments =
+			this.activeView() === 'map' ? graph.mapLineSegments : graph.schematicLineSegments;
+		const selected = this.selectedElement();
+		const hovered = this.hoveredElement();
+		const overlays: TransformerIconOverlay[] = [];
+		for (let index = 0; index < graph.edgeIds.length; index += 1) {
+			if (graph.edgeKinds[index] !== 'transformer') {
+				continue;
+			}
+			const id = graph.edgeIds[index];
+			if (!id) {
+				continue;
+			}
+			const x1 = segments[index * 4];
+			const y1 = segments[index * 4 + 1];
+			const x2 = segments[index * 4 + 2];
+			const y2 = segments[index * 4 + 3];
+			const screenStart = this.worldPointToScreen(x1, y1);
+			const screenEnd = this.worldPointToScreen(x2, y2);
+			const midpoint = this.worldPointToScreen((x1 + x2) / 2, (y1 + y2) / 2);
+			const angle = (Math.atan2(screenEnd.y - screenStart.y, screenEnd.x - screenStart.x) * 180) / Math.PI;
+			const isSelected = selected?.kind === 'transformer' && selected.id === id;
+			const isHovered = hovered?.kind === 'transformer' && hovered.id === id;
+			overlays.push({ id, x: midpoint.x, y: midpoint.y, angle, highlighted: isSelected || isHovered });
 		}
 		return overlays;
 	}
