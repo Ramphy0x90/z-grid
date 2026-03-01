@@ -7,11 +7,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @RequiredArgsConstructor
-public class PowerFlowRunQueuedListener {
-    private final PowerFlowRunWorker powerFlowRunWorker;
+public class SimulationRunQueuedListener {
+    private final SimulationRunWorker simulationRunWorker;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onRunQueued(PowerFlowRunQueuedEvent event) {
-        powerFlowRunWorker.executeRun(event.runId());
+    public void onRunQueued(SimulationRunQueuedEvent event) {
+        simulationRunWorker.executeRun(event.runId());
     }
 }

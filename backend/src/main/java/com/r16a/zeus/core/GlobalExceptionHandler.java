@@ -4,7 +4,10 @@ import com.r16a.zeus.auth.exception.InvalidCredentialsException;
 import com.r16a.zeus.features.grid.exception.GridDatasetValidationException;
 import com.r16a.zeus.features.grid.exception.GridNotFoundException;
 import com.r16a.zeus.features.simulation.exception.PowerFlowCalculationException;
+import com.r16a.zeus.features.simulation.exception.SimulationApiDisabledException;
+import com.r16a.zeus.features.simulation.exception.SimulationExecutionException;
 import com.r16a.zeus.features.simulation.exception.SimulationRunNotFoundException;
+import com.r16a.zeus.features.simulation.model.SimulationFailureCode;
 import com.r16a.zeus.team.exception.TeamConflictException;
 import com.r16a.zeus.team.exception.TeamNotFoundException;
 import com.r16a.zeus.project.exception.ProjectConflictException;
@@ -83,5 +86,21 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handlePowerFlowCalculation(PowerFlowCalculationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(SimulationApiDisabledException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ProblemDetail handleSimulationApiDisabled(SimulationApiDisabledException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
+    @ExceptionHandler(SimulationExecutionException.class)
+    public ProblemDetail handleSimulationExecution(SimulationExecutionException ex) {
+        HttpStatus status = ex.getFailureCode() == SimulationFailureCode.SYSTEM_ERROR
+                ? HttpStatus.INTERNAL_SERVER_ERROR
+                : HttpStatus.UNPROCESSABLE_ENTITY;
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        detail.setProperty("failureCode", ex.getFailureCode());
+        return detail;
     }
 }

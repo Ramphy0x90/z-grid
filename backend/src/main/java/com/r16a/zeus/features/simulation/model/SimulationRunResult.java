@@ -19,23 +19,17 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("power_flow_results")
-public class PowerFlowResult implements Persistable<UUID> {
+@Table("simulation_run_results")
+public class SimulationRunResult implements Persistable<UUID> {
     @Id
     @Column("run_id")
     private UUID runId;
 
-    private boolean converged;
-    private int iterations;
+    @Column("simulation_type")
+    private SimulationType simulationType;
 
-    @Column("total_load_mw")
-    private double totalLoadMw;
-
-    @Column("total_generation_mw")
-    private double totalGenerationMw;
-
-    @Column("losses_mw")
-    private double lossesMw;
+    @Column("summary_json")
+    private String summaryJson;
 
     @Column("result_json")
     private String resultJson;

@@ -27,14 +27,31 @@ public class SimulationRun implements Persistable<UUID> {
     @Column("grid_id")
     private UUID gridId;
 
+    @Column("simulation_type")
+    private SimulationType simulationType;
+
     private SimulationRunStatus status;
+
+    // Legacy column kept for backward compatibility during schema transition.
     private String solver;
+
+    @Column("engine_key")
+    private String engineKey;
+
+    @Column("engine_version")
+    private String engineVersion;
 
     @Column("options_json")
     private String optionsJson;
 
+    @Column("idempotency_key")
+    private String idempotencyKey;
+
     @Column("error_message")
     private String errorMessage;
+
+    @Column("failure_code")
+    private SimulationFailureCode failureCode;
 
     @CreatedDate
     @Column("created_at")
@@ -58,13 +75,24 @@ public class SimulationRun implements Persistable<UUID> {
         return forceInsert || createdAt == null;
     }
 
-    public static SimulationRun newRun(UUID gridId, String solver, String optionsJson) {
+    public static SimulationRun newRun(
+            UUID gridId,
+            SimulationType simulationType,
+            String engineKey,
+            String engineVersion,
+            String optionsJson,
+            String idempotencyKey
+    ) {
         return SimulationRun.builder()
                 .id(UUID.randomUUID())
                 .gridId(gridId)
+                .simulationType(simulationType)
                 .status(SimulationRunStatus.QUEUED)
-                .solver(solver)
+                .solver(engineKey)
+                .engineKey(engineKey)
+                .engineVersion(engineVersion)
                 .optionsJson(optionsJson)
+                .idempotencyKey(idempotencyKey)
                 .forceInsert(true)
                 .build();
     }

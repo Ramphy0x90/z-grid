@@ -14,6 +14,7 @@ import type {
 	PowerFlowRunStatus,
 	StartPowerFlowRunResponse,
 } from '../types/power-flow.types';
+import type { SimulationRunStatus, StartSimulationRunResponse } from '../types/simulation.types';
 
 type ProjectApiModel = {
   id: string;
@@ -269,8 +270,17 @@ export class ProjectService {
     options?: PowerFlowRunOptions,
   ): Observable<StartPowerFlowRunResponse> {
     return this.http
-      .post<StartPowerFlowRunResponse>(`${this.gridsApiPath}/${gridId}/power-flow/runs`, { options })
+      .post<StartSimulationRunResponse>(`${this.gridsApiPath}/${gridId}/simulations/runs`, {
+        simulationType: 'POWER_FLOW',
+        options,
+      })
       .pipe(
+        map((response) => ({
+          runId: response.runId,
+          status: response.status,
+          reusedExisting: response.reusedExisting,
+          createdAt: response.createdAt,
+        })),
         tap((response) => {
           const existing = this.latestPowerFlowRunByGridState()[gridId];
           this.latestPowerFlowRunByGridState.update((state) => ({
@@ -294,19 +304,25 @@ export class ProjectService {
 
   getPowerFlowRun(gridId: string, runId: string): Observable<PowerFlowRunStatus> {
     return this.http
-      .get<PowerFlowRunStatus>(`${this.gridsApiPath}/${gridId}/power-flow/runs/${runId}`)
-      .pipe(tap((status) => this.setLatestPowerFlowRun(status)));
+      .get<SimulationRunStatus>(`${this.gridsApiPath}/${gridId}/simulations/runs/${runId}`)
+      .pipe(
+        map((status) => this.toPowerFlowRunStatus(status)),
+        tap((status) => this.setLatestPowerFlowRun(status)),
+      );
   }
 
   listPowerFlowRuns(gridId: string): Observable<PowerFlowRunStatus[]> {
-    return this.http.get<PowerFlowRunStatus[]>(`${this.gridsApiPath}/${gridId}/power-flow/runs`).pipe(
-      tap((runs) => {
-        const latest = runs[0] ?? null;
-        if (latest) {
-          this.setLatestPowerFlowRun(latest);
-        }
-      }),
-    );
+    return this.http
+      .get<SimulationRunStatus[]>(`${this.gridsApiPath}/${gridId}/simulations/runs?simulationType=POWER_FLOW`)
+      .pipe(
+        map((runs) => runs.map((run) => this.toPowerFlowRunStatus(run))),
+        tap((runs) => {
+          const latest = runs[0] ?? null;
+          if (latest) {
+            this.setLatestPowerFlowRun(latest);
+          }
+        }),
+      );
   }
 
   private setLatestPowerFlowRun(status: PowerFlowRunStatus): void {
@@ -314,6 +330,21 @@ export class ProjectService {
       ...state,
       [status.gridId]: status,
     }));
+  }
+
+  private toPowerFlowRunStatus(status: SimulationRunStatus): PowerFlowRunStatus {
+    const resultData = status.result?.data as PowerFlowRunStatus['result'] | null | undefined;
+    return {
+      runId: status.runId,
+      gridId: status.gridId,
+      status: status.status,
+      solver: status.engineKey,
+      errorMessage: status.errorMessage,
+      createdAt: status.createdAt,
+      startedAt: status.startedAt,
+      finishedAt: status.finishedAt,
+      result: resultData ?? null,
+    };
   }
 
   private toProject(project: ProjectApiModel): Project {
