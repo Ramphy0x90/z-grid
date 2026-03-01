@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: r16a-z-grid-api
+    namespace: r16a-z-grid
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: r16a-z-grid-api
+    template:
+        metadata:
+            labels:
+                app: r16a-z-grid-api
+        spec:
+            containers:
+                - name: api
+                  image: ghcr.io/your-org/zeus-backend:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - containerPort: 8080
+                  envFrom:
+                      - secretRef:
+                            name: r16a-z-grid-secret
+                  readinessProbe:
+                      tcpSocket:
+                          port: 8080
+                      initialDelaySeconds: 10
+                      periodSeconds: 10
+                      timeoutSeconds: 2
+                  livenessProbe:
+                      tcpSocket:
+                          port: 8080
+                      initialDelaySeconds: 30
+                      periodSeconds: 20
+                      timeoutSeconds: 2

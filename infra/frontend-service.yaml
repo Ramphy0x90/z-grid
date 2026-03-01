@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: r16a-z-grid-web
+    namespace: r16a-z-grid
+spec:
+    type: ClusterIP
+    selector:
+        app: r16a-z-grid-web
+    ports:
+        - name: http
+          port: 80
+          targetPort: 80

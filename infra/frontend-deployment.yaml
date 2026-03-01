@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: r16a-z-grid-web
+    namespace: r16a-z-grid
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: r16a-z-grid-web
+    template:
+        metadata:
+            labels:
+                app: r16a-z-grid-web
+        spec:
+            containers:
+                - name: web
+                  image: ghcr.io/your-org/zeus-frontend:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - containerPort: 80
+                  readinessProbe:
+                      httpGet:
+                          path: /
+                          port: 80
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                      timeoutSeconds: 2
+                  livenessProbe:
+                      httpGet:
+                          path: /
+                          port: 80
+                      initialDelaySeconds: 20
+                      periodSeconds: 20
+                      timeoutSeconds: 2
