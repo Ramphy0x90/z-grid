@@ -28,8 +28,13 @@ export class PowerFlowPageComponent {
   protected readonly loading = this.loadingState.asReadonly();
   protected readonly error = this.errorState.asReadonly();
   protected readonly activePane = this.activePaneState.asReadonly();
-  protected readonly hasResult = computed(() => this.runState()?.result !== null);
+  protected readonly hasResult = computed(() => this.runState()?.result != null);
   protected readonly result = computed(() => this.runState()?.result ?? null);
+  protected readonly violationsCount = computed(() => {
+    const r = this.result();
+    if (!r) return 0;
+    return r.violations.voltage.length + r.violations.thermal.length;
+  });
 
   constructor() {
     effect(() => {
