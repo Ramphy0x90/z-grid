@@ -13,10 +13,12 @@ import com.r16a.zeus.features.simulation.repository.PowerFlowResultRepository;
 import com.r16a.zeus.features.simulation.repository.SimulationRunRepository;
 import com.r16a.zeus.features.grid.service.GridService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
@@ -27,6 +29,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PowerFlowSimulationService {
     public static final String SOLVER_NAME = "AC_NEWTON_RAPHSON";
+    private static final Duration STALE_QUEUED_TIMEOUT = Duration.ofMinutes(2);
+    private static final String STALE_QUEUED_MESSAGE =
+            "Run stayed queued for too long and was automatically failed. Please retry.";
     private static final Set<SimulationRunStatus> ACTIVE_STATUSES = EnumSet.of(
             SimulationRunStatus.QUEUED,
             SimulationRunStatus.RUNNING
@@ -35,7 +40,7 @@ public class PowerFlowSimulationService {
     private final SimulationRunRepository simulationRunRepository;
     private final PowerFlowResultRepository powerFlowResultRepository;
     private final GridService gridService;
-    private final PowerFlowRunWorker powerFlowRunWorker;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -45,6 +50,10 @@ public class PowerFlowSimulationService {
         SimulationRun existing = simulationRunRepository
                 .findFirstByGridIdAndStatusInOrderByCreatedAtDesc(gridId, ACTIVE_STATUSES)
                 .orElse(null);
+        if (isStaleQueued(existing)) {
+            existing = failStaleQueuedRun(existing);
+            existing = null;
+        }
         if (existing != null) {
             return new StartPowerFlowRunResponse(
                     existing.getId(),
@@ -58,13 +67,16 @@ public class PowerFlowSimulationService {
         SimulationRun created = simulationRunRepository.save(
                 SimulationRun.newRun(gridId, SOLVER_NAME, serializeOptions(normalizedOptions))
         );
-        powerFlowRunWorker.executeRun(created.getId());
+        eventPublisher.publishEvent(new PowerFlowRunQueuedEvent(created.getId()));
         return new StartPowerFlowRunResponse(created.getId(), created.getStatus(), false, created.getCreatedAt());
     }
 
+    @Transactional
     public PowerFlowRunStatusResponse getRun(UUID gridId, UUID runId) {
         gridService.getGridByIdOrThrow(gridId);
-        SimulationRun run = simulationRunRepository.findById(runId).orElse(null);
+        SimulationRun run = simulationRunRepository.findById(runId)
+                .map(this::failStaleQueuedRun)
+                .orElse(null);
         if (run != null && gridId.equals(run.getGridId())) {
             return toStatusResponse(run);
         }
@@ -72,6 +84,7 @@ public class PowerFlowSimulationService {
         // Fallback protects frontend polling from stale run ids and short consistency windows.
         SimulationRun latestForGrid = simulationRunRepository.findTop20ByGridIdOrderByCreatedAtDesc(gridId)
                 .stream()
+                .map(this::failStaleQueuedRun)
                 .findFirst()
                 .orElse(null);
         if (latestForGrid != null) {
@@ -92,10 +105,12 @@ public class PowerFlowSimulationService {
         );
     }
 
+    @Transactional
     public List<PowerFlowRunStatusResponse> listRuns(UUID gridId) {
         gridService.getGridByIdOrThrow(gridId);
         return simulationRunRepository.findTop20ByGridIdOrderByCreatedAtDesc(gridId)
                 .stream()
+                .map(this::failStaleQueuedRun)
                 .map(this::toStatusResponse)
                 .toList();
     }
@@ -203,5 +218,26 @@ public class PowerFlowSimulationService {
         } catch (Exception ex) {
             throw new IllegalStateException("Unable to serialize power flow options.", ex);
         }
+    }
+
+    private boolean isStaleQueued(SimulationRun run) {
+        if (run == null || run.getStatus() != SimulationRunStatus.QUEUED || run.getStartedAt() != null) {
+            return false;
+        }
+        Instant createdAt = run.getCreatedAt();
+        if (createdAt == null) {
+            return false;
+        }
+        return createdAt.isBefore(Instant.now().minus(STALE_QUEUED_TIMEOUT));
+    }
+
+    private SimulationRun failStaleQueuedRun(SimulationRun run) {
+        if (!isStaleQueued(run)) {
+            return run;
+        }
+        run.setStatus(SimulationRunStatus.FAILED);
+        run.setFinishedAt(Instant.now());
+        run.setErrorMessage(STALE_QUEUED_MESSAGE);
+        return simulationRunRepository.save(run);
     }
 }

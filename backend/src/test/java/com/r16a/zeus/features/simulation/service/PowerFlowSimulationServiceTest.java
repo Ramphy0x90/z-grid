@@ -14,8 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -38,6 +40,8 @@ class PowerFlowSimulationServiceTest {
     private GridService gridService;
     @Mock
     private PowerFlowRunWorker powerFlowRunWorker;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -54,7 +58,7 @@ class PowerFlowSimulationServiceTest {
                 simulationRunRepository,
                 powerFlowResultRepository,
                 gridService,
-                powerFlowRunWorker,
+                eventPublisher,
                 objectMapper
         );
 
@@ -62,7 +66,7 @@ class PowerFlowSimulationServiceTest {
 
         assertFalse(response.reusedExisting());
         assertEquals(SimulationRunStatus.QUEUED, response.status());
-        verify(powerFlowRunWorker).executeRun(response.runId());
+        verify(eventPublisher).publishEvent(new PowerFlowRunQueuedEvent(response.runId()));
 
         ArgumentCaptor<SimulationRun> captor = ArgumentCaptor.forClass(SimulationRun.class);
         verify(simulationRunRepository).save(captor.capture());
@@ -91,7 +95,7 @@ class PowerFlowSimulationServiceTest {
                 simulationRunRepository,
                 powerFlowResultRepository,
                 gridService,
-                powerFlowRunWorker,
+                eventPublisher,
                 objectMapper
         );
 
@@ -126,12 +130,45 @@ class PowerFlowSimulationServiceTest {
                 simulationRunRepository,
                 powerFlowResultRepository,
                 gridService,
-                powerFlowRunWorker,
+                eventPublisher,
                 objectMapper
         );
 
         var status = service.toStatusResponse(run);
         assertEquals(SimulationRunStatus.SUCCEEDED, status.status());
         assertEquals(5, status.result().iterations());
+    }
+
+    @Test
+    void startRunFailsStaleQueuedRunAndCreatesNewRun() {
+        UUID gridId = UUID.randomUUID();
+        Grid grid = Grid.builder().id(gridId).projectId(UUID.randomUUID()).name("Grid").build();
+        SimulationRun staleQueued = SimulationRun.builder()
+                .id(UUID.randomUUID())
+                .gridId(gridId)
+                .status(SimulationRunStatus.QUEUED)
+                .solver(PowerFlowSimulationService.SOLVER_NAME)
+                .createdAt(Instant.now().minusSeconds(180))
+                .build();
+        when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
+        when(simulationRunRepository.findFirstByGridIdAndStatusInOrderByCreatedAtDesc(any(), any(Set.class)))
+                .thenReturn(Optional.of(staleQueued));
+        when(simulationRunRepository.save(any(SimulationRun.class))).thenAnswer((invocation) -> invocation.getArgument(0));
+
+        PowerFlowSimulationService service = new PowerFlowSimulationService(
+                simulationRunRepository,
+                powerFlowResultRepository,
+                gridService,
+                eventPublisher,
+                objectMapper
+        );
+
+        StartPowerFlowRunResponse response = service.startRun(gridId, new StartPowerFlowRunRequest(null));
+
+        assertFalse(response.reusedExisting());
+        ArgumentCaptor<SimulationRun> captor = ArgumentCaptor.forClass(SimulationRun.class);
+        verify(simulationRunRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+        SimulationRun firstSave = captor.getAllValues().get(0);
+        assertEquals(SimulationRunStatus.FAILED, firstSave.getStatus());
     }
 }
