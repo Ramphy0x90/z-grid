@@ -10,6 +10,7 @@ export type GridOperationState = {
 
 export type GridState = {
 	grids: ProjectGrid[];
+	selectedProjectId: string | null;
 	selectedGridId: string | null;
 	editorMode: GridEditorMode;
 	duplicate: GridOperationState;
@@ -19,6 +20,7 @@ export type GridState = {
 
 export const initialGridState: GridState = {
 	grids: [],
+	selectedProjectId: null,
 	selectedGridId: null,
 	editorMode: 'view',
 	duplicate: {

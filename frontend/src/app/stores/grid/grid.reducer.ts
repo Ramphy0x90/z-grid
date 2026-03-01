@@ -13,10 +13,16 @@ export const gridReducer = createReducer(
 			selectedGridId: hasValidSelection ? state.selectedGridId : null,
 		};
 	}),
-	on(GridActions.selectedProjectSynced, (state) => ({
-		...state,
-		selectedGridId: null,
-	})),
+	on(GridActions.selectedProjectSynced, (state, { projectId }) => {
+		if (state.selectedProjectId === projectId) {
+			return state;
+		}
+		return {
+			...state,
+			selectedProjectId: projectId,
+			selectedGridId: null,
+		};
+	}),
 	on(GridActions.gridSelected, (state, { gridId }) => ({
 		...state,
 		selectedGridId: state.grids.some((grid) => grid.id === gridId) ? gridId : state.selectedGridId,
