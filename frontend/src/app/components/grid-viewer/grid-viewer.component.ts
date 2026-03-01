@@ -53,6 +53,14 @@ const NEW_GRID_MAP_VIEWPORT = {
 	zoom: 8,
 } as const;
 
+type AttachedElementIconOverlay = {
+	id: string;
+	kind: 'load' | 'generator';
+	x: number;
+	y: number;
+	highlighted: boolean;
+};
+
 @Component({
 	selector: 'app-grid-viewer',
 	imports: [GridElementInspectorComponent, GridViewerToolbarComponent],
@@ -84,9 +92,11 @@ export class GridViewerComponent implements AfterViewInit {
 	protected readonly totalElements = this.facade.totalElements;
 	protected readonly placementMode = this.facade.placementMode;
 	protected readonly hoveredElement = this.facade.hoveredElement;
+	protected readonly selectedElement = this.facade.selectedElement;
 	protected readonly placementHint = computed(() => this.getPlacementHint());
 	protected readonly connectionPreview = computed(() => this.getConnectionPreview());
 	protected readonly placedConnectionOverlays = computed(() => this.getPlacedConnectionOverlays());
+	protected readonly attachedElementIconOverlays = computed(() => this.getAttachedElementIconOverlays());
 	protected readonly inspectorSelection = computed<GridElementInspectorSelection | null>(() => {
 		const placementMode = this.facade.placementMode();
 		if (placementMode === 'line' || placementMode === 'transformer') {
@@ -573,6 +583,27 @@ export class GridViewerComponent implements AfterViewInit {
 		return overlays;
 	}
 
+	private getAttachedElementIconOverlays(): AttachedElementIconOverlay[] {
+		const graph = this.facade.normalizedGraph();
+		const positions =
+			this.activeView() === 'map' ? graph.mapAttachedPositions : graph.schematicAttachedPositions;
+		const selected = this.selectedElement();
+		const hovered = this.hoveredElement();
+		const overlays: AttachedElementIconOverlay[] = [];
+		for (let index = 0; index < graph.attachedElementIds.length; index += 1) {
+			const kind = graph.attachedElementKinds[index];
+			if (kind !== 'load' && kind !== 'generator') {
+				continue;
+			}
+			const id = graph.attachedElementIds[index];
+			const isSelected = selected?.id === id && selected.kind === kind;
+			const isHovered = hovered?.id === id && hovered.kind === kind;
+			const point = this.worldPointToScreen(positions[index * 2], positions[index * 2 + 1]);
+			overlays.push({ id, kind, x: point.x, y: point.y, highlighted: isSelected || isHovered });
+		}
+		return overlays;
+	}
+
 	private worldSegmentToScreen(
 		x1: number,
 		y1: number,
@@ -590,6 +621,19 @@ export class GridViewerComponent implements AfterViewInit {
 			y1: halfH - (y1 - viewport.centerY) * viewport.zoom * ySign,
 			x2: (x2 - viewport.centerX) * viewport.zoom + halfW,
 			y2: halfH - (y2 - viewport.centerY) * viewport.zoom * ySign,
+		};
+	}
+
+	private worldPointToScreen(x: number, y: number): { x: number; y: number } {
+		const viewport =
+			this.activeView() === 'map' ? this.facade.mapViewport() : this.facade.schematicViewport();
+		const ySign = this.activeView() === 'map' ? 1 : -1;
+		const size = this.viewerSize();
+		const halfW = size.width / 2;
+		const halfH = size.height / 2;
+		return {
+			x: (x - viewport.centerX) * viewport.zoom + halfW,
+			y: halfH - (y - viewport.centerY) * viewport.zoom * ySign,
 		};
 	}
 

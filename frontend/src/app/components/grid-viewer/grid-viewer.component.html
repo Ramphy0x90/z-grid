@@ -47,6 +47,42 @@
 				></line>
 			}
 		</svg>
+		<svg class="attached-icons-overlay" aria-hidden="true">
+			@for (icon of attachedElementIconOverlays(); track icon.id) {
+				<g
+					class="attached-icon"
+					[class.attached-icon-load]="icon.kind === 'load'"
+					[class.attached-icon-generator]="icon.kind === 'generator'"
+					[class.attached-icon-highlighted]="icon.highlighted"
+				>
+					@if (icon.kind === 'load') {
+						<line
+							[attr.x1]="icon.x"
+							[attr.y1]="icon.y - 7"
+							[attr.x2]="icon.x"
+							[attr.y2]="icon.y + 4"
+						></line>
+						<polyline
+							[attr.points]="
+								(icon.x - 4) + ',' + icon.y + ' ' + icon.x + ',' + (icon.y + 4) + ' ' + (icon.x + 4) + ',' + icon.y
+							"
+						></polyline>
+					} @else {
+						<polygon
+							[attr.points]="
+								icon.x + ',' + (icon.y - 8) + ' ' +
+								(icon.x - 5) + ',' + (icon.y + 1) + ' ' +
+								(icon.x - 1) + ',' + (icon.y + 1) + ' ' +
+								(icon.x - 3) + ',' + (icon.y + 8) + ' ' +
+								(icon.x + 5) + ',' + (icon.y - 2) + ' ' +
+								(icon.x + 1) + ',' + (icon.y - 2) + ' ' +
+								(icon.x + 3) + ',' + (icon.y - 8)
+							"
+						></polygon>
+					}
+				</g>
+			}
+		</svg>
 
 		<div
 			#mapHost

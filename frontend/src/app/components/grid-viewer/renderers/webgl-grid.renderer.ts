@@ -424,10 +424,13 @@ export class WebglGridRenderer {
 		if (highlightedAttachedId) {
 			const attachedIndex = this.graph.attachedElementIds.indexOf(highlightedAttachedId);
 			if (attachedIndex >= 0) {
-				this.dynamicAttachedColors[attachedIndex * 4] = 0;
-				this.dynamicAttachedColors[attachedIndex * 4 + 1] = 1;
-				this.dynamicAttachedColors[attachedIndex * 4 + 2] = 0.533;
-				this.dynamicAttachedColors[attachedIndex * 4 + 3] = 1;
+				const kind = this.graph.attachedElementKinds[attachedIndex];
+				if (kind === 'shunt') {
+					this.dynamicAttachedColors[attachedIndex * 4] = 0;
+					this.dynamicAttachedColors[attachedIndex * 4 + 1] = 1;
+					this.dynamicAttachedColors[attachedIndex * 4 + 2] = 0.533;
+					this.dynamicAttachedColors[attachedIndex * 4 + 3] = 1;
+				}
 			}
 		}
 	}

@@ -39,8 +39,8 @@ const COLOR_EDGE_OFFLINE = [0.33, 0.33, 0.35, 0.45];
 const COLOR_TRANSFORMER = [0, 1, 0.533, 0.95];
 const COLOR_USER_LINE = [1, 0.94, 0.2, 1];
 const COLOR_USER_TRANSFORMER = [1, 0.71, 0.2, 1];
-const COLOR_LOAD = [1, 0.57, 0.33, 1];
-const COLOR_GENERATOR = [1, 0.9, 0.22, 1];
+const COLOR_LOAD = [0.973, 0.443, 0.443, 0];
+const COLOR_GENERATOR = [0.204, 0.827, 0.6, 0];
 const COLOR_SHUNT = [0.58, 0.74, 1, 1];
 
 const createEmptyBounds = (): Bounds => ({
