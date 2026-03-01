@@ -24,22 +24,29 @@ jobs:
             - name: Build and push backend image
               run: |
                   docker build \
+                    -t "${{ env.BACKEND_IMAGE }}:${{ github.sha }}" \
                     -t "${{ env.BACKEND_IMAGE }}:latest" \
                     ./backend
+                  docker push "${{ env.BACKEND_IMAGE }}:${{ github.sha }}"
                   docker push "${{ env.BACKEND_IMAGE }}:latest"
 
             - name: Build and push frontend image
               run: |
                   docker build \
+                    -t "${{ env.FRONTEND_IMAGE }}:${{ github.sha }}" \
                     -t "${{ env.FRONTEND_IMAGE }}:latest" \
                     ./frontend
+                  docker push "${{ env.FRONTEND_IMAGE }}:${{ github.sha }}"
                   docker push "${{ env.FRONTEND_IMAGE }}:latest"
+
+            - name: Update deployment images in manifests
+              run: |
+                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-api:.*|image: registry.r16a.cloud/r16a-z-grid-api:${{ github.sha }}|" infra/backend-deployment.yaml
+                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-web:.*|image: registry.r16a.cloud/r16a-z-grid-web:${{ github.sha }}|" infra/frontend-deployment.yaml
 
             - name: Apply Kubernetes manifests
               run: |
                   kubectl apply -k infra
-                  kubectl rollout restart deployment/r16a-z-grid-api -n r16a-z-grid
-                  kubectl rollout restart deployment/r16a-z-grid-web -n r16a-z-grid
 
             - name: Wait for rollout
               run: |

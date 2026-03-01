@@ -15,7 +15,7 @@ spec:
         spec:
             containers:
                 - name: api
-                  image: ghcr.io/your-org/zeus-backend:latest
+                  image: registry.r16a.cloud/r16a-z-grid-api:latest
                   imagePullPolicy: Always
                   ports:
                       - containerPort: 8080

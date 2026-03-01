@@ -15,7 +15,7 @@ spec:
         spec:
             containers:
                 - name: web
-                  image: ghcr.io/your-org/zeus-frontend:latest
+                  image: registry.r16a.cloud/r16a-z-grid-web:latest
                   imagePullPolicy: Always
                   ports:
                       - containerPort: 80
