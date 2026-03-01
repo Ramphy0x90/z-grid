@@ -22,7 +22,6 @@
 			<aside class="inspector-floating" aria-label="Selected element inspector">
 				<app-grid-element-inspector
 					[selection]="selected"
-					[editEnabled]="editEnabled()"
 					[busIds]="inspectorBusIds()"
 					(applyRequested)="onInspectorApply($event)"
 				/>

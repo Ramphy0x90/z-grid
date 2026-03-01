@@ -3,12 +3,16 @@ import {
 	Component,
 	computed,
 	effect,
+	inject,
 	input,
 	output,
 	signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { merge } from 'rxjs';
 import { INSPECTOR_TITLES, resolveInspectorFields } from './types/inspector-field-config';
+import { GridSelectors } from '../../stores/grid/grid.selectors';
 import type {
 	FieldDescriptor,
 	GridElementInspectorApplyEvent,
@@ -25,12 +29,16 @@ export type { GridElementInspectorApplyEvent, GridElementInspectorSelection } fr
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridElementInspectorComponent {
+	private readonly store = inject(Store);
+	private formSignature: string | null = null;
+
 	readonly selection = input<GridElementInspectorSelection | null>(null);
-	readonly editEnabled = input(false);
+	protected readonly editEnabled = this.store.selectSignal(GridSelectors.isGridEditState);
 	readonly busIds = input<readonly string[]>([]);
 	readonly applyRequested = output<GridElementInspectorApplyEvent>();
 
 	private readonly formState = signal<FormGroup<Record<string, FormControl<unknown>>> | null>(null);
+	private readonly formChangeTick = signal(0);
 	protected readonly form = this.formState.asReadonly();
 	protected readonly title = computed(() => {
 		const kind = this.selection()?.kind;
@@ -41,16 +49,23 @@ export class GridElementInspectorComponent {
 		return selection ? resolveInspectorFields(selection.kind, this.busIds()) : [];
 	});
 	protected readonly canApply = computed(() => {
+		this.formChangeTick();
 		const form = this.form();
 		return Boolean(form && this.editEnabled() && form.valid && form.dirty);
 	});
 
 	constructor() {
-		effect(() => {
+		effect((onCleanup) => {
 			const selection = this.selection();
 			const fields = this.fields();
 			if (!selection) {
+				this.formSignature = null;
 				this.formState.set(null);
+				this.formChangeTick.update((value) => value + 1);
+				return;
+			}
+			const signature = this.createFormSignature(selection, fields);
+			if (this.formSignature === signature && this.formState()) {
 				return;
 			}
 			const rawElement = selection.element as Record<string, unknown>;
@@ -62,8 +77,31 @@ export class GridElementInspectorComponent {
 					validators: field.inputType === 'number' ? [Validators.required] : [],
 				});
 			}
-			this.formState.set(new FormGroup(controls));
+			const form = new FormGroup(controls);
+			const formChangesSubscription = merge(form.valueChanges, form.statusChanges).subscribe(() => {
+				this.formChangeTick.update((value) => value + 1);
+			});
+			onCleanup(() => formChangesSubscription.unsubscribe());
+			this.formState.set(form);
+			this.formSignature = signature;
+			this.formChangeTick.update((value) => value + 1);
 		});
+	}
+
+	private createFormSignature(
+		selection: GridElementInspectorSelection,
+		fields: readonly FieldDescriptor[],
+	): string {
+		const fieldSignature = fields
+			.map((field) =>
+				[
+					field.key,
+					field.inputType,
+					field.options?.map((option) => option.value).join(',') ?? '',
+				].join(':'),
+			)
+			.join('|');
+		return `${selection.kind}:${selection.element.id}:${fieldSignature}`;
 	}
 
 	private resolveInitialFieldValue(field: FieldDescriptor, rawValue: unknown): unknown {

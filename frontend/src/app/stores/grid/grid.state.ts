@@ -1,6 +1,7 @@
 import { ProjectGrid } from '../../types/project.types';
 
 export const gridFeatureKey = 'grid';
+export type GridEditorMode = 'view' | 'edit' | 'create';
 
 export type GridOperationState = {
 	isRunning: boolean;
@@ -10,6 +11,7 @@ export type GridOperationState = {
 export type GridState = {
 	grids: ProjectGrid[];
 	selectedGridId: string | null;
+	editorMode: GridEditorMode;
 	duplicate: GridOperationState;
 	delete: GridOperationState;
 	export: GridOperationState;
@@ -18,6 +20,7 @@ export type GridState = {
 export const initialGridState: GridState = {
 	grids: [],
 	selectedGridId: null,
+	editorMode: 'view',
 	duplicate: {
 		isRunning: false,
 		error: null,

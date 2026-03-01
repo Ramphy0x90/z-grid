@@ -12,6 +12,7 @@ import {
 	output,
 	signal,
 } from '@angular/core';
+import { Store } from '@ngrx/store';
 import {
 	map as createLeafletMap,
 	tileLayer,
@@ -44,6 +45,7 @@ import {
 import { GridViewerToolbarComponent } from './toolbar/grid-viewer-toolbar.component';
 import { MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-toolbar.constants';
 import type { ActiveView, MapStyleId, MapStyleOption } from './toolbar/grid-viewer-toolbar.types';
+import { GridSelectors } from '../../stores/grid/grid.selectors';
 
 const NEW_GRID_MAP_VIEWPORT = {
 	centerX: 60,
@@ -62,6 +64,7 @@ const NEW_GRID_MAP_VIEWPORT = {
 export class GridViewerComponent implements AfterViewInit {
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly facade = inject(GridViewerFacade);
+	private readonly store = inject(Store);
 
 	@ViewChild('mapCanvas', { static: true })
 	private readonly mapCanvasRef?: ElementRef<HTMLCanvasElement>;
@@ -76,7 +79,7 @@ export class GridViewerComponent implements AfterViewInit {
 	protected readonly mapStyleOptions = MAP_STYLE_OPTIONS;
 	protected readonly selectedMapStyleId = signal<MapStyleId>(this.resolveInitialMapStyleId());
 	readonly dataset = input<GridDataset | null>(null);
-	readonly editEnabled = input(false);
+	protected readonly editEnabled = this.store.selectSignal(GridSelectors.isGridEditState);
 	readonly datasetChange = output<GridDataset>();
 	protected readonly totalElements = this.facade.totalElements;
 	protected readonly placementMode = this.facade.placementMode;

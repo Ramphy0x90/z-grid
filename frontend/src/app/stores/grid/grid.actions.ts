@@ -1,5 +1,6 @@
 import { createActionGroup, props } from '@ngrx/store';
 import { ProjectGrid } from '../../types/project.types';
+import type { GridEditorMode } from './grid.state';
 
 export const GridActions = createActionGroup({
 	source: 'Grid',
@@ -18,5 +19,6 @@ export const GridActions = createActionGroup({
 		'Grid Export Requested': props<{ gridId: string }>(),
 		'Grid Export Succeeded': props<{ gridId: string }>(),
 		'Grid Export Failed': props<{ error: string }>(),
+		'Grid Editor Mode Set': props<{ mode: GridEditorMode }>(),
 	},
 });

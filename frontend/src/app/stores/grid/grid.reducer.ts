@@ -21,6 +21,10 @@ export const gridReducer = createReducer(
 		...state,
 		selectedGridId: state.grids.some((grid) => grid.id === gridId) ? gridId : state.selectedGridId,
 	})),
+	on(GridActions.gridEditorModeSet, (state, { mode }) => ({
+		...state,
+		editorMode: mode,
+	})),
 	on(GridActions.gridDuplicated, (state, { duplicatedGrid }) => ({
 		...state,
 		grids: [duplicatedGrid, ...state.grids],

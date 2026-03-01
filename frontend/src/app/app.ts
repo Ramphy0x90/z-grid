@@ -66,7 +66,6 @@ export class App {
 	private readonly isDividerDraggingState = signal(false);
 	private readonly isLoginRouteState = signal(false);
 	private readonly isWorkspaceRouteState = signal(false);
-	private readonly gridPageModeState = signal<'view' | 'edit' | 'create'>('view');
 	private readonly runInProgressState = signal(false);
 	private hasCompletedInitialGridSync = false;
 
@@ -77,6 +76,7 @@ export class App {
 	protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
 	protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
 	protected readonly selectedPageId = this.store.selectSignal(NavigationSelectors.selectedPageId);
+	protected readonly gridPageMode = this.store.selectSignal(GridSelectors.editorMode);
 	protected readonly selectedGridDataset = computed(() => {
 		const selectedGridId = this.selectedGridId();
 		return this.projectService.getCurrentEditorDataset(selectedGridId);
@@ -89,15 +89,12 @@ export class App {
 	protected readonly layoutPresets = App.LAYOUT_PRESETS;
 	protected readonly isLoginRoute = this.isLoginRouteState.asReadonly();
 	protected readonly isWorkspaceRoute = this.isWorkspaceRouteState.asReadonly();
-	protected readonly gridPageMode = this.gridPageModeState.asReadonly();
 	protected readonly runInProgress = this.runInProgressState.asReadonly();
-	protected readonly isViewMode = computed(() => this.gridPageModeState() === 'view');
+	protected readonly isViewMode = this.store.selectSignal(GridSelectors.isViewMode);
 	protected readonly isEditingGrid = computed(
-		() => this.gridPageModeState() === 'edit' && this.selectedGrid() !== null,
+		() => this.gridPageMode() === 'edit' && this.selectedGrid() !== null,
 	);
-	protected readonly isGridEditState = computed(
-		() => this.gridPageModeState() === 'edit' || this.gridPageModeState() === 'create',
-	);
+	protected readonly isGridEditState = this.store.selectSignal(GridSelectors.isGridEditState);
 	protected readonly createGridForm = new FormGroup({
 		name: new FormControl('', {
 			nonNullable: true,
@@ -134,7 +131,7 @@ export class App {
 		if (pageId !== App.GRID_EDITOR_PAGE_ID) {
 			return [];
 		}
-		if (this.gridPageModeState() === 'view') {
+		if (this.gridPageMode() === 'view') {
 			return [
 				{ id: 'edit', label: 'Edit', disabled: !this.selectedGrid() },
 				{ id: 'create', label: 'Create' },
@@ -177,7 +174,7 @@ export class App {
 
 		let previousGridPageMode: 'view' | 'edit' | 'create' | undefined;
 		effect(() => {
-			const mode = this.gridPageModeState();
+			const mode = this.gridPageMode();
 			if (mode === previousGridPageMode) {
 				return;
 			}
@@ -238,7 +235,7 @@ export class App {
 		this.store.dispatch(ProjectActions.selectedProjectSynced({ projectId }));
 		this.store.dispatch(GridActions.selectedProjectSynced({ projectId }));
 		this.store.dispatch(NavigationActions.routeSynced({ pageId }));
-		this.gridPageModeState.set('view');
+		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 	}
 
 	private async syncGridsForProject(projectId: string | null): Promise<void> {
@@ -290,7 +287,7 @@ export class App {
 	}
 
 	protected onGridDatasetChanged(dataset: GridDataset): void {
-		if (this.gridPageModeState() === 'create') {
+		if (this.gridPageMode() === 'create') {
 			this.projectService.updateCreateDraftDataset(dataset);
 			return;
 		}
@@ -382,7 +379,7 @@ export class App {
 			}
 			if (updatedResult) {
 				this.store.dispatch(GridActions.gridsLoaded({ grids: this.projectService.grids() }));
-				this.gridPageModeState.set('view');
+				this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 			}
 			return;
 		}
@@ -429,11 +426,11 @@ export class App {
 		}
 		this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid: createdGrid }));
 		this.projectService.clearCreateDraft();
-		this.gridPageModeState.set('view');
+		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 	}
 
 	private openCreateGridForm(): void {
-		this.gridPageModeState.set('create');
+		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'create' }));
 		this.createGridForm.reset({ name: '', description: '' });
 		const projectId = this.selectedProjectId();
 		if (projectId) {
@@ -446,7 +443,7 @@ export class App {
 		if (!selectedGrid) {
 			return;
 		}
-		this.gridPageModeState.set('edit');
+		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'edit' }));
 		this.createGridForm.reset({
 			name: selectedGrid.name,
 			description: selectedGrid.description,
@@ -454,7 +451,7 @@ export class App {
 	}
 
 	private cancelGridFormChanges(): void {
-		this.gridPageModeState.set('view');
+		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 		this.projectService.clearCreateDraft();
 		const selectedGrid = this.selectedGrid();
 		if (!selectedGrid) {

@@ -7,6 +7,12 @@ const selectGridState = createFeatureSelector<GridState>(gridFeatureKey);
 export const GridSelectors = {
 	grids: createSelector(selectGridState, (state) => state.grids),
 	selectedGridId: createSelector(selectGridState, (state) => state.selectedGridId),
+	editorMode: createSelector(selectGridState, (state) => state.editorMode),
+	isViewMode: createSelector(selectGridState, (state) => state.editorMode === 'view'),
+	isGridEditState: createSelector(
+		selectGridState,
+		(state) => state.editorMode === 'edit' || state.editorMode === 'create',
+	),
 	selectedProjectGrids: createSelector(
 		selectGridState,
 		ProjectSelectors.selectedProjectId,
