@@ -46,10 +46,11 @@ import { GridViewerToolbarComponent } from './toolbar/grid-viewer-toolbar.compon
 import { MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-toolbar.constants';
 import type { ActiveView, MapStyleId, MapStyleOption } from './toolbar/grid-viewer-toolbar.types';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
+import { latToMercatorY, mercatorYToLat } from './utils/web-mercator';
 
 const NEW_GRID_MAP_VIEWPORT = {
 	centerX: 60,
-	centerY: 48,
+	centerY: latToMercatorY(48),
 	zoom: 8,
 } as const;
 
@@ -197,7 +198,11 @@ export class GridViewerComponent implements AfterViewInit {
 		this.syncGraphToRenderers();
 
 		this.mapController = new GridInteractionController(mapCanvas, this.mapRenderer, {
-			onViewportChange: (viewport) => this.facade.setMapViewport(viewport),
+			onViewportChange: (viewport) => {
+				// Keep Leaflet and WebGL in lockstep during drag/zoom to avoid visible lag.
+				this.syncLeafletViewToViewport(viewport);
+				this.facade.setMapViewport(viewport);
+			},
 			onHoverChange: (element) => this.facade.hoverElement(element),
 			onSelect: (element) => this.onCanvasSelect(element),
 			onBackgroundClick: (point) => this.onCanvasBackgroundClick('map', point.x, point.y),
@@ -430,6 +435,10 @@ export class GridViewerComponent implements AfterViewInit {
 		const map = createLeafletMap(container, {
 			zoomControl: false,
 			attributionControl: true,
+			zoomSnap: 0,
+			zoomAnimation: false,
+			fadeAnimation: false,
+			markerZoomAnimation: false,
 			dragging: false,
 			scrollWheelZoom: false,
 			doubleClickZoom: false,
@@ -451,7 +460,9 @@ export class GridViewerComponent implements AfterViewInit {
 			return;
 		}
 		const zoom = this.toLeafletZoom(viewport.zoom);
-		this.leafletMap.setView([viewport.centerY, viewport.centerX], zoom, { animate: false });
+		this.leafletMap.setView([mercatorYToLat(viewport.centerY), viewport.centerX], zoom, {
+			animate: false,
+		});
 	}
 
 	private toLeafletZoom(viewportZoom: number): number {
@@ -545,10 +556,15 @@ export class GridViewerComponent implements AfterViewInit {
 		const graph = this.facade.normalizedGraph();
 		if (view === 'map') {
 			const projected = this.projectToOtherBounds(x, y, graph.mapBounds, graph.schematicBounds);
-			return { mapX: x, mapY: y, schematicX: projected.x, schematicY: projected.y };
+			return {
+				mapX: x,
+				mapY: mercatorYToLat(y),
+				schematicX: projected.x,
+				schematicY: projected.y,
+			};
 		}
 		const projected = this.projectToOtherBounds(x, y, graph.schematicBounds, graph.mapBounds);
-		return { mapX: projected.x, mapY: projected.y, schematicX: x, schematicY: y };
+		return { mapX: projected.x, mapY: mercatorYToLat(projected.y), schematicX: x, schematicY: y };
 	}
 
 	private projectToOtherBounds(

@@ -1,4 +1,5 @@
 import type { BusModel, GridDataset, LineModel, TransformerModel } from '../models/grid.models';
+import { latToMercatorY } from '../utils/web-mercator';
 
 export type Bounds = {
 	minX: number;
@@ -125,7 +126,7 @@ export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph 
 		const bus = dataset.buses[index];
 		const layout = layoutByBusId.get(bus.id);
 		const mapX = layout?.lng ?? 0;
-		const mapY = layout?.lat ?? 0;
+		const mapY = latToMercatorY(layout?.lat ?? 0);
 		const schematicX = layout?.schematicX ?? index * 16;
 		const schematicY = layout?.schematicY ?? 0;
 
