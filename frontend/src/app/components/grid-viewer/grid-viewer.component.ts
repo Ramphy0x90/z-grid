@@ -45,6 +45,12 @@ import { GridViewerToolbarComponent } from './toolbar/grid-viewer-toolbar.compon
 import { MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-toolbar.constants';
 import type { ActiveView, MapStyleId, MapStyleOption } from './toolbar/grid-viewer-toolbar.types';
 
+const NEW_GRID_MAP_VIEWPORT = {
+	centerX: 60,
+	centerY: 48,
+	zoom: 8,
+} as const;
+
 @Component({
 	selector: 'app-grid-viewer',
 	imports: [GridElementInspectorComponent, GridViewerToolbarComponent],
@@ -66,7 +72,7 @@ export class GridViewerComponent implements AfterViewInit {
 	@ViewChild('viewerBody', { static: true })
 	private readonly viewerBodyRef?: ElementRef<HTMLElement>;
 
-	protected readonly activeView = signal<ActiveView>('schematic');
+	protected readonly activeView = signal<ActiveView>('map');
 	protected readonly mapStyleOptions = MAP_STYLE_OPTIONS;
 	protected readonly selectedMapStyleId = signal<MapStyleId>(this.resolveInitialMapStyleId());
 	readonly dataset = input<GridDataset | null>(null);
@@ -220,6 +226,10 @@ export class GridViewerComponent implements AfterViewInit {
 		const graph = this.facade.normalizedGraph();
 		const fitPaddingPx = 72;
 		if (this.activeView() === 'map') {
+			if (graph.busIds.length === 0) {
+				this.facade.setMapViewport({ ...NEW_GRID_MAP_VIEWPORT });
+				return;
+			}
 			this.facade.setMapViewport(this.mapRenderer.fitToBounds(graph.mapBounds, fitPaddingPx));
 			return;
 		}

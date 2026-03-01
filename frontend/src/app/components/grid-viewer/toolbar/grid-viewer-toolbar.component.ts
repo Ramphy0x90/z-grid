@@ -14,7 +14,7 @@ import type {
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridViewerToolbarComponent {
-	readonly activeView = input<ActiveView>('schematic');
+	readonly activeView = input<ActiveView>('map');
 	readonly mapStyleOptions = input<readonly MapStyleOption[]>(MAP_STYLE_OPTIONS);
 	readonly selectedMapStyleId = input<MapStyleId>('cartoDark');
 	readonly totalElements = input(0);
