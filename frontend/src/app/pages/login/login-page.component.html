@@ -22,10 +22,6 @@
 			<p class="field-error">Password is required.</p>
 		}
 
-		@if (submitError()) {
-			<p class="submit-error">{{ submitError() }}</p>
-		}
-
 		<button type="submit" [disabled]="isSubmitting()">
 			{{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
 		</button>

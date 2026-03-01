@@ -1,5 +1,5 @@
 import { createActionGroup, props } from '@ngrx/store';
-import { ProjectGrid } from '../../services/project.service';
+import { ProjectGrid } from '../../types/project.types';
 
 export const GridActions = createActionGroup({
 	source: 'Grid',
@@ -9,5 +9,14 @@ export const GridActions = createActionGroup({
 		'Grid Selected': props<{ gridId: string }>(),
 		'Grid Duplicated': props<{ duplicatedGrid: ProjectGrid }>(),
 		'Grid Deleted': props<{ gridId: string; nextSelectedGridId: string | null }>(),
+		'Grid Duplicate Requested': props<{ gridId: string }>(),
+		'Grid Duplicate Succeeded': props<{ duplicatedGrid: ProjectGrid }>(),
+		'Grid Duplicate Failed': props<{ error: string }>(),
+		'Grid Delete Requested': props<{ gridId: string }>(),
+		'Grid Delete Succeeded': props<{ gridId: string; nextSelectedGridId: string | null }>(),
+		'Grid Delete Failed': props<{ error: string }>(),
+		'Grid Export Requested': props<{ gridId: string }>(),
+		'Grid Export Succeeded': props<{ gridId: string }>(),
+		'Grid Export Failed': props<{ error: string }>(),
 	},
 });

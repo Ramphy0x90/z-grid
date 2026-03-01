@@ -1,0 +1,208 @@
+:host {
+	display: contents;
+}
+
+.view-switch {
+	display: inline-flex;
+	border: 1px solid var(--border-input);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.view-toggle {
+	border: 0;
+	background: var(--bg-elevated);
+	color: var(--text-muted);
+	padding: 6px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all var(--transition-fast);
+}
+
+.view-toggle:hover {
+	background: var(--bg-hover);
+	color: var(--text-secondary);
+}
+
+.view-toggle-active {
+	background: var(--accent-interactive);
+	color: var(--text-inverse);
+	font-weight: 600;
+	box-shadow: var(--shadow-glow-interactive);
+}
+
+.toolbar-button {
+	border: 1px solid var(--border-input);
+	background: var(--bg-elevated);
+	color: var(--text-tertiary);
+	border-radius: 7px;
+	padding: 6px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all var(--transition-fast);
+}
+
+.toolbar-button:hover {
+	background: var(--bg-hover);
+	border-color: var(--border-hover);
+	color: var(--text-primary);
+}
+
+.toolbar-button:focus-visible,
+.view-toggle:focus-visible,
+.map-style-select:focus-visible {
+	outline: 2px solid var(--accent-interactive);
+	outline-offset: 2px;
+}
+
+.map-style-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.map-style-select {
+	border: 1px solid var(--border-input);
+	background: var(--bg-elevated);
+	color: var(--text-tertiary);
+	border-radius: 7px;
+	padding: 5px 8px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.map-style-select:hover {
+	background: var(--bg-hover);
+	border-color: var(--border-hover);
+	color: var(--text-primary);
+}
+
+.chip {
+	border: 1px solid var(--border-subtle);
+	border-radius: 999px;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--accent-interactive);
+	background: var(--accent-interactive-subtle);
+}
+
+.top-toolbar {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	right: 8px;
+	z-index: 4;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 8px;
+	align-items: center;
+	padding: 6px 10px;
+	border: 1px solid var(--border-panel);
+	border-radius: 10px;
+	background: rgba(12, 14, 20, 0.92);
+	backdrop-filter: blur(8px);
+	box-shadow: var(--shadow-md);
+}
+
+.left-toolbar {
+	position: absolute;
+	top: 56px;
+	left: 8px;
+	width: var(--left-bar-width);
+	z-index: 4;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 6px 4px;
+	gap: 4px;
+	border: 1px solid var(--border-panel);
+	border-radius: 10px;
+	background: rgba(12, 14, 20, 0.92);
+	backdrop-filter: blur(8px);
+	box-shadow: var(--shadow-md);
+}
+
+.tool-button {
+	border: 1px solid var(--border-input);
+	background: var(--bg-elevated);
+	color: var(--text-tertiary);
+	border-radius: 7px;
+	width: 30px;
+	height: 30px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	transition: all var(--transition-fast);
+}
+
+.tool-button:hover {
+	background: var(--bg-hover);
+	border-color: var(--border-hover);
+	color: var(--text-primary);
+}
+
+.tool-button-active {
+	background: var(--accent-interactive);
+	color: var(--text-inverse);
+	border-color: var(--accent-interactive);
+	box-shadow: var(--shadow-glow-interactive);
+}
+
+.tool-button:focus-visible {
+	outline: 2px solid var(--accent-interactive);
+	outline-offset: 2px;
+}
+
+.tool-button::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	left: calc(100% + 8px);
+	top: 50%;
+	transform: translateY(-50%);
+	border: 1px solid var(--border-panel);
+	border-radius: 6px;
+	padding: 4px 8px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.2;
+	white-space: nowrap;
+	color: var(--text-secondary);
+	background: var(--bg-elevated);
+	box-shadow: var(--shadow-md);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity var(--transition-fast);
+}
+
+.tool-button:hover::after,
+.tool-button:focus-visible::after {
+	opacity: 1;
+	visibility: visible;
+}
+
+.tool-icon {
+	width: 16px;
+	height: 16px;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.tool-icon polygon {
+	fill: currentColor;
+	stroke: none;
+}

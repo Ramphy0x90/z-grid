@@ -3,108 +3,17 @@ import { Injectable, inject, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import type { GridDataset } from '../components/grid-viewer/models/grid.models';
 import { map, Observable, tap } from 'rxjs';
-
-export type Project = {
-  id: string;
-  teamId: string;
-  name: string;
-  description: string;
-};
-
-export type ProjectGrid = {
-  id: string;
-  projectId: string;
-  name: string;
-  description: string;
-  busCount: number;
-};
-
-export type CreateProjectRequest = {
-  name: string;
-  description: string;
-};
-
-export type CreateGridRequest = {
-  name: string;
-  description: string;
-};
-
-export type PowerFlowRunOptions = {
-  maxIterations?: number;
-  tolerance?: number;
-};
-
-export type PowerFlowSummary = {
-  totalLoadMw: number;
-  totalGenerationMw: number;
-  lossesMw: number;
-};
-
-export type PowerFlowBusResult = {
-  busId: string;
-  busName: string;
-  voltageMagnitudePu: number;
-  voltageAngleDeg: number;
-};
-
-export type PowerFlowBranchResult = {
-  elementId: string;
-  elementType: string;
-  name: string;
-  loadingPercent: number;
-  pFromMw: number;
-  qFromMvar: number;
-  pToMw: number;
-  qToMvar: number;
-};
-
-export type PowerFlowVoltageViolation = {
-  busId: string;
-  busName: string;
-  valuePu: number;
-  minPu: number;
-  maxPu: number;
-};
-
-export type PowerFlowThermalViolation = {
-  elementId: string;
-  elementType: string;
-  name: string;
-  loadingPercent: number;
-  maxPercent: number;
-};
-
-export type PowerFlowResult = {
-  converged: boolean;
-  iterations: number;
-  summary: PowerFlowSummary;
-  busResults: PowerFlowBusResult[];
-  branchResults: PowerFlowBranchResult[];
-  violations: {
-    voltage: PowerFlowVoltageViolation[];
-    thermal: PowerFlowThermalViolation[];
-  };
-  warnings: string[];
-};
-
-export type PowerFlowRunStatus = {
-  runId: string;
-  gridId: string;
-  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
-  solver: string;
-  errorMessage: string | null;
-  createdAt: string;
-  startedAt: string | null;
-  finishedAt: string | null;
-  result: PowerFlowResult | null;
-};
-
-export type StartPowerFlowRunResponse = {
-  runId: string;
-  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
-  reusedExisting: boolean;
-  createdAt: string;
-};
+import type {
+	CreateGridRequest,
+	CreateProjectRequest,
+	Project,
+	ProjectGrid,
+} from '../types/project.types';
+import type {
+	PowerFlowRunOptions,
+	PowerFlowRunStatus,
+	StartPowerFlowRunResponse,
+} from '../types/power-flow.types';
 
 type ProjectApiModel = {
   id: string;

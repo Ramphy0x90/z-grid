@@ -1,4 +1,4 @@
-import { Project } from '../../services/project.service';
+import { Project } from '../../types/project.types';
 
 export const projectFeatureKey = 'project';
 

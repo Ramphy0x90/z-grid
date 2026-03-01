@@ -1,6 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ROUTES } from '../../app.routes';
@@ -21,7 +19,6 @@ export class LoginPageComponent {
 	private readonly authService = inject(AuthService);
 
 	protected readonly isSubmitting = signal(false);
-	protected readonly submitError = signal<string | null>(null);
 	protected readonly loginForm = this.formBuilder.nonNullable.group({
 		username: ['', [Validators.required]],
 		password: ['', [Validators.required]],
@@ -40,7 +37,6 @@ export class LoginPageComponent {
 		}
 
 		this.isSubmitting.set(true);
-		this.submitError.set(null);
 
 		const { username, password } = this.loginForm.getRawValue();
 		this.authService
@@ -54,31 +50,9 @@ export class LoginPageComponent {
 					void this.router.navigate(['/', ROUTES.PROJECTS]);
 				},
 				error: (error: unknown) => {
+					void error;
 					this.isSubmitting.set(false);
-					this.submitError.set(this.getLoginErrorMessage(error));
 				},
 			});
-	}
-
-	private getLoginErrorMessage(error: unknown): string {
-		if (error instanceof HttpErrorResponse) {
-			const detail =
-				typeof error.error === 'object' &&
-				error.error !== null &&
-				'detail' in error.error &&
-				typeof error.error.detail === 'string'
-					? error.error.detail
-					: null;
-
-			if (detail) {
-				return detail;
-			}
-
-			if (error.status === 0) {
-				return 'Cannot reach backend right now. Please try again.';
-			}
-		}
-
-		return 'Login failed. Please try again.';
 	}
 }

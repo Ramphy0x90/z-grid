@@ -41,53 +41,13 @@ import {
 	type GridElementInspectorApplyEvent,
 	type GridElementInspectorSelection,
 } from '../grid-element-inspector/grid-element-inspector.component';
-
-type ActiveView = 'map' | 'schematic';
-type MapStyleId = 'cartoDark' | 'cartoLight' | 'osmStandard' | 'openTopo';
-
-type MapStyleOption = {
-	id: MapStyleId;
-	label: string;
-	tileUrl: string;
-	attribution: string;
-	maxZoom: number;
-};
-
-const MAP_STYLE_OPTIONS: readonly MapStyleOption[] = [
-	{
-		id: 'cartoDark',
-		label: 'CARTO Dark',
-		tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-		attribution: '&copy; OpenStreetMap contributors, &copy; CARTO',
-		maxZoom: 20,
-	},
-	{
-		id: 'cartoLight',
-		label: 'CARTO Light',
-		tileUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-		attribution: '&copy; OpenStreetMap contributors, &copy; CARTO',
-		maxZoom: 20,
-	},
-	{
-		id: 'osmStandard',
-		label: 'OSM Standard',
-		tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-		attribution: '&copy; OpenStreetMap contributors',
-		maxZoom: 19,
-	},
-	{
-		id: 'openTopo',
-		label: 'OpenTopoMap',
-		tileUrl: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-		attribution:
-			'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
-		maxZoom: 17,
-	},
-];
+import { GridViewerToolbarComponent } from './toolbar/grid-viewer-toolbar.component';
+import { MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-toolbar.constants';
+import type { ActiveView, MapStyleId, MapStyleOption } from './toolbar/grid-viewer-toolbar.types';
 
 @Component({
 	selector: 'app-grid-viewer',
-	imports: [GridElementInspectorComponent],
+	imports: [GridElementInspectorComponent, GridViewerToolbarComponent],
 	templateUrl: './grid-viewer.component.html',
 	styleUrl: './grid-viewer.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -119,6 +79,11 @@ export class GridViewerComponent implements AfterViewInit {
 	protected readonly connectionPreview = computed(() => this.getConnectionPreview());
 	protected readonly placedConnectionOverlays = computed(() => this.getPlacedConnectionOverlays());
 	protected readonly inspectorSelection = computed<GridElementInspectorSelection | null>(() => {
+		const placementMode = this.facade.placementMode();
+		if (placementMode === 'line' || placementMode === 'transformer') {
+			// While creating a connection, clicks are workflow inputs, not element inspection intent.
+			return null;
+		}
 		const selected = this.facade.selectedElement();
 		if (!selected) {
 			return null;
@@ -277,15 +242,8 @@ export class GridViewerComponent implements AfterViewInit {
 		this.facade.setPlacementMode(isSameTool ? null : tool);
 	}
 
-	protected onMapStyleChange(event: Event): void {
-		const target = event.target;
-		if (!(target instanceof HTMLSelectElement)) {
-			return;
-		}
-		if (!this.isMapStyleId(target.value)) {
-			return;
-		}
-		this.selectedMapStyleId.set(target.value);
+	protected onMapStyleIdChange(mapStyleId: MapStyleId): void {
+		this.selectedMapStyleId.set(mapStyleId);
 		this.applyMapStyleLayer();
 	}
 
@@ -471,10 +429,6 @@ export class GridViewerComponent implements AfterViewInit {
 		const configuredTileUrl = environment.map.tileUrl;
 		const matching = MAP_STYLE_OPTIONS.find((style) => style.tileUrl === configuredTileUrl);
 		return matching?.id ?? 'cartoDark';
-	}
-
-	private isMapStyleId(value: string): value is MapStyleId {
-		return MAP_STYLE_OPTIONS.some((style) => style.id === value);
 	}
 
 	private getSelectedMapStyle(): MapStyleOption {

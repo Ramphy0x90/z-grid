@@ -1,196 +1,73 @@
 <section class="grid-viewer" aria-label="Grid viewer">
-  <div class="viewer-body" #viewerBody [class.viewer-body-placement]="placementMode() !== null">
-    <div class="top-toolbar" role="toolbar" aria-label="Grid viewer controls">
-      <div class="view-switch" role="tablist" aria-label="Grid view mode">
-        <button
-          type="button"
-          role="tab"
-          class="view-toggle"
-          [class.view-toggle-active]="activeView() === 'schematic'"
-          [attr.aria-selected]="activeView() === 'schematic'"
-          (click)="setActiveView('schematic')"
-        >
-          Schematic
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="view-toggle"
-          [class.view-toggle-active]="activeView() === 'map'"
-          [attr.aria-selected]="activeView() === 'map'"
-          (click)="setActiveView('map')"
-        >
-          Map
-        </button>
-      </div>
-      @if (activeView() === 'map') {
-        <label class="map-style-control" for="map-style-select">
-          <span>Style</span>
-          <select
-            id="map-style-select"
-            class="map-style-select"
-            [value]="selectedMapStyleId()"
-            (change)="onMapStyleChange($event)"
-          >
-            @for (style of mapStyleOptions; track style.id) {
-              <option [value]="style.id">{{ style.label }}</option>
-            }
-          </select>
-        </label>
-      }
-      <button type="button" class="toolbar-button" (click)="resetViewport()">Fit view</button>
-      <span class="chip" aria-live="polite">Total elements: {{ totalElements() }}</span>
-      <button type="button" class="toolbar-button" (click)="zoomOut()" aria-label="Zoom out">
-        -
-      </button>
-      <button type="button" class="toolbar-button" (click)="zoomIn()" aria-label="Zoom in">
-        +
-      </button>
-    </div>
+	<div class="viewer-body" #viewerBody [class.viewer-body-placement]="placementMode() !== null">
+		<app-grid-viewer-toolbar
+			[activeView]="activeView()"
+			[mapStyleOptions]="mapStyleOptions"
+			[selectedMapStyleId]="selectedMapStyleId()"
+			[totalElements]="totalElements()"
+			[editEnabled]="editEnabled()"
+			[placementMode]="placementMode()"
+			(activeViewChange)="setActiveView($event)"
+			(mapStyleChange)="onMapStyleIdChange($event)"
+			(fitViewRequested)="resetViewport()"
+			(zoomInRequested)="zoomIn()"
+			(zoomOutRequested)="zoomOut()"
+			(placementModeToggleRequested)="togglePlacementMode($event)"
+		/>
 
-    @if (editEnabled()) {
-      <div class="left-toolbar" role="toolbar" aria-label="Grid element placement tools">
-        <button
-          type="button"
-          class="tool-button"
-          [class.tool-button-active]="placementMode() === 'bus'"
-          [attr.aria-pressed]="placementMode() === 'bus'"
-          (click)="togglePlacementMode('bus')"
-          aria-label="Place bus"
-          title="Bus"
-          data-tooltip="Bus"
-        >
-          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-            <circle cx="12" cy="12" r="5"></circle>
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="tool-button"
-          [class.tool-button-active]="placementMode() === 'line'"
-          [attr.aria-pressed]="placementMode() === 'line'"
-          (click)="togglePlacementMode('line')"
-          aria-label="Place line"
-          title="Line"
-          data-tooltip="Line"
-        >
-          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-            <line x1="5" y1="19" x2="19" y2="5"></line>
-            <circle cx="5" cy="19" r="2"></circle>
-            <circle cx="19" cy="5" r="2"></circle>
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="tool-button"
-          [class.tool-button-active]="placementMode() === 'transformer'"
-          [attr.aria-pressed]="placementMode() === 'transformer'"
-          (click)="togglePlacementMode('transformer')"
-          aria-label="Place transformer"
-          title="Transformer"
-          data-tooltip="Transformer"
-        >
-          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-            <circle cx="9" cy="12" r="4"></circle>
-            <circle cx="15" cy="12" r="4"></circle>
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="tool-button"
-          [class.tool-button-active]="placementMode() === 'load'"
-          [attr.aria-pressed]="placementMode() === 'load'"
-          (click)="togglePlacementMode('load')"
-          aria-label="Place load"
-          title="Load"
-          data-tooltip="Load"
-        >
-          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="16"></line>
-            <polyline points="8,12 12,16 16,12"></polyline>
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="tool-button"
-          [class.tool-button-active]="placementMode() === 'generator'"
-          [attr.aria-pressed]="placementMode() === 'generator'"
-          (click)="togglePlacementMode('generator')"
-          aria-label="Place generator"
-          title="Generator"
-          data-tooltip="Generator"
-        >
-          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-            <polygon points="12,4 7,13 11,13 9,20 17,10 13,10 15,4"></polygon>
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="tool-button"
-          [class.tool-button-active]="placementMode() === 'shunt'"
-          [attr.aria-pressed]="placementMode() === 'shunt'"
-          (click)="togglePlacementMode('shunt')"
-          aria-label="Place shunt compensator"
-          title="Shunt compensator"
-          data-tooltip="Shunt compensator"
-        >
-          <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
-            <line x1="8" y1="6" x2="8" y2="18"></line>
-            <line x1="16" y1="6" x2="16" y2="18"></line>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
-          </svg>
-        </button>
-      </div>
-    }
+		@if (editEnabled() && placementMode()) {
+			<p class="placement-hint" aria-live="polite">{{ placementHint() }}</p>
+		}
+		@if (inspectorSelection(); as selected) {
+			<aside class="inspector-floating" aria-label="Selected element inspector">
+				<app-grid-element-inspector
+					[selection]="selected"
+					[editEnabled]="editEnabled()"
+					[busIds]="inspectorBusIds()"
+					(applyRequested)="onInspectorApply($event)"
+				/>
+			</aside>
+		}
+		@if (editEnabled() && connectionPreview(); as preview) {
+			<svg class="connection-preview" aria-hidden="true">
+				<line
+					[attr.x1]="preview.x1"
+					[attr.y1]="preview.y1"
+					[attr.x2]="preview.x2"
+					[attr.y2]="preview.y2"
+				></line>
+			</svg>
+		}
+		<svg class="placed-connections-overlay" aria-hidden="true">
+			@for (segment of placedConnectionOverlays(); track $index) {
+				<line
+					[attr.x1]="segment.x1"
+					[attr.y1]="segment.y1"
+					[attr.x2]="segment.x2"
+					[attr.y2]="segment.y2"
+				></line>
+			}
+		</svg>
 
-    @if (editEnabled() && placementMode()) {
-      <p class="placement-hint" aria-live="polite">{{ placementHint() }}</p>
-    }
-    @if (inspectorSelection(); as selected) {
-      <aside class="inspector-floating" aria-label="Selected element inspector">
-        <app-grid-element-inspector
-          [selection]="selected"
-          [editEnabled]="editEnabled()"
-          [busIds]="inspectorBusIds()"
-          (applyRequested)="onInspectorApply($event)"
-        />
-      </aside>
-    }
-    @if (editEnabled() && connectionPreview(); as preview) {
-      <svg class="connection-preview" aria-hidden="true">
-        <line [attr.x1]="preview.x1" [attr.y1]="preview.y1" [attr.x2]="preview.x2" [attr.y2]="preview.y2"></line>
-      </svg>
-    }
-    <svg class="placed-connections-overlay" aria-hidden="true">
-      @for (segment of placedConnectionOverlays(); track $index) {
-        <line
-          [attr.x1]="segment.x1"
-          [attr.y1]="segment.y1"
-          [attr.x2]="segment.x2"
-          [attr.y2]="segment.y2"
-        ></line>
-      }
-    </svg>
-
-    <div
-      #mapHost
-      class="map-host"
-      [class.viewer-canvas-hidden]="activeView() !== 'map'"
-      aria-hidden="true"
-    ></div>
-    <canvas
-      #schematicCanvas
-      class="viewer-canvas"
-      [class.viewer-canvas-hidden]="activeView() !== 'schematic'"
-      role="img"
-      aria-label="Grid schematic canvas. Use drag to pan and wheel to zoom."
-    ></canvas>
-    <canvas
-      #mapCanvas
-      class="viewer-canvas viewer-canvas-map"
-      [class.viewer-canvas-hidden]="activeView() !== 'map'"
-      role="img"
-      aria-label="Grid map canvas. Use drag to pan and wheel to zoom."
-    ></canvas>
-  </div>
+		<div
+			#mapHost
+			class="map-host"
+			[class.viewer-canvas-hidden]="activeView() !== 'map'"
+			aria-hidden="true"
+		></div>
+		<canvas
+			#schematicCanvas
+			class="viewer-canvas"
+			[class.viewer-canvas-hidden]="activeView() !== 'schematic'"
+			role="img"
+			aria-label="Grid schematic canvas. Use drag to pan and wheel to zoom."
+		></canvas>
+		<canvas
+			#mapCanvas
+			class="viewer-canvas viewer-canvas-map"
+			[class.viewer-canvas-hidden]="activeView() !== 'map'"
+			role="img"
+			aria-label="Grid map canvas. Use drag to pan and wheel to zoom."
+		></canvas>
+	</div>
 </section>

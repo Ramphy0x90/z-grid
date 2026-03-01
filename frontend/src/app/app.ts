@@ -73,9 +73,6 @@ export class App {
 	protected readonly selectedProjectId = this.store.selectSignal(
 		ProjectSelectors.selectedProjectId,
 	);
-	protected readonly selectedProjectGrids = this.store.selectSignal(
-		GridSelectors.selectedProjectGrids,
-	);
 	protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
 	protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
 	protected readonly selectedPageId = this.store.selectSignal(NavigationSelectors.selectedPageId);
@@ -287,60 +284,6 @@ export class App {
 		this.isDividerDraggingState.set(isDragging);
 	}
 
-	protected onGridSelected(gridId: string): void {
-		if (!gridId) {
-			return;
-		}
-		this.store.dispatch(GridActions.gridSelected({ gridId }));
-	}
-
-	protected onGridDuplicate(gridId: string): void {
-		void this.onGridDuplicateAsync(gridId);
-	}
-
-	protected onGridExport(gridId: string): void {
-		void this.onGridExportAsync(gridId);
-	}
-
-	private async onGridExportAsync(gridId: string): Promise<void> {
-		let dataset: GridDataset;
-		try {
-			dataset = await firstValueFrom(this.projectService.loadGridDatasetById(gridId));
-		} catch {
-			return;
-		}
-		const grid = this.projectService.getGridById(gridId);
-		const filenameBase = this.toSafeFileName(grid?.name ?? '') || `grid-${gridId}`;
-		const serializedDataset = JSON.stringify(dataset, null, 2);
-		this.downloadTextFile(`${filenameBase}.json`, serializedDataset, 'application/json;charset=utf-8');
-	}
-
-	private async onGridDuplicateAsync(gridId: string): Promise<void> {
-		try {
-			const duplicatedGrid = await firstValueFrom(this.projectService.duplicateGrid(gridId));
-			this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid }));
-		} catch {
-			// Keep current state on failed duplicate.
-		}
-	}
-
-	protected onGridDelete(gridId: string): void {
-		void this.onGridDeleteAsync(gridId);
-	}
-
-	private async onGridDeleteAsync(gridId: string): Promise<void> {
-		try {
-			await firstValueFrom(this.projectService.deleteGrid(gridId));
-		} catch {
-			return;
-		}
-		const projectId = this.selectedProjectId();
-		const nextSelectedGridId = projectId
-			? (this.projectService.getGridsByProjectId(projectId)[0]?.id ?? null)
-			: null;
-		this.store.dispatch(GridActions.gridDeleted({ gridId, nextSelectedGridId }));
-	}
-
 	protected onGridDatasetChanged(dataset: GridDataset): void {
 		if (this.gridPageModeState() === 'create') {
 			this.projectService.updateCreateDraftDataset(dataset);
@@ -519,24 +462,4 @@ export class App {
 		});
 	}
 
-	private toSafeFileName(value: string): string {
-		return value
-			.trim()
-			.replace(/[^a-zA-Z0-9_-]+/g, '-')
-			.replace(/-+/g, '-')
-			.replace(/^-|-$/g, '');
-	}
-
-	private downloadTextFile(filename: string, content: string, mimeType: string): void {
-		const blob = new Blob([content], { type: mimeType });
-		const objectUrl = URL.createObjectURL(blob);
-		const anchor = document.createElement('a');
-		anchor.href = objectUrl;
-		anchor.download = filename;
-		anchor.style.display = 'none';
-		document.body.append(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(objectUrl);
-	}
 }

@@ -44,10 +44,6 @@
           <textarea rows="4" formControlName="description" placeholder="Project description"></textarea>
         </label>
 
-        @if (submitError()) {
-          <p class="submit-error">{{ submitError() }}</p>
-        }
-
         <div class="modal-actions">
           <button type="button" class="secondary" (click)="closeCreateProjectModal()">Cancel</button>
           <button type="submit" class="primary" [disabled]="isSubmitting()">

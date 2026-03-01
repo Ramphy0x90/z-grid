@@ -33,14 +33,7 @@
 					[style.grid-template-columns]="layoutColumns()"
 				>
 					<article class="page-panel">
-						<app-grid-selector
-							[grids]="selectedProjectGrids()"
-							[selectedGridId]="selectedGridId() ?? ''"
-							(selectionChange)="onGridSelected($event)"
-							(exportRequested)="onGridExport($event)"
-							(duplicateRequested)="onGridDuplicate($event)"
-							(deleteRequested)="onGridDelete($event)"
-						/>
+						<app-grid-selector />
 
 						@if (isGridEditorPage()) {
 							<section class="create-grid-form" aria-label="Grid form">

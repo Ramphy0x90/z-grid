@@ -3,22 +3,11 @@ import { Store } from '@ngrx/store';
 import { ProjectService } from '../../services/project.service';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import type { GridDataset } from '../../components/grid-viewer/models/grid.models';
-
-type PaneId =
-  | 'buses'
-  | 'lines'
-  | 'transformers'
-  | 'loads'
-  | 'generators'
-  | 'shuntCompensators';
+import { getColumnsForPane } from './columns/grid-editor-columns.constants';
+import type { PaneId } from './columns/grid-editor-columns.types';
 
 type PaneTab = {
   id: PaneId;
-  label: string;
-};
-
-type TableColumn = {
-  key: string;
   label: string;
 };
 
@@ -77,7 +66,7 @@ export class GridEditorPageComponent {
       shuntCompensators: dataset.shuntCompensators.length,
     };
   });
-  protected readonly activePaneColumns = computed(() => this.getColumnsForPane(this.activePaneId()));
+  protected readonly activePaneColumns = computed(() => getColumnsForPane(this.activePaneId()));
   protected readonly activePaneRows = computed(() => {
     const dataset = this.selectedDataset();
     if (!dataset) {
@@ -92,64 +81,6 @@ export class GridEditorPageComponent {
 
   protected getPaneCount(paneId: PaneId): number {
     return this.paneCounts()[paneId];
-  }
-
-  private getColumnsForPane(paneId: PaneId): readonly TableColumn[] {
-    if (paneId === 'buses') {
-      return [
-        { key: 'name', label: 'Name' },
-        { key: 'nominalVoltageKv', label: 'Nominal kV' },
-        { key: 'busType', label: 'Type' },
-        { key: 'voltageMagnitudePu', label: 'Voltage p.u.' },
-        { key: 'inService', label: 'In Service' },
-      ];
-    }
-    if (paneId === 'lines') {
-      return [
-        { key: 'name', label: 'Name' },
-        { key: 'fromBusId', label: 'From Bus' },
-        { key: 'toBusId', label: 'To Bus' },
-        { key: 'ratingMva', label: 'Rating MVA' },
-        { key: 'inService', label: 'In Service' },
-      ];
-    }
-    if (paneId === 'transformers') {
-      return [
-        { key: 'name', label: 'Name' },
-        { key: 'fromBusId', label: 'From Bus' },
-        { key: 'toBusId', label: 'To Bus' },
-        { key: 'ratingMva', label: 'Rating MVA' },
-        { key: 'tapRatio', label: 'Tap Ratio' },
-        { key: 'inService', label: 'In Service' },
-      ];
-    }
-    if (paneId === 'loads') {
-      return [
-        { key: 'name', label: 'Name' },
-        { key: 'busId', label: 'Bus' },
-        { key: 'activePowerMw', label: 'P MW' },
-        { key: 'reactivePowerMvar', label: 'Q MVAR' },
-        { key: 'inService', label: 'In Service' },
-      ];
-    }
-    if (paneId === 'generators') {
-      return [
-        { key: 'name', label: 'Name' },
-        { key: 'busId', label: 'Bus' },
-        { key: 'activePowerMw', label: 'P MW' },
-        { key: 'reactivePowerMvar', label: 'Q MVAR' },
-        { key: 'voltagePu', label: 'Voltage p.u.' },
-        { key: 'inService', label: 'In Service' },
-      ];
-    }
-    return [
-      { key: 'name', label: 'Name' },
-      { key: 'busId', label: 'Bus' },
-      { key: 'shuntType', label: 'Type' },
-      { key: 'qMvar', label: 'Q MVAR' },
-      { key: 'currentStep', label: 'Step' },
-      { key: 'inService', label: 'In Service' },
-    ];
   }
 
   private getRowsForPane(dataset: GridDataset, paneId: PaneId): TableRow[] {

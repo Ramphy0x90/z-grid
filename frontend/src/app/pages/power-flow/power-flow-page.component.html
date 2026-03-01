@@ -1,4 +1,8 @@
-<section class="base-page" aria-label="Power Flow">
+<section
+	class="base-page"
+	[class.base-page-empty]="!loading() && !run() && !error()"
+	aria-label="Power Flow"
+>
 	@if (loading()) {
 		<p class="subtitle">Loading latest run…</p>
 	}
