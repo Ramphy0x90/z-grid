@@ -148,7 +148,21 @@ export class App {
 	});
 
 	constructor() {
-		void this.syncProjectsFromBackend();
+		let previousAuthenticationState: boolean | undefined;
+		effect(() => {
+			const isAuthenticated = this.authService.isAuthenticated();
+			if (isAuthenticated === previousAuthenticationState) {
+				return;
+			}
+			previousAuthenticationState = isAuthenticated;
+			if (isAuthenticated) {
+				void this.syncProjectsFromBackend();
+				return;
+			}
+			this.hasCompletedInitialGridSync = false;
+			this.store.dispatch(ProjectActions.projectsLoaded({ projects: [] }));
+			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
+		});
 
 		this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
 			this.syncRoute();
@@ -209,6 +223,9 @@ export class App {
 	}
 
 	private async syncProjectsFromBackend(): Promise<void> {
+		if (!this.authService.isAuthenticated()) {
+			return;
+		}
 		try {
 			const projects = await firstValueFrom(this.projectService.loadProjects());
 			this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
@@ -239,6 +256,10 @@ export class App {
 	}
 
 	private async syncGridsForProject(projectId: string | null): Promise<void> {
+		if (!this.authService.isAuthenticated()) {
+			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
+			return;
+		}
 		const isInitialProjectGridSync = !this.hasCompletedInitialGridSync;
 		this.hasCompletedInitialGridSync = true;
 		if (!projectId) {
@@ -257,6 +278,9 @@ export class App {
 	}
 
 	private async syncDatasetForGrid(gridId: string): Promise<void> {
+		if (!this.authService.isAuthenticated()) {
+			return;
+		}
 		try {
 			await firstValueFrom(this.projectService.loadGridDatasetById(gridId));
 		} catch {
