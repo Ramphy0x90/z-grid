@@ -13,6 +13,13 @@ export class GridSelectorComponent {
 	private readonly store = inject(Store);
 	readonly grids = this.store.selectSignal(GridSelectors.selectedProjectGrids);
 	readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
+	readonly gridSelectValue = computed(() => {
+		const selectedGridId = this.selectedGridId();
+		if (!selectedGridId) {
+			return '';
+		}
+		return this.grids().some((grid) => grid.id === selectedGridId) ? selectedGridId : '';
+	});
 	readonly duplicateOperation = this.store.selectSignal(GridSelectors.duplicateOperation);
 	readonly deleteOperation = this.store.selectSignal(GridSelectors.deleteOperation);
 	readonly exportOperation = this.store.selectSignal(GridSelectors.exportOperation);

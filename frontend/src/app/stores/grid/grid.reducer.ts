@@ -2,16 +2,6 @@ import { createReducer, on } from '@ngrx/store';
 import { GridActions } from './grid.actions';
 import { initialGridState } from './grid.state';
 
-const getDefaultGridId = (
-  projectId: string | null,
-  grids: { id: string; projectId: string }[],
-): string | null => {
-  if (!projectId) {
-    return null;
-  }
-  return grids.find((grid) => grid.projectId === projectId)?.id ?? null;
-};
-
 export const gridReducer = createReducer(
 	initialGridState,
 	on(GridActions.gridsLoaded, (state, { grids }) => {
@@ -23,17 +13,9 @@ export const gridReducer = createReducer(
 			selectedGridId: hasValidSelection ? state.selectedGridId : null,
 		};
 	}),
-	on(GridActions.selectedProjectSynced, (state, { projectId }) => ({
+	on(GridActions.selectedProjectSynced, (state) => ({
 		...state,
-		selectedGridId:
-			projectId === null
-				? null
-				: state.selectedGridId !== null &&
-					  state.grids.some(
-							(grid) => grid.id === state.selectedGridId && grid.projectId === projectId,
-					  )
-					? state.selectedGridId
-					: getDefaultGridId(projectId, state.grids),
+		selectedGridId: null,
 	})),
 	on(GridActions.gridSelected, (state, { gridId }) => ({
 		...state,

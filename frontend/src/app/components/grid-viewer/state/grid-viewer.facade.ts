@@ -15,26 +15,28 @@ export type SelectedElement = {
 
 export type PlacementTool = 'bus' | 'line' | 'transformer' | 'load' | 'generator' | 'shunt' | null;
 
+const EMPTY_DATASET: GridDataset = {
+  grid: {
+    id: 'empty-grid',
+    projectId: 'empty-project',
+    name: 'Empty Grid',
+    description: '',
+    baseMva: 100,
+    frequencyHz: 50,
+  },
+  buses: [],
+  lines: [],
+  transformers: [],
+  loads: [],
+  generators: [],
+  shuntCompensators: [],
+  busLayout: [],
+  edgeLayout: [],
+};
+
 @Injectable()
 export class GridViewerFacade {
-  private readonly datasetState = signal<GridDataset>({
-    grid: {
-      id: 'empty-grid',
-      projectId: 'empty-project',
-      name: 'Empty Grid',
-      description: '',
-      baseMva: 100,
-      frequencyHz: 50,
-    },
-    buses: [],
-    lines: [],
-    transformers: [],
-    loads: [],
-    generators: [],
-    shuntCompensators: [],
-    busLayout: [],
-    edgeLayout: [],
-  });
+  private readonly datasetState = signal<GridDataset>(EMPTY_DATASET);
   private readonly mapViewportState = signal<ViewportState>({ centerX: 0, centerY: 0, zoom: 1 });
   private readonly schematicViewportState = signal<ViewportState>({ centerX: 0, centerY: 0, zoom: 1 });
   private readonly selectedElementState = signal<SelectedElement>(null);
@@ -73,6 +75,13 @@ export class GridViewerFacade {
 
   setDataset(dataset: GridDataset): void {
 		this.datasetState.set(this.normalizeDataset(dataset));
+    this.selectedElementState.set(null);
+    this.hoveredElementState.set(null);
+    this.placementModeState.set(null);
+  }
+
+  clearDataset(): void {
+    this.datasetState.set(EMPTY_DATASET);
     this.selectedElementState.set(null);
     this.hoveredElementState.set(null);
     this.placementModeState.set(null);

@@ -68,6 +68,7 @@ export class App {
 	private readonly isWorkspaceRouteState = signal(false);
 	private readonly gridPageModeState = signal<'view' | 'edit' | 'create'>('view');
 	private readonly runInProgressState = signal(false);
+	private hasCompletedInitialGridSync = false;
 
 	protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
 	protected readonly selectedProjectId = this.store.selectSignal(
@@ -241,6 +242,8 @@ export class App {
 	}
 
 	private async syncGridsForProject(projectId: string | null): Promise<void> {
+		const isInitialProjectGridSync = !this.hasCompletedInitialGridSync;
+		this.hasCompletedInitialGridSync = true;
 		if (!projectId) {
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 			return;
@@ -248,7 +251,9 @@ export class App {
 		try {
 			const grids = await firstValueFrom(this.projectService.loadGridsByProjectId(projectId));
 			this.store.dispatch(GridActions.gridsLoaded({ grids }));
-			this.store.dispatch(GridActions.selectedProjectSynced({ projectId }));
+			if (isInitialProjectGridSync && grids.length > 0) {
+				this.store.dispatch(GridActions.gridSelected({ gridId: grids[0].id }));
+			}
 		} catch {
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 		}

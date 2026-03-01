@@ -129,6 +129,9 @@ export class GridViewerComponent implements AfterViewInit {
 		const dataset = this.dataset();
 		if (!dataset) {
 			this.lastDatasetGridId = null;
+			this.facade.clearDataset();
+			this.syncGraphToRenderers();
+			this.pendingConnectionBusId.set(null);
 			return;
 		}
 		const shouldResetViewport = this.lastDatasetGridId !== dataset.grid.id;
