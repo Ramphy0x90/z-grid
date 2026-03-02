@@ -29,12 +29,7 @@ import { WorkspaceRouteService } from './services/workspace-route.service';
 
 @Component({
 	selector: 'app-root',
-	imports: [
-		RouterOutlet,
-		NavbarComponent,
-		LayoutDividerComponent,
-		GridViewerComponent,
-	],
+	imports: [RouterOutlet, NavbarComponent, LayoutDividerComponent, GridViewerComponent],
 	templateUrl: './app.html',
 	styleUrl: './app.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -138,11 +133,15 @@ export class App {
 			.syncProjects$()
 			.pipe(take(1), takeUntilDestroyed(this.destroyRef))
 			.subscribe((projects) => {
+				const routeState = this.workspaceRouteService.readCurrentRoute();
 				this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
+				if (!routeState.isWorkspaceRoute) {
+					return;
+				}
 				this.workspaceRouteService.ensureValidProjectRoute(
 					projects.map((project) => project.id),
-					this.selectedProjectId(),
-					this.selectedPageId(),
+					routeState.projectId,
+					routeState.pageId,
 				);
 			});
 	}
@@ -198,5 +197,4 @@ export class App {
 		}
 		this.projectService.updateGridDataset(selectedGridId, dataset);
 	}
-
 }
