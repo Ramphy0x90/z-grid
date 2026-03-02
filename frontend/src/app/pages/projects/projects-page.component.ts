@@ -9,6 +9,7 @@ import { ProjectService } from '../../services/project.service';
 import { ProjectActions } from '../../stores/project/project.actions';
 import { ProjectSelectors } from '../../stores/project/project.selectors';
 import type { Project } from '../../types/project.types';
+import type { ExampleProjectKey } from '../../types/project.types';
 
 @Component({
 	selector: 'app-projects-page',
@@ -18,6 +19,16 @@ import type { Project } from '../../types/project.types';
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProjectsPageComponent {
+	private static readonly EXAMPLE_PROJECT_OPTIONS: ReadonlyArray<{
+		key: ExampleProjectKey;
+		label: string;
+	}> = [
+		{ key: 'zurich', label: 'Zurich' },
+		{ key: 'tokyo', label: 'Tokyo' },
+		{ key: 'new-delhi', label: 'New Delhi' },
+		{ key: 'madrid', label: 'Madrid' },
+	];
+
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly router = inject(Router);
 	private readonly store = inject(Store);
@@ -29,9 +40,13 @@ export class ProjectsPageComponent {
 	protected readonly isEditModalOpen = signal(false);
 	protected readonly isDeleteModalOpen = signal(false);
 	protected readonly isSubmitting = signal(false);
+	protected readonly isInstallingExample = signal(false);
 	protected readonly createErrorMessage = signal('');
 	protected readonly editErrorMessage = signal('');
 	protected readonly deleteErrorMessage = signal('');
+	protected readonly installErrorMessage = signal('');
+	protected readonly selectedExampleProjectKey = signal<ExampleProjectKey>('zurich');
+	protected readonly exampleProjectOptions = ProjectsPageComponent.EXAMPLE_PROJECT_OPTIONS;
 	protected readonly editProjectId = signal<string | null>(null);
 	protected readonly deleteProjectId = signal<string | null>(null);
 	protected readonly createProjectForm = this.formBuilder.nonNullable.group({
@@ -87,6 +102,40 @@ export class ProjectsPageComponent {
 				error: (error: unknown) => {
 					this.createErrorMessage.set(this.resolveErrorMessage(error, 'Unable to create project.'));
 					this.isSubmitting.set(false);
+				},
+			});
+	}
+
+	protected onExampleProjectSelectionChange(event: Event): void {
+		const target = event.target;
+		if (!(target instanceof HTMLSelectElement)) {
+			return;
+		}
+		this.selectedExampleProjectKey.set(target.value as ExampleProjectKey);
+	}
+
+	protected installExampleProject(): void {
+		if (this.isInstallingExample()) {
+			return;
+		}
+
+		this.installErrorMessage.set('');
+		this.isInstallingExample.set(true);
+		this.projectService
+			.installExampleProject$({ exampleKey: this.selectedExampleProjectKey() })
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: () => {
+					this.store.dispatch(
+						ProjectActions.projectsLoaded({ projects: this.projectService.projects() }),
+					);
+					this.isInstallingExample.set(false);
+				},
+				error: (error: unknown) => {
+					this.installErrorMessage.set(
+						this.resolveErrorMessage(error, 'Unable to install the selected example project.'),
+					);
+					this.isInstallingExample.set(false);
 				},
 			});
 	}

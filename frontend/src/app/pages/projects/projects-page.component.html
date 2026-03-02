@@ -1,10 +1,37 @@
 <section class="projects-panel" aria-label="Projects">
 	<div class="projects-header">
 		<h2>Projects</h2>
-		<button type="button" class="create-project-button" (click)="openCreateProjectModal()">
-			Create Project
-		</button>
+		<div class="header-actions">
+			<div class="example-install-actions">
+				<label class="example-label" for="example-project-select">Install example</label>
+				<select
+					id="example-project-select"
+					class="example-select"
+					[value]="selectedExampleProjectKey()"
+					(change)="onExampleProjectSelectionChange($event)"
+					[disabled]="isInstallingExample()"
+				>
+					@for (option of exampleProjectOptions; track option.key) {
+						<option [value]="option.key">{{ option.label }}</option>
+					}
+				</select>
+				<button
+					type="button"
+					class="install-example-button"
+					(click)="installExampleProject()"
+					[disabled]="isInstallingExample()"
+				>
+					{{ isInstallingExample() ? 'Installing...' : 'Install' }}
+				</button>
+			</div>
+			<button type="button" class="create-project-button" (click)="openCreateProjectModal()">
+				Create Project
+			</button>
+		</div>
 	</div>
+	@if (installErrorMessage()) {
+		<p class="submit-error">{{ installErrorMessage() }}</p>
+	}
 
 	<div class="project-grid">
 		@for (project of projects(); track project.id) {

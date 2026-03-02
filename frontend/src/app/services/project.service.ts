@@ -6,6 +6,7 @@ import { map, Observable, tap } from 'rxjs';
 import type {
 	CreateGridRequest,
 	CreateProjectRequest,
+	InstallExampleProjectRequest,
 	Project,
 	ProjectGrid,
 	UpdateProjectRequest,
@@ -49,6 +50,13 @@ export class ProjectService {
 
   createProject$(request: CreateProjectRequest): Observable<Project> {
     return this.http.post<ProjectApiModel>(this.projectsApiPath, request).pipe(
+      map((project) => this.toProject(project)),
+      tap((project) => this.projectsState.update((projects) => [project, ...projects])),
+    );
+  }
+
+  installExampleProject$(request: InstallExampleProjectRequest): Observable<Project> {
+    return this.http.post<ProjectApiModel>(`${this.projectsApiPath}/install-example`, request).pipe(
       map((project) => this.toProject(project)),
       tap((project) => this.projectsState.update((projects) => [project, ...projects])),
     );

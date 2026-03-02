@@ -18,6 +18,14 @@ export type CreateProjectRequest = {
 	description: string;
 };
 
+export type ExampleProjectKey = 'zurich' | 'tokyo' | 'new-delhi' | 'madrid';
+
+export type InstallExampleProjectRequest = {
+	exampleKey: ExampleProjectKey;
+	projectName?: string;
+	gridName?: string;
+};
+
 export type UpdateProjectRequest = {
 	name: string;
 	description: string;

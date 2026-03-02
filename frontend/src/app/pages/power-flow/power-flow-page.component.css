@@ -13,10 +13,6 @@
 	gap: 12px;
 }
 
-.base-page-empty {
-	justify-content: center;
-}
-
 .page-header {
 	display: flex;
 	align-items: center;
