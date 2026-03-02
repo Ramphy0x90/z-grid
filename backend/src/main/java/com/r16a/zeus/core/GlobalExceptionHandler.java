@@ -11,6 +11,7 @@ import com.r16a.zeus.features.simulation.model.SimulationFailureCode;
 import com.r16a.zeus.team.exception.TeamConflictException;
 import com.r16a.zeus.team.exception.TeamNotFoundException;
 import com.r16a.zeus.project.exception.ProjectConflictException;
+import com.r16a.zeus.project.exception.ProjectExampleNotFoundException;
 import com.r16a.zeus.project.exception.ProjectNotFoundException;
 import com.r16a.zeus.user.exception.UserConflictException;
 import com.r16a.zeus.user.exception.UserNotFoundException;
@@ -62,6 +63,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ProblemDetail handleProjectConflict(ProjectConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ProjectExampleNotFoundException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleProjectExampleNotFound(ProjectExampleNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(GridNotFoundException.class)

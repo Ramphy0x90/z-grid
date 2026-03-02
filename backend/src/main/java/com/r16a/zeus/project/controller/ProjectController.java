@@ -2,8 +2,10 @@ package com.r16a.zeus.project.controller;
 
 import com.r16a.zeus.project.Project;
 import com.r16a.zeus.project.dto.CreateProjectRequest;
+import com.r16a.zeus.project.dto.InstallExampleProjectRequest;
 import com.r16a.zeus.project.dto.ProjectResponse;
 import com.r16a.zeus.project.dto.UpdateProjectRequest;
+import com.r16a.zeus.project.service.ProjectExampleInstallerService;
 import com.r16a.zeus.project.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,6 +35,7 @@ import java.util.UUID;
 @Tag(name = "Project", description = "Project management endpoints")
 public class ProjectController {
     private final ProjectService projectService;
+    private final ProjectExampleInstallerService projectExampleInstallerService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get project by ID", description = "Fetches a single project by its unique ID")
@@ -79,6 +82,25 @@ public class ProjectController {
 
         Project createdProject = projectService.createProject(projectToCreate);
         return ResponseEntity.status(HttpStatus.CREATED).body(ProjectResponse.from(createdProject));
+    }
+
+    @PostMapping("/install-example")
+    @Operation(
+            summary = "Install example project",
+            description = "Installs a static example project and creates its initial grid dataset"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Example project installed"),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload",
+                    content = @Content(schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "409", description = "Project cannot be created because of team constraints",
+                    content = @Content(schema = @Schema(implementation = String.class)))
+    })
+    public ResponseEntity<ProjectResponse> installExampleProject(
+            @Valid @RequestBody InstallExampleProjectRequest request
+    ) {
+        ProjectResponse createdProject = projectExampleInstallerService.installExampleProject(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 
     @PutMapping("/{id}")
