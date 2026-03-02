@@ -35,12 +35,9 @@ export class ProjectService {
   private readonly projectsState = signal<Project[]>([]);
   private readonly gridsState = signal<ProjectGrid[]>([]);
   private readonly gridDatasetsState = signal<Record<string, GridDataset>>({});
-  private readonly gridEditorModeState = signal<'view' | 'edit' | 'create'>('view');
-  private readonly createDraftDatasetState = signal<GridDataset | null>(null);
 
   readonly projects = this.projectsState.asReadonly();
   readonly grids = this.gridsState.asReadonly();
-  readonly gridEditorMode = this.gridEditorModeState.asReadonly();
 
   loadProjects$(): Observable<Project[]> {
     return this.http.get<ProjectApiModel[]>(this.projectsApiPath).pipe(
@@ -148,47 +145,6 @@ export class ProjectService {
     return this.gridDatasetsState()[gridId] ?? null;
   }
 
-  getCurrentEditorDataset(selectedGridId: string | null): GridDataset | null {
-    if (this.gridEditorModeState() === 'create') {
-      return this.createDraftDatasetState();
-    }
-    if (!selectedGridId) {
-      return null;
-    }
-    return this.getGridDatasetById(selectedGridId);
-  }
-
-  setGridEditorMode(mode: 'view' | 'edit' | 'create'): void {
-    this.gridEditorModeState.set(mode);
-  }
-
-  beginCreateDraft(projectId: string): GridDataset {
-    const draft: GridDataset = {
-      grid: {
-        id: 'draft-grid',
-        projectId,
-        name: 'New Grid',
-        description: '',
-        baseMva: 100,
-        frequencyHz: 50,
-      },
-      buses: [],
-      lines: [],
-      transformers: [],
-      loads: [],
-      generators: [],
-      shuntCompensators: [],
-      busLayout: [],
-      edgeLayout: [],
-    };
-    this.createDraftDatasetState.set(draft);
-    return draft;
-  }
-
-  clearCreateDraft(): void {
-    this.createDraftDatasetState.set(null);
-  }
-
   loadGridDatasetById$(gridId: string): Observable<GridDataset> {
     return this.http.get<GridDataset>(`${this.gridsApiPath}/${gridId}/dataset`).pipe(
       map((dataset) => this.normalizeDatasetPayload(dataset, gridId)),
@@ -220,33 +176,6 @@ export class ProjectService {
       ...datasets,
       [gridId]: normalizedDataset,
     }));
-  }
-
-  updateCreateDraftDataset(dataset: GridDataset): void {
-    const currentDraft = this.createDraftDatasetState();
-    if (!currentDraft) {
-      return;
-    }
-    this.createDraftDatasetState.set({
-      ...dataset,
-      grid: {
-        ...dataset.grid,
-        id: currentDraft.grid.id,
-        projectId: currentDraft.grid.projectId,
-      },
-      buses: Array.isArray(dataset.buses) ? dataset.buses : [],
-      lines: Array.isArray(dataset.lines) ? dataset.lines : [],
-      transformers: Array.isArray(dataset.transformers) ? dataset.transformers : [],
-      loads: Array.isArray(dataset.loads) ? dataset.loads : [],
-      generators: Array.isArray(dataset.generators) ? dataset.generators : [],
-      shuntCompensators: Array.isArray(dataset.shuntCompensators) ? dataset.shuntCompensators : [],
-      busLayout: Array.isArray(dataset.busLayout) ? dataset.busLayout : [],
-      edgeLayout: Array.isArray(dataset.edgeLayout) ? dataset.edgeLayout : [],
-    });
-  }
-
-  getCreateDraftDataset(): GridDataset | null {
-    return this.createDraftDatasetState();
   }
 
   private toProject(project: ProjectApiModel): Project {

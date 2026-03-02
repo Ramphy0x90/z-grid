@@ -24,6 +24,7 @@ import { ProjectSelectors } from './stores/project/project.selectors';
 import { GridActions } from './stores/grid/grid.actions';
 import { GridSelectors } from './stores/grid/grid.selectors';
 import { AuthService } from './services/auth.service';
+import { GridEditorSessionService } from './services/grid-editor-session.service';
 import { PowerFlowRunService } from './services/power-flow-run.service';
 import { ProjectService } from './services/project.service';
 import {
@@ -65,6 +66,7 @@ export class App {
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly store = inject(Store);
 	private readonly authService = inject(AuthService);
+	private readonly gridEditorSessionService = inject(GridEditorSessionService);
 	private readonly powerFlowRunService = inject(PowerFlowRunService);
 	private readonly projectService = inject(ProjectService);
 	private readonly layoutSplitPercentState = signal(50);
@@ -86,7 +88,7 @@ export class App {
 	protected readonly gridPageMode = this.store.selectSignal(GridSelectors.editorMode);
 	protected readonly selectedGridDataset = computed(() => {
 		const selectedGridId = this.selectedGridId();
-		return this.projectService.getCurrentEditorDataset(selectedGridId);
+		return this.gridEditorSessionService.getCurrentEditorDataset(selectedGridId);
 	});
 	protected readonly isGridEditorPage = computed(
 		() => this.selectedPageId() === App.GRID_EDITOR_PAGE_ID,
@@ -205,7 +207,7 @@ export class App {
 				return;
 			}
 			previousGridPageMode = mode;
-			this.projectService.setGridEditorMode(mode);
+			this.gridEditorSessionService.setGridEditorMode(mode);
 		});
 
 		let previousProjectId: string | null | undefined;
@@ -341,7 +343,7 @@ export class App {
 
 	protected onGridDatasetChanged(dataset: GridDataset): void {
 		if (this.gridPageMode() === 'create') {
-			this.projectService.updateCreateDraftDataset(dataset);
+			this.gridEditorSessionService.updateCreateDraftDataset(dataset);
 			return;
 		}
 		const selectedGridId = this.selectedGridId();
@@ -447,7 +449,7 @@ export class App {
 		} catch {
 			return;
 		}
-		const draftDataset = this.projectService.getCreateDraftDataset();
+		const draftDataset = this.gridEditorSessionService.getCreateDraftDataset();
 		if (draftDataset) {
 			const datasetToPersist: GridDataset = {
 				...draftDataset,
@@ -480,7 +482,7 @@ export class App {
 			}
 		}
 		this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid: createdGrid }));
-		this.projectService.clearCreateDraft();
+		this.gridEditorSessionService.clearCreateDraft();
 		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 	}
 
@@ -489,7 +491,7 @@ export class App {
 		this.createGridForm.reset({ name: '', description: '' });
 		const projectId = this.selectedProjectId();
 		if (projectId) {
-			this.projectService.beginCreateDraft(projectId);
+			this.gridEditorSessionService.beginCreateDraft(projectId);
 		}
 	}
 
@@ -507,7 +509,7 @@ export class App {
 
 	private cancelGridFormChanges(): void {
 		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
-		this.projectService.clearCreateDraft();
+		this.gridEditorSessionService.clearCreateDraft();
 		const selectedGrid = this.selectedGrid();
 		if (!selectedGrid) {
 			this.createGridForm.reset({ name: '', description: '' });

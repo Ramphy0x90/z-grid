@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { ProjectService } from '../../services/project.service';
+import { GridEditorSessionService } from '../../services/grid-editor-session.service';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import type { GridDataset } from '../../components/grid-viewer/models/grid.models';
 import { getColumnsForPane } from './columns/grid-editor-columns.constants';
@@ -31,13 +31,13 @@ const PANE_TABS: readonly PaneTab[] = [
 })
 export class GridEditorPageComponent {
   private readonly store = inject(Store);
-  private readonly projectService = inject(ProjectService);
+  private readonly gridEditorSessionService = inject(GridEditorSessionService);
   private readonly activePaneIdState = signal<PaneId>('buses');
 
   protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
   protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
   protected readonly selectedDataset = computed(() => {
-    return this.projectService.getCurrentEditorDataset(this.selectedGridId());
+    return this.gridEditorSessionService.getCurrentEditorDataset(this.selectedGridId());
   });
 
   protected readonly paneTabs = PANE_TABS;

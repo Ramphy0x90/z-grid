@@ -3,6 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { catchError, exhaustMap, map, of, tap, withLatestFrom } from 'rxjs';
 import { ProjectSelectors } from '../project/project.selectors';
+import { GridExportService } from '../../services/grid-export.service';
 import { ProjectService } from '../../services/project.service';
 import type { ProjectGrid } from '../../types/project.types';
 import { GridActions } from './grid.actions';
@@ -12,6 +13,7 @@ import { GridSelectors } from './grid.selectors';
 export class GridEffects {
 	private readonly actions$ = inject(Actions);
 	private readonly projectService = inject(ProjectService);
+	private readonly gridExportService = inject(GridExportService);
 	private readonly store = inject(Store);
 
 	private readonly duplicateGrid$ = createEffect(() =>
@@ -68,12 +70,7 @@ export class GridEffects {
 				this.projectService.loadGridDatasetById$(gridId).pipe(
 					tap((dataset) => {
 						const grid = this.projectService.getGridById(gridId);
-						const filenameBase = this.toSafeFileName(grid?.name ?? '') || `grid-${gridId}`;
-						this.downloadTextFile(
-							`${filenameBase}.json`,
-							JSON.stringify(dataset, null, 2),
-							'application/json;charset=utf-8',
-						);
+						this.gridExportService.exportDatasetAsJson(gridId, grid?.name, dataset);
 					}),
 					map(() => GridActions.gridExportSucceeded({ gridId })),
 					catchError((error: unknown) =>
@@ -87,27 +84,6 @@ export class GridEffects {
 			),
 		),
 	);
-
-	private toSafeFileName(value: string): string {
-		return value
-			.trim()
-			.replace(/[^a-zA-Z0-9_-]+/g, '-')
-			.replace(/-+/g, '-')
-			.replace(/^-|-$/g, '');
-	}
-
-	private downloadTextFile(filename: string, content: string, mimeType: string): void {
-		const blob = new Blob([content], { type: mimeType });
-		const objectUrl = URL.createObjectURL(blob);
-		const anchor = document.createElement('a');
-		anchor.href = objectUrl;
-		anchor.download = filename;
-		anchor.style.display = 'none';
-		document.body.append(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(objectUrl);
-	}
 
 	private toErrorMessage(error: unknown): string {
 		if (error instanceof Error && error.message.trim().length > 0) {
