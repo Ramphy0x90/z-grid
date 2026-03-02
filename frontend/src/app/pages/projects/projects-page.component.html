@@ -1,56 +1,167 @@
 <section class="projects-panel" aria-label="Projects">
-  <div class="projects-header">
-    <h2>Projects</h2>
-    <button type="button" class="create-project-button" (click)="openCreateProjectModal()">
-      Create Project
-    </button>
-  </div>
-  <p class="subtitle">Choose a project to enable all available pages in the navbar.</p>
-  <div class="project-grid">
-    @for (project of projects(); track project.id) {
-      <button type="button" class="project-card" (click)="selectProject(project.id)">
-        <span class="project-name">{{ project.name }}</span>
-        <span class="project-description">{{ project.description }}</span>
-        <span class="project-meta">Project</span>
-      </button>
-    }
-  </div>
+	<div class="projects-header">
+		<h2>Projects</h2>
+		<button type="button" class="create-project-button" (click)="openCreateProjectModal()">
+			Create Project
+		</button>
+	</div>
 
-  @if (isCreateModalOpen()) {
-    <div
-      class="modal-overlay"
-      role="button"
-      tabindex="0"
-      aria-label="Close project creation modal"
-      (click)="closeCreateProjectModal()"
-      (keydown.enter)="closeCreateProjectModal()"
-      (keydown.space)="closeCreateProjectModal()">
-    </div>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
-      <header class="modal-header">
-        <h3 id="create-project-title">Create new project</h3>
-      </header>
-      <form class="modal-form" [formGroup]="createProjectForm" (ngSubmit)="createProject()">
-        <label>
-          <span>Name</span>
-          <input type="text" formControlName="name" placeholder="Project name" />
-        </label>
-        @if (createProjectForm.controls.name.invalid && createProjectForm.controls.name.touched) {
-          <p class="field-error">Project name is required.</p>
-        }
+	<div class="project-grid">
+		@for (project of projects(); track project.id) {
+			<article class="project-card">
+				<button type="button" class="project-open-button" (click)="selectProject(project.id)">
+					<span class="project-name">{{ project.name }}</span>
+					<span class="project-description">{{
+						project.description || 'No description yet.'
+					}}</span>
+				</button>
+				<div class="project-actions">
+					<button type="button" class="secondary" (click)="openEditProjectModal(project)">
+						Edit
+					</button>
+					<button type="button" class="danger" (click)="openDeleteProjectModal(project)">
+						Delete
+					</button>
+				</div>
+			</article>
+		}
+	</div>
 
-        <label>
-          <span>Description</span>
-          <textarea rows="4" formControlName="description" placeholder="Project description"></textarea>
-        </label>
+	@if (isCreateModalOpen()) {
+		<div
+			class="modal-overlay"
+			role="button"
+			tabindex="0"
+			aria-label="Close project creation modal"
+			(click)="closeCreateProjectModal()"
+			(keydown.enter)="closeCreateProjectModal()"
+			(keydown.space)="closeCreateProjectModal()"
+		></div>
+		<section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
+			<header class="modal-header">
+				<h3 id="create-project-title">Create new project</h3>
+			</header>
+			<form class="modal-form" [formGroup]="createProjectForm" (ngSubmit)="createProject()">
+				<label>
+					<span>Name</span>
+					<input type="text" formControlName="name" placeholder="Project name" />
+				</label>
+				@if (
+					createProjectForm.controls.name.invalid &&
+					(createProjectForm.controls.name.touched || createProjectForm.controls.name.dirty)
+				) {
+					<p class="field-error">Project name is required.</p>
+				}
 
-        <div class="modal-actions">
-          <button type="button" class="secondary" (click)="closeCreateProjectModal()">Cancel</button>
-          <button type="submit" class="primary" [disabled]="isSubmitting()">
-            {{ isSubmitting() ? 'Creating...' : 'Create project' }}
-          </button>
-        </div>
-      </form>
-    </section>
-  }
+				<label>
+					<span>Description</span>
+					<textarea
+						rows="4"
+						formControlName="description"
+						placeholder="Project description"
+					></textarea>
+				</label>
+				@if (createErrorMessage()) {
+					<p class="submit-error">{{ createErrorMessage() }}</p>
+				}
+
+				<div class="modal-actions">
+					<button type="button" class="secondary" (click)="closeCreateProjectModal()">
+						Cancel
+					</button>
+					<button type="submit" class="primary" [disabled]="isSubmitting()">
+						{{ isSubmitting() ? 'Creating...' : 'Create project' }}
+					</button>
+				</div>
+			</form>
+		</section>
+	}
+
+	@if (isEditModalOpen()) {
+		<div
+			class="modal-overlay"
+			role="button"
+			tabindex="0"
+			aria-label="Close project update modal"
+			(click)="closeEditProjectModal()"
+			(keydown.enter)="closeEditProjectModal()"
+			(keydown.space)="closeEditProjectModal()"
+		></div>
+		<section class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-project-title">
+			<header class="modal-header">
+				<h3 id="edit-project-title">Update project</h3>
+			</header>
+			<form class="modal-form" [formGroup]="editProjectForm" (ngSubmit)="updateProject()">
+				<label>
+					<span>Name</span>
+					<input type="text" formControlName="name" placeholder="Project name" />
+				</label>
+				@if (
+					editProjectForm.controls.name.invalid &&
+					(editProjectForm.controls.name.touched || editProjectForm.controls.name.dirty)
+				) {
+					<p class="field-error">Project name is required.</p>
+				}
+
+				<label>
+					<span>Description</span>
+					<textarea
+						rows="4"
+						formControlName="description"
+						placeholder="Project description"
+					></textarea>
+				</label>
+				@if (editErrorMessage()) {
+					<p class="submit-error">{{ editErrorMessage() }}</p>
+				}
+
+				<div class="modal-actions">
+					<button type="button" class="secondary" (click)="closeEditProjectModal()">Cancel</button>
+					<button type="submit" class="primary" [disabled]="isSubmitting()">
+						{{ isSubmitting() ? 'Saving...' : 'Save changes' }}
+					</button>
+				</div>
+			</form>
+		</section>
+	}
+
+	@if (isDeleteModalOpen()) {
+		<div
+			class="modal-overlay"
+			role="button"
+			tabindex="0"
+			aria-label="Close project deletion modal"
+			(click)="closeDeleteProjectModal()"
+			(keydown.enter)="closeDeleteProjectModal()"
+			(keydown.space)="closeDeleteProjectModal()"
+		></div>
+		<section class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-project-title">
+			<header class="modal-header">
+				<h3 id="delete-project-title">Delete project</h3>
+			</header>
+			<div class="modal-form">
+				<p class="delete-copy">
+					You are about to delete
+					<strong>{{ getProjectById(deleteProjectId())?.name ?? 'this project' }}</strong
+					>. This action cannot be undone.
+				</p>
+				@if (deleteErrorMessage()) {
+					<p class="submit-error">{{ deleteErrorMessage() }}</p>
+				}
+				<div class="modal-actions">
+					<button type="button" class="secondary" (click)="closeDeleteProjectModal()">
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="danger"
+						[disabled]="isSubmitting()"
+						(click)="confirmDeleteProject()"
+					>
+						{{ isSubmitting() ? 'Deleting...' : 'Delete project' }}
+					</button>
+				</div>
+			</div>
+		</section>
+	}
 </section>

@@ -8,6 +8,7 @@ import type {
 	CreateProjectRequest,
 	Project,
 	ProjectGrid,
+	UpdateProjectRequest,
 } from '../types/project.types';
 
 type ProjectApiModel = {
@@ -50,6 +51,27 @@ export class ProjectService {
     return this.http.post<ProjectApiModel>(this.projectsApiPath, request).pipe(
       map((project) => this.toProject(project)),
       tap((project) => this.projectsState.update((projects) => [project, ...projects])),
+    );
+  }
+
+  updateProject$(projectId: string, request: UpdateProjectRequest): Observable<Project> {
+    return this.http.put<ProjectApiModel>(`${this.projectsApiPath}/${projectId}`, request).pipe(
+      map((project) => this.toProject(project)),
+      tap((updatedProject) => {
+        this.projectsState.update((projects) =>
+          projects.map((project) => (project.id === projectId ? updatedProject : project)),
+        );
+      }),
+    );
+  }
+
+  deleteProject$(projectId: string): Observable<void> {
+    return this.http.delete<void>(`${this.projectsApiPath}/${projectId}`).pipe(
+      tap(() => {
+        this.projectsState.update((projects) =>
+          projects.filter((project) => project.id !== projectId),
+        );
+      }),
     );
   }
 

@@ -63,14 +63,26 @@ h2 {
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   text-align: left;
-  padding: 16px;
-  cursor: pointer;
+  padding: 0;
   transition: all var(--transition-normal);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+}
+
+.project-open-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  padding: 12px 84px 12px 14px;
+  cursor: pointer;
 }
 
 /* Subtle left accent bar on project cards */
@@ -97,7 +109,7 @@ h2 {
   opacity: 1;
 }
 
-.project-card:focus-visible {
+.project-open-button:focus-visible {
   outline: 2px solid var(--accent-focus);
   outline-offset: 2px;
 }
@@ -106,18 +118,78 @@ h2 {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .project-description {
   color: var(--text-muted);
   font-size: 13px;
   line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .project-meta {
   color: var(--accent-energy);
   font-size: 12px;
   font-weight: 600;
+}
+
+.project-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+  padding: 0;
+  z-index: 1;
+  opacity: 0.75;
+  transition: opacity var(--transition-fast);
+}
+
+.project-card:hover .project-actions {
+  opacity: 1;
+}
+
+.project-actions button {
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.project-actions .secondary {
+  color: var(--text-muted);
+}
+
+.project-actions .secondary:hover {
+  color: var(--text-primary);
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.project-actions .danger {
+  color: var(--text-muted);
+}
+
+.project-actions .danger:focus-visible,
+.project-actions .secondary:focus-visible {
+  outline: 2px solid var(--accent-focus);
+  outline-offset: 1px;
+}
+
+.project-actions .danger:hover,
+.modal-actions .danger:hover {
+  color: var(--status-critical-text);
+  background: rgba(220, 38, 38, 0.18);
+  border-color: rgba(220, 38, 38, 0.28);
 }
 
 .modal-overlay {
@@ -224,6 +296,12 @@ h2 {
   border-color: var(--border-strong);
 }
 
+.modal-actions .danger {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--status-critical-text);
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
 .modal-actions .primary {
   background: linear-gradient(135deg, var(--accent-energy) 0%, #0d9668 100%);
   border-color: rgba(16, 185, 129, 0.3);
@@ -241,4 +319,16 @@ h2 {
   cursor: not-allowed;
   box-shadow: none;
   filter: none;
+}
+
+.modal-actions .danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-copy {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
 }

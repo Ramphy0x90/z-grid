@@ -18,6 +18,11 @@ export type CreateProjectRequest = {
 	description: string;
 };
 
+export type UpdateProjectRequest = {
+	name: string;
+	description: string;
+};
+
 export type CreateGridRequest = {
 	name: string;
 	description: string;
