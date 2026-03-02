@@ -6,7 +6,15 @@ COPY gradle gradle
 COPY settings.gradle build.gradle ./
 COPY src src
 
-RUN chmod +x ./gradlew && ./gradlew clean bootJar --no-daemon
+RUN chmod +x ./gradlew && \
+    attempts=0; \
+    until [ "$attempts" -ge 3 ]; do \
+      ./gradlew clean bootJar --no-daemon && break; \
+      attempts=$((attempts + 1)); \
+      echo "Gradle build failed (attempt ${attempts}/3), retrying in 10s..."; \
+      sleep 10; \
+    done; \
+    [ "$attempts" -lt 3 ]
 
 FROM eclipse-temurin:25-jdk
 WORKDIR /app
