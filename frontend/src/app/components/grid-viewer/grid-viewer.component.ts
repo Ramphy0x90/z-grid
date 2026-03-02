@@ -53,6 +53,7 @@ const NEW_GRID_MAP_VIEWPORT = {
 	centerY: latToMercatorY(48),
 	zoom: 8,
 } as const;
+const MAP_VIEW_MAX_ZOOM = 24;
 
 type AttachedElementIconOverlay = {
 	id: string;
@@ -468,7 +469,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private toLeafletZoom(viewportZoom: number): number {
 		const safeZoom = Math.max(Number.EPSILON, viewportZoom);
 		const rawZoom = Math.log2((360 * safeZoom) / 256);
-		return Math.min(19, Math.max(0, rawZoom));
+		return Math.min(MAP_VIEW_MAX_ZOOM, Math.max(0, rawZoom));
 	}
 
 	private resolveInitialMapStyleId(): MapStyleId {
@@ -497,7 +498,8 @@ export class GridViewerComponent implements AfterViewInit {
 		const style = this.getSelectedMapStyle();
 		this.leafletTileLayer = tileLayer(style.tileUrl, {
 			attribution: style.attribution,
-			maxZoom: style.maxZoom,
+			maxNativeZoom: style.maxZoom,
+			maxZoom: MAP_VIEW_MAX_ZOOM,
 		});
 		this.leafletTileLayer.addTo(this.leafletMap);
 	}

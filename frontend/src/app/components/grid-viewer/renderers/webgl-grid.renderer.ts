@@ -185,7 +185,9 @@ const distanceToSegment = (
 	return Math.hypot(px - projX, py - projY);
 };
 
-const clampZoom = (zoom: number): number => Math.min(5000, Math.max(0.05, zoom));
+const MIN_VIEWPORT_ZOOM = 0.05;
+const MAX_SCHEMATIC_VIEWPORT_ZOOM = 5000;
+const MAX_MAP_VIEWPORT_ZOOM = 12_000_000;
 
 export class WebglGridRenderer {
 	private readonly gl: WebGLRenderingContext;
@@ -203,6 +205,12 @@ export class WebglGridRenderer {
 	private dynamicAttachedColors: Float32Array = new Float32Array(0);
 	private dynamicLineColors: Float32Array = new Float32Array(0);
 	private lastInteractionKey = '';
+
+	private clampZoom(zoom: number): number {
+		const maxZoom =
+			this.renderSpace === 'map' ? MAX_MAP_VIEWPORT_ZOOM : MAX_SCHEMATIC_VIEWPORT_ZOOM;
+		return Math.min(maxZoom, Math.max(MIN_VIEWPORT_ZOOM, zoom));
+	}
 
 	constructor(
 		private readonly canvas: HTMLCanvasElement,
@@ -325,7 +333,7 @@ export class WebglGridRenderer {
 		this.viewport = {
 			centerX: viewport.centerX,
 			centerY: viewport.centerY,
-			zoom: clampZoom(viewport.zoom),
+			zoom: this.clampZoom(viewport.zoom),
 		};
 	}
 
@@ -335,7 +343,7 @@ export class WebglGridRenderer {
 
 	zoomAt(screenX: number, screenY: number, zoomFactor: number): ViewportState {
 		const worldBefore = this.toWorldCoordinates(screenX, screenY);
-		const nextZoom = clampZoom(this.viewport.zoom * zoomFactor);
+		const nextZoom = this.clampZoom(this.viewport.zoom * zoomFactor);
 		this.viewport = { ...this.viewport, zoom: nextZoom };
 		const worldAfter = this.toWorldCoordinates(screenX, screenY);
 		this.viewport = {
@@ -365,7 +373,7 @@ export class WebglGridRenderer {
 		const spanY = Math.max(1e-6, bounds.maxY - bounds.minY);
 		const usableWidth = Math.max(1, width - paddingPx * 2);
 		const usableHeight = Math.max(1, height - paddingPx * 2);
-		const zoom = clampZoom(Math.min(usableWidth / spanX, usableHeight / spanY));
+		const zoom = this.clampZoom(Math.min(usableWidth / spanX, usableHeight / spanY));
 		this.viewport = {
 			centerX: bounds.minX + spanX / 2,
 			centerY: bounds.minY + spanY / 2,
