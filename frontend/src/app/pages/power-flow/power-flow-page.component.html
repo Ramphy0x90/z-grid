@@ -3,6 +3,21 @@
 	[class.base-page-empty]="!loading() && !run() && !error()"
 	aria-label="Power Flow"
 >
+	<header class="page-header" aria-label="Power flow header">
+		<h2 class="page-title">Power Flow</h2>
+		<div class="page-actions">
+			<button
+				type="button"
+				class="page-action-button"
+				[disabled]="!selectedGridId() || runOperation().isRunning"
+				(click)="runPowerFlow()"
+			>
+				Run
+			</button>
+		</div>
+	</header>
+	<app-grid-selector />
+
 	@if (loading()) {
 		<p class="subtitle">Loading latest run…</p>
 	}
@@ -14,7 +29,7 @@
 	@if (!loading() && !run() && !error()) {
 		<div class="empty-state">
 			<i class="bi bi-activity" aria-hidden="true"></i>
-			<p>No power flow runs yet. Run a calculation from the toolbar.</p>
+			<p>No power flow runs yet. Run a calculation from the page header.</p>
 		</div>
 	}
 

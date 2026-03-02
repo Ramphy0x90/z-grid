@@ -1,4 +1,63 @@
 <section class="base-page" aria-label="Grid Editor">
+	<header class="page-header" aria-label="Grid editor header">
+		<h2 class="page-title">Grid Editor</h2>
+		<div class="page-actions">
+			@if (gridPageMode() === 'view') {
+				<button type="button" class="grid-action-button" [disabled]="!selectedGrid()" (click)="openEditGridForm()">
+					Edit
+				</button>
+				<button type="button" class="grid-action-button" (click)="openCreateGridForm()">
+					Create
+				</button>
+			} @else {
+				<button type="button" class="grid-action-button" (click)="cancelGridFormChanges()">
+					Cancel
+				</button>
+				<button type="button" class="grid-action-button" (click)="onCreateGridSubmit()">
+					Save
+				</button>
+			}
+		</div>
+	</header>
+	<app-grid-selector />
+
+	<section class="create-grid-form" aria-label="Grid form">
+		<div class="create-grid-form-header">
+			<p class="create-grid-form-title">
+				@if (gridPageMode() === 'edit') {
+					Update Grid
+				} @else if (gridPageMode() === 'create') {
+					Create Grid
+				} @else {
+					Grid Metadata
+				}
+			</p>
+		</div>
+		<form [formGroup]="createGridForm" (ngSubmit)="onCreateGridSubmit()">
+			<label class="create-grid-label" for="create-grid-name">Name</label>
+			<input
+				id="create-grid-name"
+				class="create-grid-input"
+				type="text"
+				formControlName="name"
+				[readonly]="isViewMode()"
+				placeholder="Enter grid name"
+			/>
+			@if (createGridForm.controls.name.invalid && createGridForm.controls.name.touched) {
+				<p class="create-grid-error">Name is required.</p>
+			}
+			<label class="create-grid-label" for="create-grid-description">Description</label>
+			<textarea
+				id="create-grid-description"
+				class="create-grid-textarea"
+				rows="3"
+				formControlName="description"
+				[readonly]="isViewMode()"
+				placeholder="Enter grid description"
+			></textarea>
+		</form>
+	</section>
+
 	<div class="pane-selector" role="tablist" aria-label="Grid element types">
 		@for (pane of paneTabs; track pane.id) {
 			<button

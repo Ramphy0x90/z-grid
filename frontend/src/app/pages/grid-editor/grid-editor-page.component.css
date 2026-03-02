@@ -1,15 +1,121 @@
 :host {
-  display: block;
-  height: 100%;
+  display: flex;
+  flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 .base-page {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
   padding: 0;
   overflow: hidden;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.page-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-grid-form {
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  padding: 12px;
+}
+
+.create-grid-form-header {
+  margin-bottom: 10px;
+}
+
+.create-grid-form-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.grid-action-button {
+  border: 1px solid var(--border-input);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.grid-action-button:hover {
+  background: var(--bg-active);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.grid-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.create-grid-form form {
+  display: grid;
+  gap: 8px;
+}
+
+.create-grid-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.create-grid-input,
+.create-grid-textarea {
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.create-grid-input:hover,
+.create-grid-textarea:hover {
+  border-color: var(--border-hover);
+}
+
+.create-grid-input:focus-visible,
+.create-grid-textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent-focus);
+  box-shadow: 0 0 0 3px rgba(92, 154, 255, 0.12);
+}
+
+.create-grid-error {
+  margin: -2px 0 0;
+  color: var(--status-critical-text);
+  font-size: 12px;
 }
 
 /* ── Tabs: underline style, no boxes ── */

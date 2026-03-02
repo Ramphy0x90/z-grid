@@ -17,6 +17,45 @@
 	justify-content: center;
 }
 
+.page-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.page-title {
+	margin: 0;
+	font-size: 18px;
+}
+
+.page-actions {
+	display: inline-flex;
+	align-items: center;
+}
+
+.page-action-button {
+	border: 1px solid var(--border-input);
+	background: var(--bg-elevated);
+	color: var(--text-secondary);
+	border-radius: 8px;
+	height: 32px;
+	padding: 0 12px;
+	font-size: 12px;
+	cursor: pointer;
+	transition: all var(--transition-normal);
+}
+
+.page-action-button:hover {
+	background: var(--bg-active);
+	border-color: var(--border-hover);
+	color: var(--text-primary);
+}
+
+.page-action-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 /* ── Empty & loading states ── */
 
 .subtitle {

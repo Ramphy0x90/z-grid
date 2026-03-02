@@ -6,73 +6,12 @@
 	<main class="main-content">
 		@if (shouldRenderWorkspace()) {
 			<section class="workspace-layout" aria-live="polite">
-				<header class="topbar" aria-label="Workspace header">
-					<div class="topbar-copy">
-						<h1>{{ topbarTitle() }}</h1>
-					</div>
-
-					@if (workspaceActions().length > 0) {
-						<div class="topbar-actions" aria-label="Workspace actions">
-							@for (action of workspaceActions(); track action.id) {
-								<button
-									type="button"
-									class="workspace-action-button"
-									[disabled]="action.disabled ?? false"
-									(click)="onWorkspaceAction(action.id)"
-								>
-									{{ action.label }}
-								</button>
-							}
-						</div>
-					}
-				</header>
-
 				<div
 					class="workspace-panels"
 					#workspacePanels
 					[style.grid-template-columns]="layoutColumns()"
 				>
 					<article class="page-panel">
-						<app-grid-selector />
-
-						@if (isGridEditorPage()) {
-							<section class="create-grid-form" aria-label="Grid form">
-								<h2 class="create-grid-form-title">
-									@if (gridPageMode() === 'edit') {
-										Update Grid
-									} @else if (gridPageMode() === 'create') {
-										Create Grid
-									} @else {
-										Grid Metadata
-									}
-								</h2>
-								<form [formGroup]="createGridForm" (ngSubmit)="onCreateGridSubmit()">
-									<label class="create-grid-label" for="create-grid-name">Name</label>
-									<input
-										id="create-grid-name"
-										class="create-grid-input"
-										type="text"
-										formControlName="name"
-										[readonly]="isViewMode()"
-										placeholder="Enter grid name"
-									/>
-									@if (createGridForm.controls.name.invalid && createGridForm.controls.name.touched) {
-										<p class="create-grid-error">Name is required.</p>
-									}
-
-									<label class="create-grid-label" for="create-grid-description">Description</label>
-									<textarea
-										id="create-grid-description"
-										class="create-grid-textarea"
-										rows="3"
-										formControlName="description"
-										[readonly]="isViewMode()"
-										placeholder="Enter grid description"
-									></textarea>
-								</form>
-							</section>
-						}
-
 						<div class="page-content">
 							<router-outlet />
 						</div>

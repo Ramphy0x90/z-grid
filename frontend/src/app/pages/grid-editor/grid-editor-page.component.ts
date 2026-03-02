@@ -1,6 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
+import { GridSelectorComponent } from '../../components/grid-selector/grid-selector.component';
 import { GridEditorSessionService } from '../../services/grid-editor-session.service';
+import { ProjectSelectors } from '../../stores/project/project.selectors';
+import { GridActions } from '../../stores/grid/grid.actions';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import type { GridDataset } from '../../components/grid-viewer/models/grid.models';
 import { getColumnsForPane } from './columns/grid-editor-columns.constants';
@@ -25,17 +29,31 @@ const PANE_TABS: readonly PaneTab[] = [
 
 @Component({
   selector: 'app-grid-editor-page',
+  imports: [ReactiveFormsModule, GridSelectorComponent],
   templateUrl: './grid-editor-page.component.html',
   styleUrl: './grid-editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridEditorPageComponent {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(Store);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly gridEditorSessionService = inject(GridEditorSessionService);
   private readonly activePaneIdState = signal<PaneId>('buses');
 
+  protected readonly selectedProjectId = this.store.selectSignal(ProjectSelectors.selectedProjectId);
   protected readonly selectedGrid = this.store.selectSignal(GridSelectors.selectedGrid);
   protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
+  protected readonly gridPageMode = this.store.selectSignal(GridSelectors.editorMode);
+  protected readonly isViewMode = this.store.selectSignal(GridSelectors.isViewMode);
+  protected readonly isEditingGrid = computed(
+    () => this.gridPageMode() === 'edit' && this.selectedGrid() !== null,
+  );
+  protected readonly isGridEditState = this.store.selectSignal(GridSelectors.isGridEditState);
+  protected readonly createGridForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    description: ['', [Validators.maxLength(500)]],
+  });
   protected readonly selectedDataset = computed(() => {
     return this.gridEditorSessionService.getCurrentEditorDataset(this.selectedGridId());
   });
@@ -74,6 +92,102 @@ export class GridEditorPageComponent {
     }
     return this.getRowsForPane(dataset, this.activePaneId());
   });
+
+  constructor() {
+    let previousSelectedGridId: string | null | undefined;
+    effect(() => {
+      const selectedGrid = this.selectedGrid();
+      const selectedGridId = selectedGrid?.id ?? null;
+      if (selectedGridId === previousSelectedGridId) {
+        return;
+      }
+      previousSelectedGridId = selectedGridId;
+      if (selectedGrid) {
+        this.createGridForm.reset({
+          name: selectedGrid.name,
+          description: selectedGrid.description,
+        });
+        return;
+      }
+      this.createGridForm.reset({ name: '', description: '' });
+    });
+
+    let previousGridPageMode: 'view' | 'edit' | 'create' | undefined;
+    effect(() => {
+      const mode = this.gridPageMode();
+      if (mode === previousGridPageMode) {
+        return;
+      }
+      previousGridPageMode = mode;
+      this.gridEditorSessionService.setGridEditorMode(mode);
+    });
+
+    this.destroyRef.onDestroy(() => {
+      if (this.gridPageMode() !== 'view') {
+        this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
+      }
+      this.gridEditorSessionService.clearCreateDraft();
+    });
+  }
+
+  protected onCreateGridSubmit(): void {
+    if (!this.isGridEditState()) {
+      return;
+    }
+    if (this.createGridForm.invalid) {
+      this.createGridForm.markAllAsTouched();
+      return;
+    }
+    const projectId = this.selectedProjectId();
+    if (!projectId) {
+      return;
+    }
+    const value = this.createGridForm.getRawValue();
+    this.store.dispatch(
+      GridActions.gridSubmitRequested({
+        projectId,
+        selectedGridId: this.selectedGridId(),
+        isEditing: this.isEditingGrid(),
+        name: value.name,
+        description: value.description,
+      }),
+    );
+  }
+
+  protected openCreateGridForm(): void {
+    this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'create' }));
+    this.createGridForm.reset({ name: '', description: '' });
+    const projectId = this.selectedProjectId();
+    if (projectId) {
+      this.gridEditorSessionService.beginCreateDraft(projectId);
+    }
+  }
+
+  protected openEditGridForm(): void {
+    const selectedGrid = this.selectedGrid();
+    if (!selectedGrid) {
+      return;
+    }
+    this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'edit' }));
+    this.createGridForm.reset({
+      name: selectedGrid.name,
+      description: selectedGrid.description,
+    });
+  }
+
+  protected cancelGridFormChanges(): void {
+    this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
+    this.gridEditorSessionService.clearCreateDraft();
+    const selectedGrid = this.selectedGrid();
+    if (!selectedGrid) {
+      this.createGridForm.reset({ name: '', description: '' });
+      return;
+    }
+    this.createGridForm.reset({
+      name: selectedGrid.name,
+      description: selectedGrid.description,
+    });
+  }
 
   protected setActivePane(paneId: PaneId): void {
     this.activePaneIdState.set(paneId);

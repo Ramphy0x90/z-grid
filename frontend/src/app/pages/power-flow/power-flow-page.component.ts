@@ -10,12 +10,16 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize, take } from 'rxjs';
 import { Store } from '@ngrx/store';
+import { GridSelectorComponent } from '../../components/grid-selector/grid-selector.component';
+import { ProjectSelectors } from '../../stores/project/project.selectors';
+import { GridActions } from '../../stores/grid/grid.actions';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { PowerFlowRunService } from '../../services/power-flow-run.service';
 import type { PowerFlowRunStatus } from '../../types/power-flow.types';
 
 @Component({
 	selector: 'app-power-flow-page',
+	imports: [GridSelectorComponent],
 	templateUrl: './power-flow-page.component.html',
 	styleUrl: './power-flow-page.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,7 +37,9 @@ export class PowerFlowPageComponent {
 	private pollTimer: number | null = null;
 	private pollInFlight = false;
 
+	protected readonly selectedProjectId = this.store.selectSignal(ProjectSelectors.selectedProjectId);
 	protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
+	protected readonly runOperation = this.store.selectSignal(GridSelectors.runOperation);
 	protected readonly run = this.runState.asReadonly();
 	protected readonly loading = this.loadingState.asReadonly();
 	protected readonly error = this.errorState.asReadonly();
@@ -65,6 +71,15 @@ export class PowerFlowPageComponent {
 
 	protected setActivePane(pane: 'buses' | 'branches' | 'violations'): void {
 		this.activePaneState.set(pane);
+	}
+
+	protected runPowerFlow(): void {
+		const projectId = this.selectedProjectId();
+		const gridId = this.selectedGridId();
+		if (!projectId || !gridId || this.runOperation().isRunning) {
+			return;
+		}
+		this.store.dispatch(GridActions.powerFlowRunRequested({ projectId, gridId }));
 	}
 
 	private loadLatestRun(gridId: string): void {
