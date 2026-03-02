@@ -27,4 +27,5 @@ export const GridSelectors = {
 	duplicateOperation: createSelector(selectGridState, (state) => state.duplicate),
 	deleteOperation: createSelector(selectGridState, (state) => state.delete),
 	exportOperation: createSelector(selectGridState, (state) => state.export),
+	runOperation: createSelector(selectGridState, (state) => state.run),
 };

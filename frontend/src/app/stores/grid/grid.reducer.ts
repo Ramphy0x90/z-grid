@@ -108,4 +108,25 @@ export const gridReducer = createReducer(
 			error,
 		},
 	})),
+	on(GridActions.powerFlowRunRequested, (state) => ({
+		...state,
+		run: {
+			isRunning: true,
+			error: null,
+		},
+	})),
+	on(GridActions.powerFlowRunSucceeded, (state) => ({
+		...state,
+		run: {
+			isRunning: false,
+			error: null,
+		},
+	})),
+	on(GridActions.powerFlowRunFailed, (state, { error }) => ({
+		...state,
+		run: {
+			isRunning: false,
+			error,
+		},
+	})),
 );

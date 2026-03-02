@@ -10,17 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-	catchError,
-	EMPTY,
-	filter,
-	finalize,
-	from,
-	map,
-	of,
-	switchMap,
-	take,
-} from 'rxjs';
+import { filter, take } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { GridSelectorComponent } from './components/grid-selector/grid-selector.component';
@@ -35,14 +25,10 @@ import { GridActions } from './stores/grid/grid.actions';
 import { GridSelectors } from './stores/grid/grid.selectors';
 import { AuthService } from './services/auth.service';
 import { GridEditorSessionService } from './services/grid-editor-session.service';
-import { PowerFlowRunService } from './services/power-flow-run.service';
 import { ProjectService } from './services/project.service';
 import { WorkspaceDataSyncService } from './services/workspace-data-sync.service';
 import { WorkspaceRouteService } from './services/workspace-route.service';
-import {
-	PAGE_GROUPS,
-	toProjectPageCommands,
-} from './app.routes';
+import { PAGE_GROUPS } from './app.routes';
 
 type WorkspaceAction = {
 	id: 'save' | 'create' | 'run' | 'edit' | 'cancel';
@@ -76,7 +62,6 @@ export class App {
 	private readonly store = inject(Store);
 	private readonly authService = inject(AuthService);
 	private readonly gridEditorSessionService = inject(GridEditorSessionService);
-	private readonly powerFlowRunService = inject(PowerFlowRunService);
 	private readonly projectService = inject(ProjectService);
 	private readonly workspaceDataSyncService = inject(WorkspaceDataSyncService);
 	private readonly workspaceRouteService = inject(WorkspaceRouteService);
@@ -84,7 +69,6 @@ export class App {
 	private readonly isDividerDraggingState = signal(false);
 	private readonly isLoginRouteState = signal(false);
 	private readonly isWorkspaceRouteState = signal(false);
-	private readonly runInProgressState = signal(false);
 
 	protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
 	protected readonly selectedProjectId = this.store.selectSignal(
@@ -106,7 +90,7 @@ export class App {
 	protected readonly layoutPresets = App.LAYOUT_PRESETS;
 	protected readonly isLoginRoute = this.isLoginRouteState.asReadonly();
 	protected readonly isWorkspaceRoute = this.isWorkspaceRouteState.asReadonly();
-	protected readonly runInProgress = this.runInProgressState.asReadonly();
+	protected readonly runInProgress = this.store.selectSignal(GridSelectors.runOperation);
 	protected readonly isViewMode = this.store.selectSignal(GridSelectors.isViewMode);
 	protected readonly isEditingGrid = computed(
 		() => this.gridPageMode() === 'edit' && this.selectedGrid() !== null,
@@ -142,7 +126,7 @@ export class App {
 		if (pageGroup.id === 'static-calculation') {
 			return App.STATIC_CALCULATION_ACTIONS.map((action) => ({
 				...action,
-				disabled: !this.selectedGridId() || this.runInProgressState(),
+				disabled: !this.selectedGridId() || this.runInProgress().isRunning,
 			}));
 		}
 		if (pageId !== App.GRID_EDITOR_PAGE_ID) {
@@ -338,21 +322,7 @@ export class App {
 		if (!projectId || !gridId) {
 			return;
 		}
-		this.runInProgressState.set(true);
-		const dataset = this.projectService.getGridDatasetById(gridId);
-		const saveBeforeRun$ = dataset
-			? this.projectService.saveGridDataset$(gridId, dataset).pipe(map(() => null))
-			: of(null);
-		saveBeforeRun$
-			.pipe(
-				switchMap(() => this.powerFlowRunService.startPowerFlowRun$(gridId)),
-				switchMap(() => from(this.router.navigate([...toProjectPageCommands(projectId, 'power-flow')]))),
-				catchError(() => of(false)),
-				finalize(() => this.runInProgressState.set(false)),
-				take(1),
-				takeUntilDestroyed(this.destroyRef),
-			)
-			.subscribe();
+		this.store.dispatch(GridActions.powerFlowRunRequested({ projectId, gridId }));
 	}
 
 	protected onCreateGridSubmit(): void {
@@ -368,84 +338,15 @@ export class App {
 			return;
 		}
 		const value = this.createGridForm.getRawValue();
-		if (this.isEditingGrid()) {
-			const selectedGridId = this.selectedGridId();
-			if (!selectedGridId) {
-				return;
-			}
-			this.submitGridUpdate(selectedGridId, value.name, value.description);
-			return;
-		}
-		this.submitGridCreate(projectId, value.name, value.description);
-	}
-
-	private submitGridUpdate(selectedGridId: string, name: string, description: string): void {
-		this.projectService
-			.updateGrid$(selectedGridId, { name, description })
-			.pipe(
-				switchMap((updatedGrid) => {
-					const dataset = this.projectService.getGridDatasetById(selectedGridId);
-					if (!dataset) {
-						return of(updatedGrid);
-					}
-					return this.projectService.saveGridDataset$(selectedGridId, dataset).pipe(
-						map(() => updatedGrid),
-					);
-				}),
-				catchError(() => EMPTY),
-				take(1),
-				takeUntilDestroyed(this.destroyRef),
-			)
-			.subscribe(() => {
-				this.store.dispatch(GridActions.gridsLoaded({ grids: this.projectService.grids() }));
-				this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
-			});
-	}
-
-	private submitGridCreate(projectId: string, name: string, description: string): void {
-		this.projectService
-			.createGrid$(projectId, { name, description })
-			.pipe(
-				switchMap((createdGrid) => {
-					const draftDataset = this.gridEditorSessionService.getCreateDraftDataset();
-					if (!draftDataset) {
-						return of(createdGrid);
-					}
-					const datasetToPersist: GridDataset = {
-						...draftDataset,
-						grid: {
-							...draftDataset.grid,
-							id: createdGrid.id,
-							projectId: createdGrid.projectId,
-							name: createdGrid.name,
-							description: createdGrid.description,
-						},
-						buses: draftDataset.buses.map((bus) => ({
-							...bus,
-							gridId: createdGrid.id,
-						})),
-						lines: draftDataset.lines.map((line) => ({
-							...line,
-							gridId: createdGrid.id,
-						})),
-						transformers: draftDataset.transformers.map((transformer) => ({
-							...transformer,
-							gridId: createdGrid.id,
-						})),
-					};
-					return this.projectService.saveGridDataset$(createdGrid.id, datasetToPersist).pipe(
-						map(() => createdGrid),
-					);
-				}),
-				catchError(() => EMPTY),
-				take(1),
-				takeUntilDestroyed(this.destroyRef),
-			)
-			.subscribe((createdGrid) => {
-				this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid: createdGrid }));
-				this.gridEditorSessionService.clearCreateDraft();
-				this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
-			});
+		this.store.dispatch(
+			GridActions.gridSubmitRequested({
+				projectId,
+				selectedGridId: this.selectedGridId(),
+				isEditing: this.isEditingGrid(),
+				name: value.name,
+				description: value.description,
+			}),
+		);
 	}
 
 	private openCreateGridForm(): void {
