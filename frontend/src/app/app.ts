@@ -27,12 +27,11 @@ import { AuthService } from './services/auth.service';
 import { GridEditorSessionService } from './services/grid-editor-session.service';
 import { PowerFlowRunService } from './services/power-flow-run.service';
 import { ProjectService } from './services/project.service';
+import { WorkspaceDataSyncService } from './services/workspace-data-sync.service';
+import { WorkspaceRouteService } from './services/workspace-route.service';
 import {
-	DEFAULT_PROJECT_PAGE,
 	PAGE_GROUPS,
-	ROUTES,
 	toProjectPageCommands,
-	toProjectsCommands,
 } from './app.routes';
 
 type WorkspaceAction = {
@@ -69,14 +68,13 @@ export class App {
 	private readonly gridEditorSessionService = inject(GridEditorSessionService);
 	private readonly powerFlowRunService = inject(PowerFlowRunService);
 	private readonly projectService = inject(ProjectService);
+	private readonly workspaceDataSyncService = inject(WorkspaceDataSyncService);
+	private readonly workspaceRouteService = inject(WorkspaceRouteService);
 	private readonly layoutSplitPercentState = signal(50);
 	private readonly isDividerDraggingState = signal(false);
 	private readonly isLoginRouteState = signal(false);
 	private readonly isWorkspaceRouteState = signal(false);
 	private readonly runInProgressState = signal(false);
-	private gridSyncRequestId = 0;
-	private datasetSyncRequestId = 0;
-	private hasCompletedInitialGridSync = false;
 
 	protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
 	protected readonly selectedProjectId = this.store.selectSignal(
@@ -168,7 +166,7 @@ export class App {
 				void this.syncProjectsFromBackend();
 				return;
 			}
-			this.hasCompletedInitialGridSync = false;
+			this.workspaceDataSyncService.resetSessionState();
 			this.store.dispatch(ProjectActions.projectsLoaded({ projects: [] }));
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 		});
@@ -237,100 +235,38 @@ export class App {
 	}
 
 	private async syncProjectsFromBackend(): Promise<void> {
-		if (!this.authService.isAuthenticated()) {
-			return;
-		}
-		try {
-			const projects = await firstValueFrom(this.projectService.loadProjects$());
-			this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
-			this.ensureValidProjectRoute(projects.map((project) => project.id));
-		} catch {
-			this.store.dispatch(ProjectActions.projectsLoaded({ projects: [] }));
-			this.ensureValidProjectRoute([]);
-		}
+		const projects = await this.workspaceDataSyncService.syncProjects();
+		this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
+		this.workspaceRouteService.ensureValidProjectRoute(
+			projects.map((project) => project.id),
+			this.selectedProjectId(),
+			this.selectedPageId(),
+		);
 	}
 
 	private syncRoute(): void {
-		const urlTree = this.router.parseUrl(this.router.url);
-		const segments =
-			urlTree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
-		const [firstSegment, secondSegment] = segments;
-		const isLoginRoute = firstSegment === ROUTES.LOGIN;
-		const hasPrimarySegment = typeof firstSegment === 'string' && firstSegment.length > 0;
-		const isWorkspaceRoute = hasPrimarySegment && !isLoginRoute && firstSegment !== ROUTES.PROJECTS;
-		const projectId = isWorkspaceRoute ? firstSegment : null;
-		const pageId = secondSegment ?? null;
-
-		this.isLoginRouteState.set(isLoginRoute);
-		this.isWorkspaceRouteState.set(isWorkspaceRoute);
-		this.store.dispatch(ProjectActions.selectedProjectSynced({ projectId }));
-		this.store.dispatch(GridActions.selectedProjectSynced({ projectId }));
-		this.store.dispatch(NavigationActions.routeSynced({ pageId }));
+		const routeState = this.workspaceRouteService.readCurrentRoute();
+		this.isLoginRouteState.set(routeState.isLoginRoute);
+		this.isWorkspaceRouteState.set(routeState.isWorkspaceRoute);
+		this.store.dispatch(ProjectActions.selectedProjectSynced({ projectId: routeState.projectId }));
+		this.store.dispatch(GridActions.selectedProjectSynced({ projectId: routeState.projectId }));
+		this.store.dispatch(NavigationActions.routeSynced({ pageId: routeState.pageId }));
 		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 	}
 
 	private async syncGridsForProject(projectId: string | null): Promise<void> {
-		const requestId = ++this.gridSyncRequestId;
-		if (!this.authService.isAuthenticated()) {
-			if (requestId !== this.gridSyncRequestId) {
-				return;
-			}
-			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
+		const result = await this.workspaceDataSyncService.syncGridsForProject(projectId);
+		if (result.stale) {
 			return;
 		}
-		const isInitialProjectGridSync = !this.hasCompletedInitialGridSync;
-		this.hasCompletedInitialGridSync = true;
-		if (!projectId) {
-			if (requestId !== this.gridSyncRequestId) {
-				return;
-			}
-			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
-			return;
-		}
-		try {
-			const grids = await firstValueFrom(this.projectService.loadGridsByProjectId$(projectId));
-			if (requestId !== this.gridSyncRequestId) {
-				return;
-			}
-			this.store.dispatch(GridActions.gridsLoaded({ grids }));
-			if (isInitialProjectGridSync && grids.length > 0) {
-				this.store.dispatch(GridActions.gridSelected({ gridId: grids[0].id }));
-			}
-		} catch {
-			if (requestId !== this.gridSyncRequestId) {
-				return;
-			}
-			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
+		this.store.dispatch(GridActions.gridsLoaded({ grids: result.grids }));
+		if (result.shouldSelectFirst) {
+			this.store.dispatch(GridActions.gridSelected({ gridId: result.grids[0].id }));
 		}
 	}
 
 	private async syncDatasetForGrid(gridId: string): Promise<void> {
-		const requestId = ++this.datasetSyncRequestId;
-		if (!this.authService.isAuthenticated()) {
-			return;
-		}
-		try {
-			await firstValueFrom(this.projectService.loadGridDatasetById$(gridId));
-			if (requestId !== this.datasetSyncRequestId) {
-				return;
-			}
-		} catch {
-			// Keep current dataset state on transient load failures.
-		}
-	}
-
-	private ensureValidProjectRoute(validProjectIds: readonly string[]): void {
-		const selectedProjectId = this.selectedProjectId();
-		if (selectedProjectId && validProjectIds.includes(selectedProjectId)) {
-			return;
-		}
-		if (validProjectIds.length === 0) {
-			this.router.navigate([...toProjectsCommands()]);
-			return;
-		}
-		const fallbackProjectId = validProjectIds[0];
-		const pageId = this.selectedPageId() ?? DEFAULT_PROJECT_PAGE;
-		this.router.navigate([...toProjectPageCommands(fallbackProjectId, pageId)]);
+		await this.workspaceDataSyncService.syncDatasetForGrid(gridId);
 	}
 
 	protected onLayoutSplitChange(nextSplitPercent: number): void {
