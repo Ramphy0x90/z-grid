@@ -2,36 +2,20 @@
 	<div class="projects-header">
 		<h2>Projects</h2>
 		<div class="header-actions">
-			<div class="example-install-actions">
-				<label class="example-label" for="example-project-select">Install example</label>
-				<select
-					id="example-project-select"
-					class="example-select"
-					[value]="selectedExampleProjectKey()"
-					(change)="onExampleProjectSelectionChange($event)"
-					[disabled]="isInstallingExample()"
-				>
-					@for (option of exampleProjectOptions; track option.key) {
-						<option [value]="option.key">{{ option.label }}</option>
-					}
-				</select>
-				<button
-					type="button"
-					class="install-example-button"
-					(click)="installExampleProject()"
-					[disabled]="isInstallingExample()"
-				>
-					{{ isInstallingExample() ? 'Installing...' : 'Install' }}
-				</button>
-			</div>
+			<button
+				type="button"
+				class="install-trigger-button"
+				aria-label="Install example project"
+				title="Install example project"
+				(click)="openInstallExampleModal()"
+			>
+				<i class="bi bi-cloud-download" aria-hidden="true"></i>
+			</button>
 			<button type="button" class="create-project-button" (click)="openCreateProjectModal()">
 				Create Project
 			</button>
 		</div>
 	</div>
-	@if (installErrorMessage()) {
-		<p class="submit-error">{{ installErrorMessage() }}</p>
-	}
 
 	<div class="project-grid">
 		@for (project of projects(); track project.id) {
@@ -53,6 +37,55 @@
 			</article>
 		}
 	</div>
+
+	@if (isInstallModalOpen()) {
+		<div
+			class="modal-overlay"
+			role="button"
+			tabindex="0"
+			aria-label="Close install example project modal"
+			(click)="closeInstallExampleModal()"
+			(keydown.enter)="closeInstallExampleModal()"
+			(keydown.space)="closeInstallExampleModal()"
+		></div>
+		<section class="modal" role="dialog" aria-modal="true" aria-labelledby="install-example-title">
+			<header class="modal-header">
+				<h3 id="install-example-title">Install example project</h3>
+			</header>
+			<div class="modal-form">
+				<p class="delete-copy">Choose a city template to install.</p>
+				<div class="example-options">
+					@for (option of exampleProjectOptions; track option.key) {
+						<button
+							type="button"
+							class="example-option-button"
+							[disabled]="isInstallingExample()"
+							(click)="installExampleProject(option.key)"
+						>
+							{{
+								isInstallingExample() && installInProgressKey() === option.key
+									? 'Installing...'
+									: option.label
+							}}
+						</button>
+					}
+				</div>
+				@if (isInstallingExample()) {
+					<p class="install-loading-hint" aria-live="polite">
+						Installing selected example project...
+					</p>
+				}
+				@if (installErrorMessage()) {
+					<p class="submit-error">{{ installErrorMessage() }}</p>
+				}
+				<div class="modal-actions">
+					<button type="button" class="secondary" (click)="closeInstallExampleModal()">
+						Cancel
+					</button>
+				</div>
+			</div>
+		</section>
+	}
 
 	@if (isCreateModalOpen()) {
 		<div

@@ -46,7 +46,9 @@ describe('ProjectsPageComponent', () => {
 		const store = TestBed.inject(Store);
 		const dispatchSpy = vi.spyOn(store, 'dispatch');
 
-		(component as unknown as { installExampleProject: () => void }).installExampleProject();
+		(
+			component as unknown as { installExampleProject: (key: 'zurich') => void }
+		).installExampleProject('zurich');
 
 		expect(projectServiceMock.installExampleProject$).toHaveBeenCalledWith({
 			exampleKey: 'zurich',

@@ -39,13 +39,14 @@ export class ProjectsPageComponent {
 	protected readonly isCreateModalOpen = signal(false);
 	protected readonly isEditModalOpen = signal(false);
 	protected readonly isDeleteModalOpen = signal(false);
+	protected readonly isInstallModalOpen = signal(false);
 	protected readonly isSubmitting = signal(false);
 	protected readonly isInstallingExample = signal(false);
+	protected readonly installInProgressKey = signal<ExampleProjectKey | null>(null);
 	protected readonly createErrorMessage = signal('');
 	protected readonly editErrorMessage = signal('');
 	protected readonly deleteErrorMessage = signal('');
 	protected readonly installErrorMessage = signal('');
-	protected readonly selectedExampleProjectKey = signal<ExampleProjectKey>('zurich');
 	protected readonly exampleProjectOptions = ProjectsPageComponent.EXAMPLE_PROJECT_OPTIONS;
 	protected readonly editProjectId = signal<string | null>(null);
 	protected readonly deleteProjectId = signal<string | null>(null);
@@ -106,29 +107,35 @@ export class ProjectsPageComponent {
 			});
 	}
 
-	protected onExampleProjectSelectionChange(event: Event): void {
-		const target = event.target;
-		if (!(target instanceof HTMLSelectElement)) {
-			return;
-		}
-		this.selectedExampleProjectKey.set(target.value as ExampleProjectKey);
+	protected openInstallExampleModal(): void {
+		this.installErrorMessage.set('');
+		this.isInstallModalOpen.set(true);
 	}
 
-	protected installExampleProject(): void {
+	protected closeInstallExampleModal(): void {
+		this.isInstallModalOpen.set(false);
+		this.isInstallingExample.set(false);
+		this.installInProgressKey.set(null);
+		this.installErrorMessage.set('');
+	}
+
+	protected installExampleProject(exampleKey: ExampleProjectKey): void {
 		if (this.isInstallingExample()) {
 			return;
 		}
 
 		this.installErrorMessage.set('');
 		this.isInstallingExample.set(true);
+		this.installInProgressKey.set(exampleKey);
 		this.projectService
-			.installExampleProject$({ exampleKey: this.selectedExampleProjectKey() })
+			.installExampleProject$({ exampleKey })
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
 				next: () => {
 					this.store.dispatch(
 						ProjectActions.projectsLoaded({ projects: this.projectService.projects() }),
 					);
+					this.closeInstallExampleModal();
 					this.isInstallingExample.set(false);
 				},
 				error: (error: unknown) => {
@@ -136,6 +143,7 @@ export class ProjectsPageComponent {
 						this.resolveErrorMessage(error, 'Unable to install the selected example project.'),
 					);
 					this.isInstallingExample.set(false);
+					this.installInProgressKey.set(null);
 				},
 			});
 	}

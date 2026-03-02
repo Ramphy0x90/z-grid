@@ -13,56 +13,70 @@
 
 .header-actions {
   display: flex;
-  align-items: end;
+  align-items: center;
   gap: 10px;
 }
 
-.example-install-actions {
-  display: flex;
-  align-items: end;
-  gap: 8px;
-}
-
-.example-label {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.example-select {
-  border: 1px solid var(--border-input);
-  border-radius: 8px;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  font-size: 13px;
-  padding: 8px 10px;
-  min-width: 140px;
-}
-
-.example-select:focus-visible {
-  outline: 2px solid var(--accent-focus);
-  outline-offset: 2px;
-}
-
-.install-example-button {
+.install-trigger-button {
   border: 1px solid var(--border-hover);
   border-radius: 8px;
   background: transparent;
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 12px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.install-example-button:hover {
+.install-trigger-button:hover {
   background: var(--bg-hover);
 }
 
-.install-example-button:disabled {
+.install-trigger-button:focus-visible {
+  outline: 2px solid var(--accent-focus);
+  outline-offset: 2px;
+}
+
+.install-trigger-button i {
+  font-size: 16px;
+}
+
+.example-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.example-option-button {
+  border-radius: 8px;
+  border: 1px solid var(--border-hover);
+  background: transparent;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.example-option-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.example-option-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.install-loading-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 h2 {
