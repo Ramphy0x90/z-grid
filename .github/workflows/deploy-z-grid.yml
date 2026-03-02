@@ -27,6 +27,7 @@ jobs:
                   docker build \
                     --build-arg BUILDKIT_INLINE_CACHE=1 \
                     --cache-from "${{ env.BACKEND_IMAGE }}:latest" \
+                    --network host \
                     -t "${{ env.BACKEND_IMAGE }}:${{ github.sha }}" \
                     -t "${{ env.BACKEND_IMAGE }}:latest" \
                     ./backend
