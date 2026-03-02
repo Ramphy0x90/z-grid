@@ -11,7 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
-import { ProjectService } from '../../services/project.service';
+import { PowerFlowRunService } from '../../services/power-flow-run.service';
 import type { PowerFlowRunStatus } from '../../types/power-flow.types';
 
 @Component({
@@ -21,7 +21,7 @@ import type { PowerFlowRunStatus } from '../../types/power-flow.types';
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PowerFlowPageComponent {
-	private readonly projectService = inject(ProjectService);
+	private readonly powerFlowRunService = inject(PowerFlowRunService);
 	private readonly store = inject(Store);
 	private readonly destroyRef = inject(DestroyRef);
 
@@ -31,6 +31,7 @@ export class PowerFlowPageComponent {
 	private readonly activePaneState = signal<'buses' | 'branches' | 'violations'>('buses');
 	private readonly succeededWithoutResultPollCountState = signal(0);
 	private pollTimer: number | null = null;
+	private pollInFlight = false;
 
 	protected readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
 	protected readonly run = this.runState.asReadonly();
@@ -48,7 +49,7 @@ export class PowerFlowPageComponent {
 	constructor() {
 		effect(() => {
 			const gridId = this.selectedGridId();
-			this.projectService.powerFlowRunRefreshToken();
+			this.powerFlowRunService.powerFlowRunRefreshToken();
 			this.stopPolling();
 			this.runState.set(null);
 			if (!gridId) {
@@ -69,7 +70,7 @@ export class PowerFlowPageComponent {
 	private async loadLatestRun(gridId: string): Promise<void> {
 		this.loadingState.set(true);
 		try {
-			const runs = await firstValueFrom(this.projectService.listPowerFlowRuns(gridId));
+			const runs = await firstValueFrom(this.powerFlowRunService.listPowerFlowRuns$(gridId));
 			const latest = runs[0] ?? null;
 			this.runState.set(latest);
 			this.succeededWithoutResultPollCountState.set(0);
@@ -83,7 +84,7 @@ export class PowerFlowPageComponent {
 				this.stopPolling();
 			}
 		} catch {
-			const cached = this.projectService.getLatestPowerFlowRun(gridId);
+			const cached = this.powerFlowRunService.getLatestPowerFlowRun(gridId);
 			this.runState.set(cached);
 			if (!cached) {
 				this.errorState.set('Could not load power-flow history.');
@@ -96,11 +97,15 @@ export class PowerFlowPageComponent {
 	private startPolling(gridId: string): void {
 		this.stopPolling();
 		this.pollTimer = window.setInterval(() => {
+			if (this.pollInFlight) {
+				return;
+			}
 			const run = this.runState();
 			if (!run || run.gridId !== gridId) {
 				this.stopPolling();
 				return;
 			}
+			this.pollInFlight = true;
 			void this.fetchRun(gridId, run.runId);
 		}, 2000);
 	}
@@ -110,11 +115,12 @@ export class PowerFlowPageComponent {
 			window.clearInterval(this.pollTimer);
 			this.pollTimer = null;
 		}
+		this.pollInFlight = false;
 	}
 
 	private async fetchRun(gridId: string, runId: string): Promise<void> {
 		try {
-			const run = await firstValueFrom(this.projectService.getPowerFlowRun(gridId, runId));
+			const run = await firstValueFrom(this.powerFlowRunService.getPowerFlowRun$(gridId, runId));
 			this.runState.set(run);
 			if (run.status === 'SUCCEEDED' && run.result === null) {
 				const attempts = this.succeededWithoutResultPollCountState() + 1;
@@ -142,6 +148,8 @@ export class PowerFlowPageComponent {
 				return;
 			}
 			this.errorState.set('Run status polling failed. The run may still be processing.');
+		} finally {
+			this.pollInFlight = false;
 		}
 	}
 }

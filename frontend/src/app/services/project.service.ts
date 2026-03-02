@@ -9,12 +9,6 @@ import type {
 	Project,
 	ProjectGrid,
 } from '../types/project.types';
-import type {
-	PowerFlowRunOptions,
-	PowerFlowRunStatus,
-	StartPowerFlowRunResponse,
-} from '../types/power-flow.types';
-import type { SimulationRunStatus, StartSimulationRunResponse } from '../types/simulation.types';
 
 type ProjectApiModel = {
   id: string;
@@ -43,22 +37,19 @@ export class ProjectService {
   private readonly gridDatasetsState = signal<Record<string, GridDataset>>({});
   private readonly gridEditorModeState = signal<'view' | 'edit' | 'create'>('view');
   private readonly createDraftDatasetState = signal<GridDataset | null>(null);
-  private readonly latestPowerFlowRunByGridState = signal<Record<string, PowerFlowRunStatus>>({});
-  private readonly powerFlowRunRefreshState = signal(0);
 
   readonly projects = this.projectsState.asReadonly();
   readonly grids = this.gridsState.asReadonly();
   readonly gridEditorMode = this.gridEditorModeState.asReadonly();
-  readonly powerFlowRunRefreshToken = this.powerFlowRunRefreshState.asReadonly();
 
-  loadProjects(): Observable<Project[]> {
+  loadProjects$(): Observable<Project[]> {
     return this.http.get<ProjectApiModel[]>(this.projectsApiPath).pipe(
       map((projects) => projects.map((project) => this.toProject(project))),
       tap((projects) => this.projectsState.set(projects)),
     );
   }
 
-  createProject(request: CreateProjectRequest): Observable<Project> {
+  createProject$(request: CreateProjectRequest): Observable<Project> {
     return this.http.post<ProjectApiModel>(this.projectsApiPath, request).pipe(
       map((project) => this.toProject(project)),
       tap((project) => this.projectsState.update((projects) => [project, ...projects])),
@@ -81,21 +72,21 @@ export class ProjectService {
     return this.grids().filter((grid) => grid.projectId === projectId);
   }
 
-  loadGridsByProjectId(projectId: string): Observable<ProjectGrid[]> {
+  loadGridsByProjectId$(projectId: string): Observable<ProjectGrid[]> {
     return this.http.get<GridApiModel[]>(`${this.gridsApiPath}/project/${projectId}`).pipe(
       map((grids) => grids.map((grid) => this.toGrid(grid))),
       tap((grids) => this.gridsState.set(grids)),
     );
   }
 
-  duplicateGrid(sourceGridId: string): Observable<ProjectGrid> {
+  duplicateGrid$(sourceGridId: string): Observable<ProjectGrid> {
     return this.http.post<GridApiModel>(`${this.gridsApiPath}/${sourceGridId}/duplicate`, {}).pipe(
       map((grid) => this.toGrid(grid)),
       tap((duplicatedGrid) => this.gridsState.update((grids) => [duplicatedGrid, ...grids])),
     );
   }
 
-  createGrid(projectId: string, request: CreateGridRequest): Observable<ProjectGrid> {
+  createGrid$(projectId: string, request: CreateGridRequest): Observable<ProjectGrid> {
     return this.http
       .post<GridApiModel>(this.gridsApiPath, {
         projectId,
@@ -108,7 +99,7 @@ export class ProjectService {
       );
   }
 
-  updateGrid(gridId: string, request: CreateGridRequest): Observable<ProjectGrid> {
+  updateGrid$(gridId: string, request: CreateGridRequest): Observable<ProjectGrid> {
     return this.http
       .put<GridApiModel>(`${this.gridsApiPath}/${gridId}`, {
         name: request.name,
@@ -141,7 +132,7 @@ export class ProjectService {
       );
   }
 
-  deleteGrid(gridId: string): Observable<void> {
+  deleteGrid$(gridId: string): Observable<void> {
     return this.http.delete<void>(`${this.gridsApiPath}/${gridId}`).pipe(
       tap(() => {
         this.gridsState.update((grids) => grids.filter((grid) => grid.id !== gridId));
@@ -198,7 +189,7 @@ export class ProjectService {
     this.createDraftDatasetState.set(null);
   }
 
-  loadGridDatasetById(gridId: string): Observable<GridDataset> {
+  loadGridDatasetById$(gridId: string): Observable<GridDataset> {
     return this.http.get<GridDataset>(`${this.gridsApiPath}/${gridId}/dataset`).pipe(
       map((dataset) => this.normalizeDatasetPayload(dataset, gridId)),
       tap((dataset) => {
@@ -210,7 +201,7 @@ export class ProjectService {
     );
   }
 
-  saveGridDataset(gridId: string, dataset: GridDataset): Observable<GridDataset> {
+  saveGridDataset$(gridId: string, dataset: GridDataset): Observable<GridDataset> {
     const normalizedRequest = this.normalizeDatasetPayload(dataset, gridId);
     return this.http.put<GridDataset>(`${this.gridsApiPath}/${gridId}/dataset`, normalizedRequest).pipe(
       map((savedDataset) => this.normalizeDatasetPayload(savedDataset, gridId)),
@@ -256,95 +247,6 @@ export class ProjectService {
 
   getCreateDraftDataset(): GridDataset | null {
     return this.createDraftDatasetState();
-  }
-
-  getLatestPowerFlowRun(gridId: string | null): PowerFlowRunStatus | null {
-    if (!gridId) {
-      return null;
-    }
-    return this.latestPowerFlowRunByGridState()[gridId] ?? null;
-  }
-
-  startPowerFlowRun(
-    gridId: string,
-    options?: PowerFlowRunOptions,
-  ): Observable<StartPowerFlowRunResponse> {
-    return this.http
-      .post<StartSimulationRunResponse>(`${this.gridsApiPath}/${gridId}/simulations/runs`, {
-        simulationType: 'POWER_FLOW',
-        options,
-      })
-      .pipe(
-        map((response) => ({
-          runId: response.runId,
-          status: response.status,
-          reusedExisting: response.reusedExisting,
-          createdAt: response.createdAt,
-        })),
-        tap((response) => {
-          const existing = this.latestPowerFlowRunByGridState()[gridId];
-          this.latestPowerFlowRunByGridState.update((state) => ({
-            ...state,
-            [gridId]: {
-              runId: response.runId,
-              gridId,
-              status: response.status,
-              solver: existing?.solver ?? 'AC_NEWTON_RAPHSON',
-              errorMessage: null,
-              createdAt: response.createdAt,
-              startedAt: existing?.startedAt ?? null,
-              finishedAt: null,
-              result: existing?.runId === response.runId ? existing.result : null,
-            },
-          }));
-          this.powerFlowRunRefreshState.update((value) => value + 1);
-        }),
-      );
-  }
-
-  getPowerFlowRun(gridId: string, runId: string): Observable<PowerFlowRunStatus> {
-    return this.http
-      .get<SimulationRunStatus>(`${this.gridsApiPath}/${gridId}/simulations/runs/${runId}`)
-      .pipe(
-        map((status) => this.toPowerFlowRunStatus(status)),
-        tap((status) => this.setLatestPowerFlowRun(status)),
-      );
-  }
-
-  listPowerFlowRuns(gridId: string): Observable<PowerFlowRunStatus[]> {
-    return this.http
-      .get<SimulationRunStatus[]>(`${this.gridsApiPath}/${gridId}/simulations/runs?simulationType=POWER_FLOW`)
-      .pipe(
-        map((runs) => runs.map((run) => this.toPowerFlowRunStatus(run))),
-        tap((runs) => {
-          const latest = runs[0] ?? null;
-          if (latest) {
-            this.setLatestPowerFlowRun(latest);
-          }
-        }),
-      );
-  }
-
-  private setLatestPowerFlowRun(status: PowerFlowRunStatus): void {
-    this.latestPowerFlowRunByGridState.update((state) => ({
-      ...state,
-      [status.gridId]: status,
-    }));
-  }
-
-  private toPowerFlowRunStatus(status: SimulationRunStatus): PowerFlowRunStatus {
-    const resultData = status.result?.data as PowerFlowRunStatus['result'] | null | undefined;
-    return {
-      runId: status.runId,
-      gridId: status.gridId,
-      status: status.status,
-      solver: status.engineKey,
-      errorMessage: status.errorMessage,
-      createdAt: status.createdAt,
-      startedAt: status.startedAt,
-      finishedAt: status.finishedAt,
-      result: resultData ?? null,
-    };
   }
 
   private toProject(project: ProjectApiModel): Project {

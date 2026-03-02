@@ -56,7 +56,7 @@ export class ProjectsPageComponent {
 		this.isSubmitting.set(true);
 
 		this.projectService
-			.createProject({
+			.createProject$({
 				name: name.trim(),
 				description: description.trim(),
 			})

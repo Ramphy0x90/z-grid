@@ -18,7 +18,7 @@ export class GridEffects {
 		this.actions$.pipe(
 			ofType(GridActions.gridDuplicateRequested),
 			exhaustMap(({ gridId }) =>
-				this.projectService.duplicateGrid(gridId).pipe(
+				this.projectService.duplicateGrid$(gridId).pipe(
 					map((duplicatedGrid) => GridActions.gridDuplicateSucceeded({ duplicatedGrid })),
 					catchError((error: unknown) =>
 						of(
@@ -40,7 +40,7 @@ export class GridEffects {
 				this.store.select(ProjectSelectors.selectedProjectId),
 			),
 			exhaustMap(([{ gridId }, grids, selectedProjectId]) =>
-				this.projectService.deleteGrid(gridId).pipe(
+				this.projectService.deleteGrid$(gridId).pipe(
 					map(() => {
 						const remainingGrids = grids.filter((grid: ProjectGrid) => grid.id !== gridId);
 						const nextSelectedGridId = selectedProjectId
@@ -65,7 +65,7 @@ export class GridEffects {
 		this.actions$.pipe(
 			ofType(GridActions.gridExportRequested),
 			exhaustMap(({ gridId }) =>
-				this.projectService.loadGridDatasetById(gridId).pipe(
+				this.projectService.loadGridDatasetById$(gridId).pipe(
 					tap((dataset) => {
 						const grid = this.projectService.getGridById(gridId);
 						const filenameBase = this.toSafeFileName(grid?.name ?? '') || `grid-${gridId}`;

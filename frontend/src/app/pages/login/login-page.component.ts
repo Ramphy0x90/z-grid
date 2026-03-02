@@ -40,7 +40,7 @@ export class LoginPageComponent {
 
 		const { username, password } = this.loginForm.getRawValue();
 		this.authService
-			.login({
+			.login$({
 				username: username.trim(),
 				password,
 			})

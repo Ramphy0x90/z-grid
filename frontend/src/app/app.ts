@@ -1,11 +1,13 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	DestroyRef,
 	computed,
 	effect,
 	inject,
 	signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { filter, firstValueFrom } from 'rxjs';
@@ -22,6 +24,7 @@ import { ProjectSelectors } from './stores/project/project.selectors';
 import { GridActions } from './stores/grid/grid.actions';
 import { GridSelectors } from './stores/grid/grid.selectors';
 import { AuthService } from './services/auth.service';
+import { PowerFlowRunService } from './services/power-flow-run.service';
 import { ProjectService } from './services/project.service';
 import {
 	DEFAULT_PROJECT_PAGE,
@@ -59,14 +62,18 @@ export class App {
 	];
 
 	private readonly router = inject(Router);
+	private readonly destroyRef = inject(DestroyRef);
 	private readonly store = inject(Store);
 	private readonly authService = inject(AuthService);
+	private readonly powerFlowRunService = inject(PowerFlowRunService);
 	private readonly projectService = inject(ProjectService);
 	private readonly layoutSplitPercentState = signal(50);
 	private readonly isDividerDraggingState = signal(false);
 	private readonly isLoginRouteState = signal(false);
 	private readonly isWorkspaceRouteState = signal(false);
 	private readonly runInProgressState = signal(false);
+	private gridSyncRequestId = 0;
+	private datasetSyncRequestId = 0;
 	private hasCompletedInitialGridSync = false;
 
 	protected readonly topbarTitle = this.store.selectSignal(NavigationSelectors.topbarTitle);
@@ -164,9 +171,14 @@ export class App {
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 		});
 
-		this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
-			this.syncRoute();
-		});
+		this.router.events
+			.pipe(
+				filter((event) => event instanceof NavigationEnd),
+				takeUntilDestroyed(this.destroyRef),
+			)
+			.subscribe(() => {
+				this.syncRoute();
+			});
 
 		let previousSelectedGridId: string | null | undefined;
 		effect(() => {
@@ -227,7 +239,7 @@ export class App {
 			return;
 		}
 		try {
-			const projects = await firstValueFrom(this.projectService.loadProjects());
+			const projects = await firstValueFrom(this.projectService.loadProjects$());
 			this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
 			this.ensureValidProjectRoute(projects.map((project) => project.id));
 		} catch {
@@ -256,33 +268,50 @@ export class App {
 	}
 
 	private async syncGridsForProject(projectId: string | null): Promise<void> {
+		const requestId = ++this.gridSyncRequestId;
 		if (!this.authService.isAuthenticated()) {
+			if (requestId !== this.gridSyncRequestId) {
+				return;
+			}
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 			return;
 		}
 		const isInitialProjectGridSync = !this.hasCompletedInitialGridSync;
 		this.hasCompletedInitialGridSync = true;
 		if (!projectId) {
+			if (requestId !== this.gridSyncRequestId) {
+				return;
+			}
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 			return;
 		}
 		try {
-			const grids = await firstValueFrom(this.projectService.loadGridsByProjectId(projectId));
+			const grids = await firstValueFrom(this.projectService.loadGridsByProjectId$(projectId));
+			if (requestId !== this.gridSyncRequestId) {
+				return;
+			}
 			this.store.dispatch(GridActions.gridsLoaded({ grids }));
 			if (isInitialProjectGridSync && grids.length > 0) {
 				this.store.dispatch(GridActions.gridSelected({ gridId: grids[0].id }));
 			}
 		} catch {
+			if (requestId !== this.gridSyncRequestId) {
+				return;
+			}
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 		}
 	}
 
 	private async syncDatasetForGrid(gridId: string): Promise<void> {
+		const requestId = ++this.datasetSyncRequestId;
 		if (!this.authService.isAuthenticated()) {
 			return;
 		}
 		try {
-			await firstValueFrom(this.projectService.loadGridDatasetById(gridId));
+			await firstValueFrom(this.projectService.loadGridDatasetById$(gridId));
+			if (requestId !== this.datasetSyncRequestId) {
+				return;
+			}
 		} catch {
 			// Keep current dataset state on transient load failures.
 		}
@@ -354,9 +383,9 @@ export class App {
 		try {
 			const dataset = this.projectService.getGridDatasetById(gridId);
 			if (dataset) {
-				await firstValueFrom(this.projectService.saveGridDataset(gridId, dataset));
+				await firstValueFrom(this.projectService.saveGridDataset$(gridId, dataset));
 			}
-			await firstValueFrom(this.projectService.startPowerFlowRun(gridId));
+			await firstValueFrom(this.powerFlowRunService.startPowerFlowRun$(gridId));
 			await this.router.navigate([...toProjectPageCommands(projectId, 'power-flow')]);
 		} catch {
 			// Run state and detailed errors are surfaced in the power-flow page.
@@ -383,20 +412,20 @@ export class App {
 			if (!selectedGridId) {
 				return;
 			}
-			const updatedGrid = this.projectService.updateGrid(selectedGridId, {
+			const updatedGrid$ = this.projectService.updateGrid$(selectedGridId, {
 				name: value.name,
 				description: value.description,
 			});
 			let updatedResult = null;
 			try {
-				updatedResult = await firstValueFrom(updatedGrid);
+				updatedResult = await firstValueFrom(updatedGrid$);
 			} catch {
 				return;
 			}
 			const dataset = this.projectService.getGridDatasetById(selectedGridId);
 			if (dataset) {
 				try {
-					await firstValueFrom(this.projectService.saveGridDataset(selectedGridId, dataset));
+					await firstValueFrom(this.projectService.saveGridDataset$(selectedGridId, dataset));
 				} catch {
 					return;
 				}
@@ -410,7 +439,7 @@ export class App {
 		let createdGrid;
 		try {
 			createdGrid = await firstValueFrom(
-				this.projectService.createGrid(projectId, {
+				this.projectService.createGrid$(projectId, {
 					name: value.name,
 					description: value.description,
 				}),
@@ -443,7 +472,9 @@ export class App {
 				})),
 			};
 			try {
-				await firstValueFrom(this.projectService.saveGridDataset(createdGrid.id, datasetToPersist));
+				await firstValueFrom(
+					this.projectService.saveGridDataset$(createdGrid.id, datasetToPersist),
+				);
 			} catch {
 				return;
 			}

@@ -18,7 +18,7 @@ export class CsrfTokenService {
   private readonly csrfTokenApiPath = `${environment.apiBaseUrl}/api/auth/csrf-token`;
   private readonly csrfTokenState = signal<CsrfTokenResponse | null>(null);
 
-  getCsrfToken(): Observable<CsrfTokenResponse> {
+  getCsrfToken$(): Observable<CsrfTokenResponse> {
     const cachedToken = this.csrfTokenState();
     if (cachedToken) {
       return of(cachedToken);

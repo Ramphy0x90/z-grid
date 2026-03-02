@@ -17,7 +17,7 @@ export const csrfInterceptor: HttpInterceptorFn = (request, next) => {
 		return next(requestWithCredentials);
 	}
 
-	return csrfTokenService.getCsrfToken().pipe(
+	return csrfTokenService.getCsrfToken$().pipe(
 		switchMap((csrfToken) =>
 			next(
 				requestWithCredentials.clone({

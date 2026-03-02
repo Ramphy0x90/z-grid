@@ -30,7 +30,7 @@ export class AuthService {
   readonly currentUser = this.currentUserState.asReadonly();
   readonly isAuthenticated = () => this.currentUserState() !== null;
 
-  login(request: LoginRequest): Observable<AuthUser> {
+  login$(request: LoginRequest): Observable<AuthUser> {
     return this.http.post<AuthUser>(this.loginApiPath, request).pipe(
       tap((user) => {
         this.currentUserState.set(user);
