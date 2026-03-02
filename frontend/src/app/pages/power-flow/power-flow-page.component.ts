@@ -8,7 +8,7 @@ import {
 	signal,
 } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { finalize, take } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { PowerFlowRunService } from '../../services/power-flow-run.service';
@@ -57,7 +57,7 @@ export class PowerFlowPageComponent {
 				return;
 			}
 			this.errorState.set(null);
-			void this.loadLatestRun(gridId);
+			this.loadLatestRun(gridId);
 		});
 
 		this.destroyRef.onDestroy(() => this.stopPolling());
@@ -67,31 +67,37 @@ export class PowerFlowPageComponent {
 		this.activePaneState.set(pane);
 	}
 
-	private async loadLatestRun(gridId: string): Promise<void> {
+	private loadLatestRun(gridId: string): void {
 		this.loadingState.set(true);
-		try {
-			const runs = await firstValueFrom(this.powerFlowRunService.listPowerFlowRuns$(gridId));
-			const latest = runs[0] ?? null;
-			this.runState.set(latest);
-			this.succeededWithoutResultPollCountState.set(0);
-			if (!latest) {
-				this.stopPolling();
-			} else if (latest.status === 'QUEUED' || latest.status === 'RUNNING') {
-				this.startPolling(gridId);
-			} else if (latest.status === 'SUCCEEDED' && latest.result === null) {
-				this.startPolling(gridId);
-			} else {
-				this.stopPolling();
-			}
-		} catch {
-			const cached = this.powerFlowRunService.getLatestPowerFlowRun(gridId);
-			this.runState.set(cached);
-			if (!cached) {
-				this.errorState.set('Could not load power-flow history.');
-			}
-		} finally {
-			this.loadingState.set(false);
-		}
+		this.powerFlowRunService
+			.listPowerFlowRuns$(gridId)
+			.pipe(
+				take(1),
+				finalize(() => this.loadingState.set(false)),
+			)
+			.subscribe({
+				next: (runs) => {
+					const latest = runs[0] ?? null;
+					this.runState.set(latest);
+					this.succeededWithoutResultPollCountState.set(0);
+					if (!latest) {
+						this.stopPolling();
+					} else if (latest.status === 'QUEUED' || latest.status === 'RUNNING') {
+						this.startPolling(gridId);
+					} else if (latest.status === 'SUCCEEDED' && latest.result === null) {
+						this.startPolling(gridId);
+					} else {
+						this.stopPolling();
+					}
+				},
+				error: () => {
+					const cached = this.powerFlowRunService.getLatestPowerFlowRun(gridId);
+					this.runState.set(cached);
+					if (!cached) {
+						this.errorState.set('Could not load power-flow history.');
+					}
+				},
+			});
 	}
 
 	private startPolling(gridId: string): void {
@@ -106,7 +112,7 @@ export class PowerFlowPageComponent {
 				return;
 			}
 			this.pollInFlight = true;
-			void this.fetchRun(gridId, run.runId);
+			this.fetchRun(gridId, run.runId);
 		}, 2000);
 	}
 
@@ -118,38 +124,45 @@ export class PowerFlowPageComponent {
 		this.pollInFlight = false;
 	}
 
-	private async fetchRun(gridId: string, runId: string): Promise<void> {
-		try {
-			const run = await firstValueFrom(this.powerFlowRunService.getPowerFlowRun$(gridId, runId));
-			this.runState.set(run);
-			if (run.status === 'SUCCEEDED' && run.result === null) {
-				const attempts = this.succeededWithoutResultPollCountState() + 1;
-				this.succeededWithoutResultPollCountState.set(attempts);
-				// Keep polling briefly to bridge backend write timing.
-				if (attempts < 10) {
-					return;
-				}
-				this.errorState.set(
-					'Run completed but result payload is not available yet. Please run again.',
-				);
-				this.stopPolling();
-				return;
-			} else {
-				this.succeededWithoutResultPollCountState.set(0);
-			}
-			if (run.status !== 'QUEUED' && run.status !== 'RUNNING') {
-				this.stopPolling();
-			}
-		} catch (error) {
-			if (error instanceof HttpErrorResponse && error.status === 404) {
-				this.stopPolling();
-				this.runState.set(null);
-				await this.loadLatestRun(gridId);
-				return;
-			}
-			this.errorState.set('Run status polling failed. The run may still be processing.');
-		} finally {
-			this.pollInFlight = false;
-		}
+	private fetchRun(gridId: string, runId: string): void {
+		this.powerFlowRunService
+			.getPowerFlowRun$(gridId, runId)
+			.pipe(
+				take(1),
+				finalize(() => {
+					this.pollInFlight = false;
+				}),
+			)
+			.subscribe({
+				next: (run) => {
+					this.runState.set(run);
+					if (run.status === 'SUCCEEDED' && run.result === null) {
+						const attempts = this.succeededWithoutResultPollCountState() + 1;
+						this.succeededWithoutResultPollCountState.set(attempts);
+						// Keep polling briefly to bridge backend write timing.
+						if (attempts < 10) {
+							return;
+						}
+						this.errorState.set(
+							'Run completed but result payload is not available yet. Please run again.',
+						);
+						this.stopPolling();
+						return;
+					}
+					this.succeededWithoutResultPollCountState.set(0);
+					if (run.status !== 'QUEUED' && run.status !== 'RUNNING') {
+						this.stopPolling();
+					}
+				},
+				error: (error: unknown) => {
+					if (error instanceof HttpErrorResponse && error.status === 404) {
+						this.stopPolling();
+						this.runState.set(null);
+						this.loadLatestRun(gridId);
+						return;
+					}
+					this.errorState.set('Run status polling failed. The run may still be processing.');
+				},
+			});
 	}
 }

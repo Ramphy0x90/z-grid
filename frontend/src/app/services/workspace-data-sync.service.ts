@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { AuthService } from './auth.service';
 import { ProjectService } from './project.service';
 import type { Project, ProjectGrid } from '../types/project.types';
@@ -26,49 +26,43 @@ export class WorkspaceDataSyncService {
 		this.datasetSyncRequestId += 1;
 	}
 
-	async syncProjects(): Promise<Project[]> {
+	syncProjects$(): Observable<Project[]> {
 		if (!this.authService.isAuthenticated()) {
-			return [];
+			return of([]);
 		}
-		try {
-			return await firstValueFrom(this.projectService.loadProjects$());
-		} catch {
-			return [];
-		}
+		return this.projectService.loadProjects$().pipe(catchError(() => of([])));
 	}
 
-	async syncGridsForProject(projectId: string | null): Promise<GridSyncResult> {
+	syncGridsForProject$(projectId: string | null): Observable<GridSyncResult> {
 		const requestId = ++this.gridSyncRequestId;
 		if (!this.authService.isAuthenticated()) {
-			return { grids: [], shouldSelectFirst: false, stale: requestId !== this.gridSyncRequestId };
+			return of({ grids: [], shouldSelectFirst: false, stale: requestId !== this.gridSyncRequestId });
 		}
 		const isInitialProjectGridSync = !this.hasCompletedInitialGridSync;
 		this.hasCompletedInitialGridSync = true;
 		if (!projectId) {
-			return { grids: [], shouldSelectFirst: false, stale: requestId !== this.gridSyncRequestId };
+			return of({ grids: [], shouldSelectFirst: false, stale: requestId !== this.gridSyncRequestId });
 		}
-		try {
-			const grids = await firstValueFrom(this.projectService.loadGridsByProjectId$(projectId));
-			return {
+		return this.projectService.loadGridsByProjectId$(projectId).pipe(
+			map((grids) => ({
 				grids,
 				shouldSelectFirst: isInitialProjectGridSync && grids.length > 0,
 				stale: requestId !== this.gridSyncRequestId,
-			};
-		} catch {
-			return { grids: [], shouldSelectFirst: false, stale: requestId !== this.gridSyncRequestId };
-		}
+			})),
+			catchError(() =>
+				of({ grids: [], shouldSelectFirst: false, stale: requestId !== this.gridSyncRequestId }),
+			),
+		);
 	}
 
-	async syncDatasetForGrid(gridId: string): Promise<boolean> {
+	syncDatasetForGrid$(gridId: string): Observable<boolean> {
 		const requestId = ++this.datasetSyncRequestId;
 		if (!this.authService.isAuthenticated()) {
-			return false;
+			return of(false);
 		}
-		try {
-			await firstValueFrom(this.projectService.loadGridDatasetById$(gridId));
-			return requestId === this.datasetSyncRequestId;
-		} catch {
-			return requestId === this.datasetSyncRequestId;
-		}
+		return this.projectService.loadGridDatasetById$(gridId).pipe(
+			map(() => requestId === this.datasetSyncRequestId),
+			catchError(() => of(requestId === this.datasetSyncRequestId)),
+		);
 	}
 }

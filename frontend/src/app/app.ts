@@ -10,7 +10,17 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { filter, firstValueFrom } from 'rxjs';
+import {
+	catchError,
+	EMPTY,
+	filter,
+	finalize,
+	from,
+	map,
+	of,
+	switchMap,
+	take,
+} from 'rxjs';
 import { Store } from '@ngrx/store';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { GridSelectorComponent } from './components/grid-selector/grid-selector.component';
@@ -163,7 +173,7 @@ export class App {
 			}
 			previousAuthenticationState = isAuthenticated;
 			if (isAuthenticated) {
-				void this.syncProjectsFromBackend();
+				this.syncProjectsFromBackend();
 				return;
 			}
 			this.workspaceDataSyncService.resetSessionState();
@@ -215,7 +225,7 @@ export class App {
 				return;
 			}
 			previousProjectId = projectId;
-			void this.syncGridsForProject(projectId);
+			this.syncGridsForProject(projectId);
 		});
 
 		let previousDatasetGridId: string | null | undefined;
@@ -228,20 +238,24 @@ export class App {
 			if (!selectedGridId) {
 				return;
 			}
-			void this.syncDatasetForGrid(selectedGridId);
+			this.syncDatasetForGrid(selectedGridId);
 		});
 
 		this.syncRoute();
 	}
 
-	private async syncProjectsFromBackend(): Promise<void> {
-		const projects = await this.workspaceDataSyncService.syncProjects();
-		this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
-		this.workspaceRouteService.ensureValidProjectRoute(
-			projects.map((project) => project.id),
-			this.selectedProjectId(),
-			this.selectedPageId(),
-		);
+	private syncProjectsFromBackend(): void {
+		this.workspaceDataSyncService
+			.syncProjects$()
+			.pipe(take(1), takeUntilDestroyed(this.destroyRef))
+			.subscribe((projects) => {
+				this.store.dispatch(ProjectActions.projectsLoaded({ projects }));
+				this.workspaceRouteService.ensureValidProjectRoute(
+					projects.map((project) => project.id),
+					this.selectedProjectId(),
+					this.selectedPageId(),
+				);
+			});
 	}
 
 	private syncRoute(): void {
@@ -254,19 +268,26 @@ export class App {
 		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
 	}
 
-	private async syncGridsForProject(projectId: string | null): Promise<void> {
-		const result = await this.workspaceDataSyncService.syncGridsForProject(projectId);
-		if (result.stale) {
-			return;
-		}
-		this.store.dispatch(GridActions.gridsLoaded({ grids: result.grids }));
-		if (result.shouldSelectFirst) {
-			this.store.dispatch(GridActions.gridSelected({ gridId: result.grids[0].id }));
-		}
+	private syncGridsForProject(projectId: string | null): void {
+		this.workspaceDataSyncService
+			.syncGridsForProject$(projectId)
+			.pipe(take(1), takeUntilDestroyed(this.destroyRef))
+			.subscribe((result) => {
+				if (result.stale) {
+					return;
+				}
+				this.store.dispatch(GridActions.gridsLoaded({ grids: result.grids }));
+				if (result.shouldSelectFirst) {
+					this.store.dispatch(GridActions.gridSelected({ gridId: result.grids[0].id }));
+				}
+			});
 	}
 
-	private async syncDatasetForGrid(gridId: string): Promise<void> {
-		await this.workspaceDataSyncService.syncDatasetForGrid(gridId);
+	private syncDatasetForGrid(gridId: string): void {
+		this.workspaceDataSyncService
+			.syncDatasetForGrid$(gridId)
+			.pipe(take(1), takeUntilDestroyed(this.destroyRef))
+			.subscribe();
 	}
 
 	protected onLayoutSplitChange(nextSplitPercent: number): void {
@@ -299,7 +320,7 @@ export class App {
 			return;
 		}
 		if (actionId === 'save') {
-			void this.onCreateGridSubmit();
+			this.onCreateGridSubmit();
 			return;
 		}
 		if (actionId === 'create') {
@@ -307,32 +328,34 @@ export class App {
 			return;
 		}
 		if (actionId === 'run') {
-			void this.onRunPowerFlowAsync();
+			this.onRunPowerFlow();
 		}
 	}
 
-	private async onRunPowerFlowAsync(): Promise<void> {
+	private onRunPowerFlow(): void {
 		const projectId = this.selectedProjectId();
 		const gridId = this.selectedGridId();
 		if (!projectId || !gridId) {
 			return;
 		}
 		this.runInProgressState.set(true);
-		try {
-			const dataset = this.projectService.getGridDatasetById(gridId);
-			if (dataset) {
-				await firstValueFrom(this.projectService.saveGridDataset$(gridId, dataset));
-			}
-			await firstValueFrom(this.powerFlowRunService.startPowerFlowRun$(gridId));
-			await this.router.navigate([...toProjectPageCommands(projectId, 'power-flow')]);
-		} catch {
-			// Run state and detailed errors are surfaced in the power-flow page.
-		} finally {
-			this.runInProgressState.set(false);
-		}
+		const dataset = this.projectService.getGridDatasetById(gridId);
+		const saveBeforeRun$ = dataset
+			? this.projectService.saveGridDataset$(gridId, dataset).pipe(map(() => null))
+			: of(null);
+		saveBeforeRun$
+			.pipe(
+				switchMap(() => this.powerFlowRunService.startPowerFlowRun$(gridId)),
+				switchMap(() => from(this.router.navigate([...toProjectPageCommands(projectId, 'power-flow')]))),
+				catchError(() => of(false)),
+				finalize(() => this.runInProgressState.set(false)),
+				take(1),
+				takeUntilDestroyed(this.destroyRef),
+			)
+			.subscribe();
 	}
 
-	protected async onCreateGridSubmit(): Promise<void> {
+	protected onCreateGridSubmit(): void {
 		if (!this.isGridEditState()) {
 			return;
 		}
@@ -350,76 +373,79 @@ export class App {
 			if (!selectedGridId) {
 				return;
 			}
-			const updatedGrid$ = this.projectService.updateGrid$(selectedGridId, {
-				name: value.name,
-				description: value.description,
-			});
-			let updatedResult = null;
-			try {
-				updatedResult = await firstValueFrom(updatedGrid$);
-			} catch {
-				return;
-			}
-			const dataset = this.projectService.getGridDatasetById(selectedGridId);
-			if (dataset) {
-				try {
-					await firstValueFrom(this.projectService.saveGridDataset$(selectedGridId, dataset));
-				} catch {
-					return;
-				}
-			}
-			if (updatedResult) {
+			this.submitGridUpdate(selectedGridId, value.name, value.description);
+			return;
+		}
+		this.submitGridCreate(projectId, value.name, value.description);
+	}
+
+	private submitGridUpdate(selectedGridId: string, name: string, description: string): void {
+		this.projectService
+			.updateGrid$(selectedGridId, { name, description })
+			.pipe(
+				switchMap((updatedGrid) => {
+					const dataset = this.projectService.getGridDatasetById(selectedGridId);
+					if (!dataset) {
+						return of(updatedGrid);
+					}
+					return this.projectService.saveGridDataset$(selectedGridId, dataset).pipe(
+						map(() => updatedGrid),
+					);
+				}),
+				catchError(() => EMPTY),
+				take(1),
+				takeUntilDestroyed(this.destroyRef),
+			)
+			.subscribe(() => {
 				this.store.dispatch(GridActions.gridsLoaded({ grids: this.projectService.grids() }));
 				this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
-			}
-			return;
-		}
-		let createdGrid;
-		try {
-			createdGrid = await firstValueFrom(
-				this.projectService.createGrid$(projectId, {
-					name: value.name,
-					description: value.description,
+			});
+	}
+
+	private submitGridCreate(projectId: string, name: string, description: string): void {
+		this.projectService
+			.createGrid$(projectId, { name, description })
+			.pipe(
+				switchMap((createdGrid) => {
+					const draftDataset = this.gridEditorSessionService.getCreateDraftDataset();
+					if (!draftDataset) {
+						return of(createdGrid);
+					}
+					const datasetToPersist: GridDataset = {
+						...draftDataset,
+						grid: {
+							...draftDataset.grid,
+							id: createdGrid.id,
+							projectId: createdGrid.projectId,
+							name: createdGrid.name,
+							description: createdGrid.description,
+						},
+						buses: draftDataset.buses.map((bus) => ({
+							...bus,
+							gridId: createdGrid.id,
+						})),
+						lines: draftDataset.lines.map((line) => ({
+							...line,
+							gridId: createdGrid.id,
+						})),
+						transformers: draftDataset.transformers.map((transformer) => ({
+							...transformer,
+							gridId: createdGrid.id,
+						})),
+					};
+					return this.projectService.saveGridDataset$(createdGrid.id, datasetToPersist).pipe(
+						map(() => createdGrid),
+					);
 				}),
-			);
-		} catch {
-			return;
-		}
-		const draftDataset = this.gridEditorSessionService.getCreateDraftDataset();
-		if (draftDataset) {
-			const datasetToPersist: GridDataset = {
-				...draftDataset,
-				grid: {
-					...draftDataset.grid,
-					id: createdGrid.id,
-					projectId: createdGrid.projectId,
-					name: createdGrid.name,
-					description: createdGrid.description,
-				},
-				buses: draftDataset.buses.map((bus) => ({
-					...bus,
-					gridId: createdGrid.id,
-				})),
-				lines: draftDataset.lines.map((line) => ({
-					...line,
-					gridId: createdGrid.id,
-				})),
-				transformers: draftDataset.transformers.map((transformer) => ({
-					...transformer,
-					gridId: createdGrid.id,
-				})),
-			};
-			try {
-				await firstValueFrom(
-					this.projectService.saveGridDataset$(createdGrid.id, datasetToPersist),
-				);
-			} catch {
-				return;
-			}
-		}
-		this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid: createdGrid }));
-		this.gridEditorSessionService.clearCreateDraft();
-		this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
+				catchError(() => EMPTY),
+				take(1),
+				takeUntilDestroyed(this.destroyRef),
+			)
+			.subscribe((createdGrid) => {
+				this.store.dispatch(GridActions.gridDuplicated({ duplicatedGrid: createdGrid }));
+				this.gridEditorSessionService.clearCreateDraft();
+				this.store.dispatch(GridActions.gridEditorModeSet({ mode: 'view' }));
+			});
 	}
 
 	private openCreateGridForm(): void {
