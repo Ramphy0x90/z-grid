@@ -447,26 +447,3 @@
 
 /* ── Responsive ── */
 
-@media (max-width: 900px) {
-  .sidebar {
-    width: 100%;
-    border-right: 0;
-    border-bottom: 1px solid var(--border-default);
-  }
-
-  .sidebar-collapsed {
-    width: 100%;
-    flex-direction: row;
-    padding: 10px 14px;
-  }
-
-  .sidebar-collapsed .nav-content {
-    flex-direction: row;
-    gap: 4px;
-  }
-
-  .sidebar-collapsed .collapse-toggle {
-    width: 34px;
-    height: 34px;
-  }
-}

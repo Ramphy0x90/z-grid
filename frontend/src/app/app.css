@@ -125,12 +125,6 @@ app-grid-viewer {
   height: 100%;
 }
 
-@media (max-width: 900px) {
-  .app-shell {
-    flex-direction: column;
-  }
-}
-
 @media (max-width: 1200px) {
   .workspace-panels {
     grid-template-columns: 1fr !important;
