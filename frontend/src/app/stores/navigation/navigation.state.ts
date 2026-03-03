@@ -7,5 +7,5 @@ export type NavigationState = {
 
 export const initialNavigationState: NavigationState = {
 	selectedPageId: null,
-	collapsed: false,
+	collapsed: true,
 };

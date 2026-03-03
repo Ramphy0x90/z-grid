@@ -33,9 +33,9 @@ export class NavbarComponent {
 	protected readonly pageGroups = PAGE_GROUPS;
 
 	protected readonly expandedGroups = signal<Record<string, boolean>>({
-		project: true,
-		grid: true,
-		'static-calculation': true,
+		project: false,
+		grid: false,
+		'static-calculation': false,
 	});
 
 	protected readonly floatingGroupId = signal<string | null>(null);

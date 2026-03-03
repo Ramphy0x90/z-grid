@@ -22,6 +22,7 @@
 						<i class="bi bi-folder2-open section-header-icon" aria-hidden="true"></i>
 						<span class="section-header-label">Projects</span>
 					</div>
+
 					<i
 						class="bi section-chevron"
 						[class.bi-chevron-up]="isGroupExpanded('project')"
@@ -29,6 +30,7 @@
 						aria-hidden="true"
 					></i>
 				</button>
+
 				@if (isGroupExpanded('project')) {
 					<div class="nav-items" role="menu" aria-label="Project selection">
 						@for (project of projects(); track project.id) {
@@ -88,7 +90,6 @@
 				<button
 					type="button"
 					class="rail-btn"
-					[class.rail-btn-active]="floatingGroupId() === 'project' || hasProjectSelected()"
 					aria-label="Project selection"
 					(click)="toggleFloatingGroup('project')"
 				>
@@ -112,7 +113,11 @@
 						}
 						@if (hasProjectSelected()) {
 							<div class="flyout-divider"></div>
-							<button type="button" class="flyout-item flyout-item-muted" (click)="onClearSelection()">
+							<button
+								type="button"
+								class="flyout-item flyout-item-muted"
+								(click)="onClearSelection()"
+							>
 								<i class="bi bi-arrow-left flyout-item-icon" aria-hidden="true"></i>
 								Back to projects
 							</button>
@@ -136,11 +141,7 @@
 						</button>
 
 						@if (floatingGroupId() === group.id) {
-							<div
-								class="flyout"
-								role="menu"
-								[attr.aria-label]="group.label + ' pages menu'"
-							>
+							<div class="flyout" role="menu" [attr.aria-label]="group.label + ' pages menu'">
 								<p class="flyout-header">{{ group.label }}</p>
 								@for (page of group.children; track page.id) {
 									<button
@@ -167,7 +168,11 @@
 		[attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
 		(click)="toggleCollapsed()"
 	>
-		<i class="bi" [class.bi-layout-sidebar-inset]="collapsed()" [class.bi-layout-sidebar]="!collapsed()"></i>
+		<i
+			class="bi"
+			[class.bi-layout-sidebar-inset]="collapsed()"
+			[class.bi-layout-sidebar]="!collapsed()"
+		></i>
 		@if (!collapsed()) {
 			<span class="collapse-label">Collapse</span>
 		}
