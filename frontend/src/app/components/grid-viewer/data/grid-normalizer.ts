@@ -1,4 +1,4 @@
-import type { BusModel, GridDataset, LineModel, TransformerModel } from '../models/grid.models';
+import type { BusModel, GridColorMode, GridDataset, LineModel, TransformerModel } from '../models/grid.models';
 import { latToMercatorY } from '../utils/web-mercator';
 
 export type Bounds = {
@@ -43,6 +43,18 @@ const COLOR_USER_TRANSFORMER = [1, 0.71, 0.2, 1];
 const COLOR_LOAD = [0.973, 0.443, 0.443, 0];
 const COLOR_GENERATOR = [0.204, 0.827, 0.6, 0];
 const COLOR_SHUNT = [0.58, 0.74, 1, 1];
+const COLOR_EDGE_MIXED_VOLTAGE = [0.66, 0.66, 0.72, 0.9];
+const COLOR_PALETTE: readonly [number, number, number, number][] = [
+	[0.89, 0.36, 0.36, 0.95],
+	[0.97, 0.68, 0.23, 0.95],
+	[0.95, 0.9, 0.29, 0.95],
+	[0.46, 0.83, 0.36, 0.95],
+	[0.22, 0.84, 0.74, 0.95],
+	[0.29, 0.58, 0.94, 0.95],
+	[0.62, 0.45, 0.93, 0.95],
+	[0.89, 0.42, 0.73, 0.95],
+];
+const COLOR_ATTACHED_OFFLINE: readonly number[] = [0.45, 0.45, 0.48, 0.8];
 
 const createEmptyBounds = (): Bounds => ({
 	minX: Number.POSITIVE_INFINITY,
@@ -74,7 +86,7 @@ const finalizeBounds = (bounds: Bounds): Bounds => {
 	return bounds;
 };
 
-const colorForLine = (line: LineModel): number[] => {
+const colorForLineByEnergized = (line: LineModel): readonly number[] => {
 	if (!line.inService || !line.fromSwitchClosed || !line.toSwitchClosed) {
 		return COLOR_EDGE_OFFLINE;
 	}
@@ -90,7 +102,7 @@ const colorForLine = (line: LineModel): number[] => {
 	return COLOR_EDGE_ACTIVE;
 };
 
-const colorForTransformer = (transformer: TransformerModel): number[] => {
+const colorForTransformerByEnergized = (transformer: TransformerModel): readonly number[] => {
 	if (!transformer.inService || !transformer.fromSwitchClosed || !transformer.toSwitchClosed) {
 		return COLOR_EDGE_OFFLINE;
 	}
@@ -100,6 +112,83 @@ const colorForTransformer = (transformer: TransformerModel): number[] => {
 	return COLOR_TRANSFORMER;
 };
 
+const colorForAttachedByKind = (kind: 'load' | 'generator' | 'shunt'): readonly number[] => {
+	if (kind === 'generator') {
+		return COLOR_GENERATOR;
+	}
+	if (kind === 'load') {
+		return COLOR_LOAD;
+	}
+	return COLOR_SHUNT;
+};
+
+const isTransformerEnergized = (transformer: TransformerModel): boolean =>
+	transformer.inService && transformer.fromSwitchClosed && transformer.toSwitchClosed;
+
+const isLineEnergized = (line: LineModel): boolean =>
+	line.inService && line.fromSwitchClosed && line.toSwitchClosed;
+
+const hashString = (value: string): number => {
+	let hash = 0;
+	for (let index = 0; index < value.length; index += 1) {
+		hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+	}
+	return hash;
+};
+
+const colorFromPalette = (key: string): readonly number[] =>
+	COLOR_PALETTE[hashString(key) % COLOR_PALETTE.length] ?? COLOR_EDGE_ACTIVE;
+
+const collectTransformerGroups = (
+	dataset: GridDataset,
+): Array<{ transformerId: string; busIds: Set<string>; edgeIds: Set<string> }> => {
+	const groups: Array<{ transformerId: string; busIds: Set<string>; edgeIds: Set<string> }> = [];
+	const hintedGroups = dataset.visualization?.transformerGroups ?? null;
+	if (hintedGroups && typeof hintedGroups === 'object') {
+		for (const [transformerId, group] of Object.entries(hintedGroups)) {
+			const busIds = new Set<string>(Array.isArray(group?.busIds) ? group.busIds : []);
+			const edgeIds = new Set<string>(Array.isArray(group?.edgeIds) ? group.edgeIds : []);
+			edgeIds.add(transformerId);
+			groups.push({ transformerId, busIds, edgeIds });
+		}
+		return groups;
+	}
+
+	const edgeIdsByBusId = new Map<string, Set<string>>();
+	const addEdgeForBus = (busId: string, edgeId: string): void => {
+		const bucket = edgeIdsByBusId.get(busId) ?? new Set<string>();
+		bucket.add(edgeId);
+		edgeIdsByBusId.set(busId, bucket);
+	};
+	for (const line of dataset.lines) {
+		addEdgeForBus(line.fromBusId, line.id);
+		addEdgeForBus(line.toBusId, line.id);
+	}
+	for (const transformer of dataset.transformers) {
+		addEdgeForBus(transformer.fromBusId, transformer.id);
+		addEdgeForBus(transformer.toBusId, transformer.id);
+	}
+
+	for (const transformer of dataset.transformers) {
+		const busIds = new Set<string>([transformer.fromBusId, transformer.toBusId]);
+		const edgeIds = new Set<string>([transformer.id]);
+		const firstBusEdges = edgeIdsByBusId.get(transformer.fromBusId);
+		if (firstBusEdges) {
+			for (const edgeId of firstBusEdges) {
+				edgeIds.add(edgeId);
+			}
+		}
+		const secondBusEdges = edgeIdsByBusId.get(transformer.toBusId);
+		if (secondBusEdges) {
+			for (const edgeId of secondBusEdges) {
+				edgeIds.add(edgeId);
+			}
+		}
+		groups.push({ transformerId: transformer.id, busIds, edgeIds });
+	}
+	return groups;
+};
+
 const copyColor = (target: Float32Array, targetOffset: number, color: readonly number[]): void => {
 	target[targetOffset] = color[0] ?? 1;
 	target[targetOffset + 1] = color[1] ?? 1;
@@ -107,7 +196,10 @@ const copyColor = (target: Float32Array, targetOffset: number, color: readonly n
 	target[targetOffset + 3] = color[3] ?? 1;
 };
 
-export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph => {
+export const normalizeGridDataset = (
+	dataset: GridDataset,
+	colorMode: GridColorMode = 'energized',
+): NormalizedGridGraph => {
 	const busIds = dataset.buses.map((bus) => bus.id);
 	const busById = new Map(dataset.buses.map((bus) => [bus.id, bus]));
 	const busIndexById = new Map(busIds.map((id, index) => [id, index]));
@@ -138,7 +230,7 @@ export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph 
 		addPointToBounds(schematicBounds, schematicX, schematicY);
 
 		nodeRadii[index] = bus.busType === 'SLACK' ? 7 : bus.busType === 'PV' ? 6 : 5;
-		copyColor(nodeColors, index * 4, bus.inService ? COLOR_NODE_ACTIVE : COLOR_NODE_OFFLINE);
+		copyColor(nodeColors, index * 4, COLOR_NODE_ACTIVE);
 	}
 
 	const mapSpanX = Math.abs(mapBounds.maxX - mapBounds.minX);
@@ -174,6 +266,7 @@ export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph 
 	const attachedElements: Array<{
 		id: string;
 		kind: 'load' | 'generator' | 'shunt';
+		busId: string;
 		mapX: number;
 		mapY: number;
 		schematicX: number;
@@ -199,6 +292,7 @@ export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph 
 			attachedElements.push({
 				id: item.id,
 				kind: item.kind,
+				busId,
 				mapX,
 				mapY,
 				schematicX,
@@ -228,7 +322,7 @@ export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph 
 		copyColor(
 			attachedColors,
 			index * 4,
-			item.kind === 'generator' ? COLOR_GENERATOR : item.kind === 'load' ? COLOR_LOAD : COLOR_SHUNT,
+			colorForAttachedByKind(item.kind),
 		);
 	}
 
@@ -281,14 +375,130 @@ export const normalizeGridDataset = (dataset: GridDataset): NormalizedGridGraph 
 
 		if (edge.kind === 'line') {
 			const line = lineById.get(edge.id);
-			copyColor(lineColors, index * 4, line ? colorForLine(line) : COLOR_EDGE_ACTIVE);
+			copyColor(lineColors, index * 4, line ? colorForLineByEnergized(line) : COLOR_EDGE_ACTIVE);
 		} else {
 			const transformer = transformerById.get(edge.id);
 			copyColor(
 				lineColors,
 				index * 4,
-				transformer ? colorForTransformer(transformer) : COLOR_TRANSFORMER,
+				transformer ? colorForTransformerByEnergized(transformer) : COLOR_TRANSFORMER,
 			);
+		}
+	}
+
+	if (colorMode === 'energized') {
+		for (let index = 0; index < dataset.buses.length; index += 1) {
+			copyColor(
+				nodeColors,
+				index * 4,
+				dataset.buses[index]?.inService ? COLOR_NODE_ACTIVE : COLOR_NODE_OFFLINE,
+			);
+		}
+		const loadById = new Map(dataset.loads.map((load) => [load.id, load]));
+		const generatorById = new Map(dataset.generators.map((generator) => [generator.id, generator]));
+		const shuntById = new Map(dataset.shuntCompensators.map((shunt) => [shunt.id, shunt]));
+		for (let index = 0; index < attachedCount; index += 1) {
+			const item = attachedElements[index];
+			const inService =
+				item.kind === 'load'
+					? (loadById.get(item.id)?.inService ?? false)
+					: item.kind === 'generator'
+						? (generatorById.get(item.id)?.inService ?? false)
+						: (shuntById.get(item.id)?.inService ?? false);
+			copyColor(
+				attachedColors,
+				index * 4,
+				inService ? colorForAttachedByKind(item.kind) : COLOR_ATTACHED_OFFLINE,
+			);
+		}
+	} else if (colorMode === 'voltageLevel') {
+		const busColorById = new Map<string, readonly number[]>();
+		for (const bus of dataset.buses) {
+			const voltageBucket = `${Math.round(bus.nominalVoltageKv * 100) / 100}kV`;
+			busColorById.set(bus.id, colorFromPalette(voltageBucket));
+		}
+		for (let index = 0; index < busIds.length; index += 1) {
+			const busId = busIds[index];
+			copyColor(nodeColors, index * 4, busColorById.get(busId) ?? COLOR_NODE_ACTIVE);
+		}
+		for (let index = 0; index < edgeCount; index += 1) {
+			const edge = edges[index];
+			const fromColor = busColorById.get(edge.from);
+			const toColor = busColorById.get(edge.to);
+			if (fromColor && toColor && fromColor === toColor) {
+				copyColor(lineColors, index * 4, fromColor);
+			} else {
+				copyColor(lineColors, index * 4, COLOR_EDGE_MIXED_VOLTAGE);
+			}
+		}
+		for (let index = 0; index < attachedCount; index += 1) {
+			const item = attachedElements[index];
+			copyColor(
+				attachedColors,
+				index * 4,
+				busColorById.get(item.busId) ?? colorForAttachedByKind(item.kind),
+			);
+		}
+	} else {
+		for (let index = 0; index < dataset.buses.length; index += 1) {
+			copyColor(nodeColors, index * 4, COLOR_NODE_OFFLINE);
+		}
+		for (let index = 0; index < edgeCount; index += 1) {
+			copyColor(lineColors, index * 4, COLOR_EDGE_OFFLINE);
+		}
+		for (let index = 0; index < attachedCount; index += 1) {
+			copyColor(attachedColors, index * 4, COLOR_ATTACHED_OFFLINE);
+		}
+
+		const busIndexLookup = new Map(busIds.map((id, index) => [id, index]));
+		const edgeIndexLookup = new Map(edgeIds.map((id, index) => [id, index]));
+		const groups = collectTransformerGroups(dataset)
+			.filter((group) => transformerById.has(group.transformerId));
+		for (const group of groups) {
+			const color = colorFromPalette(group.transformerId);
+			for (const busId of group.busIds) {
+				const busIndex = busIndexLookup.get(busId);
+				if (busIndex !== undefined) {
+					copyColor(nodeColors, busIndex * 4, color);
+				}
+			}
+			for (const edgeId of group.edgeIds) {
+				const edgeIndex = edgeIndexLookup.get(edgeId);
+				if (edgeIndex !== undefined) {
+					copyColor(lineColors, edgeIndex * 4, color);
+				}
+			}
+		}
+		for (let index = 0; index < attachedCount; index += 1) {
+			const item = attachedElements[index];
+			const busIndex = busIndexLookup.get(item.busId);
+			if (busIndex !== undefined) {
+				const nodeColorOffset = busIndex * 4;
+				const attachedColorOffset = index * 4;
+				attachedColors[attachedColorOffset] = nodeColors[nodeColorOffset];
+				attachedColors[attachedColorOffset + 1] = nodeColors[nodeColorOffset + 1];
+				attachedColors[attachedColorOffset + 2] = nodeColors[nodeColorOffset + 2];
+				attachedColors[attachedColorOffset + 3] = nodeColors[nodeColorOffset + 3];
+			}
+		}
+
+		for (let index = 0; index < dataset.lines.length; index += 1) {
+			const line = dataset.lines[index];
+			if (!isLineEnergized(line)) {
+				const edgeIndex = edgeIndexLookup.get(line.id);
+				if (edgeIndex !== undefined) {
+					copyColor(lineColors, edgeIndex * 4, COLOR_EDGE_OFFLINE);
+				}
+			}
+		}
+		for (let index = 0; index < dataset.transformers.length; index += 1) {
+			const transformer = dataset.transformers[index];
+			if (!isTransformerEnergized(transformer)) {
+				const edgeIndex = edgeIndexLookup.get(transformer.id);
+				if (edgeIndex !== undefined) {
+					copyColor(lineColors, edgeIndex * 4, COLOR_EDGE_OFFLINE);
+				}
+			}
 		}
 	}
 

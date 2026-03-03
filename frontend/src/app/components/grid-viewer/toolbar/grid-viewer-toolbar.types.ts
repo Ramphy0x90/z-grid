@@ -1,3 +1,4 @@
+import type { GridColorMode } from '../models/grid.models';
 import type { PlacementTool } from '../state/grid-viewer.facade';
 
 export type ActiveView = 'map' | 'schematic';
@@ -13,3 +14,9 @@ export type MapStyleOption = {
 };
 
 export type ToolbarPlacementTool = Exclude<PlacementTool, null>;
+export type ColorModeId = GridColorMode;
+export type ColorModeOption = {
+	id: ColorModeId;
+	label: string;
+	description: string;
+};

@@ -1,4 +1,4 @@
-import type { MapStyleOption } from './grid-viewer-toolbar.types';
+import type { ColorModeOption, MapStyleOption } from './grid-viewer-toolbar.types';
 
 export const MAP_STYLE_OPTIONS: readonly MapStyleOption[] = [
 	{
@@ -32,5 +32,23 @@ export const MAP_STYLE_OPTIONS: readonly MapStyleOption[] = [
 		attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
 		maxZoom: 17,
 		backgroundColor: '#f3f1ec',
+	},
+];
+
+export const COLOR_MODE_OPTIONS: readonly ColorModeOption[] = [
+	{
+		id: 'energized',
+		label: 'Energized',
+		description: 'Color by energized state from in-service and switch flags.',
+	},
+	{
+		id: 'voltageLevel',
+		label: 'Voltage level',
+		description: 'Color by nominal voltage level buckets.',
+	},
+	{
+		id: 'transformerGroup',
+		label: 'Transformer group',
+		description: 'Color each transformer and directly connected buses/edges as one group.',
 	},
 ];

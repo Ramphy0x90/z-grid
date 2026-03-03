@@ -83,6 +83,28 @@
 	color: var(--text-primary);
 }
 
+.color-mode-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.color-mode-hint {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	border: 1px solid var(--border-subtle);
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--text-muted);
+	background: var(--bg-surface);
+	cursor: help;
+}
+
 .chip {
 	border: 1px solid var(--border-subtle);
 	border-radius: 999px;

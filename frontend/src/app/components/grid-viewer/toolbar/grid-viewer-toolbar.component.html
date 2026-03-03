@@ -36,6 +36,24 @@
 			</select>
 		</label>
 	}
+	<label
+		class="map-style-control color-mode-control"
+		for="color-mode-select"
+		title="Choose how elements are colored."
+	>
+		<span>Color mode</span>
+		<select
+			id="color-mode-select"
+			class="map-style-select"
+			[value]="selectedColorModeId()"
+			(change)="onColorModeChange($event)"
+		>
+			@for (mode of colorModeOptions(); track mode.id) {
+				<option [value]="mode.id">{{ mode.label }}</option>
+			}
+		</select>
+		<span class="color-mode-hint" aria-hidden="true" title="Transformer group: transformer + directly connected buses and edges. Voltage level: nominal kV buckets. Energized: static in-service and switch state.">?</span>
+	</label>
 	<button type="button" class="toolbar-button" (click)="fitViewRequested.emit()">Fit view</button>
 	<span class="chip" aria-live="polite">Total elements: {{ totalElements() }}</span>
 	<button type="button" class="toolbar-button" (click)="zoomOutRequested.emit()" aria-label="Zoom out">

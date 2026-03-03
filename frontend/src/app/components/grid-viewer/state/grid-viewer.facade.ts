@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import type { GridDataset } from '../models/grid.models';
+import type { GridColorMode, GridDataset } from '../models/grid.models';
 import { normalizeGridDataset } from '../data/grid-normalizer';
 
 export type ViewportState = {
@@ -42,14 +42,18 @@ export class GridViewerFacade {
   private readonly selectedElementState = signal<SelectedElement>(null);
   private readonly hoveredElementState = signal<SelectedElement>(null);
   private readonly placementModeState = signal<PlacementTool>(null);
+  private readonly colorModeState = signal<GridColorMode>('energized');
 
   readonly dataset = this.datasetState.asReadonly();
-  readonly normalizedGraph = computed(() => normalizeGridDataset(this.datasetState()));
+  readonly normalizedGraph = computed(() =>
+    normalizeGridDataset(this.datasetState(), this.colorModeState()),
+  );
   readonly mapViewport = this.mapViewportState.asReadonly();
   readonly schematicViewport = this.schematicViewportState.asReadonly();
   readonly selectedElement = this.selectedElementState.asReadonly();
   readonly hoveredElement = this.hoveredElementState.asReadonly();
   readonly placementMode = this.placementModeState.asReadonly();
+  readonly colorMode = this.colorModeState.asReadonly();
   readonly stats = computed(() => {
     const dataset = this.datasetState();
     return {
@@ -113,6 +117,10 @@ export class GridViewerFacade {
 
   setPlacementMode(mode: PlacementTool): void {
     this.placementModeState.set(mode);
+  }
+
+  setColorMode(mode: GridColorMode): void {
+    this.colorModeState.set(mode);
   }
 
   addBusAt(layout: { mapX: number; mapY: number; schematicX: number; schematicY: number }): string {

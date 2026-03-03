@@ -3,6 +3,7 @@ export type LoadType = 'PQ' | 'I' | 'Z';
 export type ShuntType = 'CAPACITOR' | 'REACTOR';
 export type TapSide = 'HV' | 'LV';
 export type WindingType = 'TWO_WINDING' | 'THREE_WINDING';
+export type GridColorMode = 'energized' | 'voltageLevel' | 'transformerGroup';
 
 export type GridModel = {
   id: string;
@@ -133,4 +134,13 @@ export type GridDataset = {
   shuntCompensators: ShuntCompensatorModel[];
   busLayout: BusLayout[];
   edgeLayout: EdgeLayout[];
+  visualization?: {
+    transformerGroups?: Record<
+      string,
+      {
+        busIds: string[];
+        edgeIds: string[];
+      }
+    >;
+  };
 };

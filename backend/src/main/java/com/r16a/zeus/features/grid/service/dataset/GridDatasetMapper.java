@@ -15,9 +15,12 @@ import com.r16a.zeus.features.grid.model.type.ShuntType;
 import com.r16a.zeus.features.grid.model.type.TapSide;
 import com.r16a.zeus.features.grid.model.type.WindingType;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -88,6 +91,7 @@ public class GridDatasetMapper {
         root.set("shuntCompensators", buildShuntsArray(snapshot.shunts()));
         root.set("busLayout", buildBusLayoutsArray(snapshot.busLayouts()));
         root.set("edgeLayout", buildEdgeLayoutsArray(snapshot.edgeLayouts()));
+        root.set("visualization", buildVisualizationNode(snapshot));
         return root;
     }
 
@@ -283,6 +287,71 @@ public class GridDatasetMapper {
             array.add(node);
         }
         return array;
+    }
+
+    private ObjectNode buildVisualizationNode(GridDatasetSnapshot snapshot) {
+        ObjectNode visualizationNode = objectMapper.createObjectNode();
+        ObjectNode transformerGroupsNode = objectMapper.createObjectNode();
+        Map<UUID, Set<String>> edgeIdsByBusId = new HashMap<>();
+        for (Line line : snapshot.lines()) {
+            addConnectedEdge(edgeIdsByBusId, line.getFromBusId(), line.getId().toString());
+            addConnectedEdge(edgeIdsByBusId, line.getToBusId(), line.getId().toString());
+        }
+        for (Transformer transformer : snapshot.transformers()) {
+            String edgeId = transformer.getId().toString();
+            addConnectedEdge(edgeIdsByBusId, transformer.getFromBusId(), edgeId);
+            addConnectedEdge(edgeIdsByBusId, transformer.getToBusId(), edgeId);
+        }
+
+        List<Transformer> sortedTransformers = snapshot.transformers().stream()
+                .sorted(Comparator.comparing((Transformer transformer) -> transformer.getId().toString()))
+                .toList();
+        for (Transformer transformer : sortedTransformers) {
+            Set<UUID> groupBusIds = new HashSet<>();
+            groupBusIds.add(transformer.getFromBusId());
+            groupBusIds.add(transformer.getToBusId());
+
+            Set<String> connectedEdgeIds = new HashSet<>();
+            connectedEdgeIds.add(transformer.getId().toString());
+            for (UUID busId : groupBusIds) {
+                Set<String> busEdgeIds = edgeIdsByBusId.get(busId);
+                if (busEdgeIds != null) {
+                    connectedEdgeIds.addAll(busEdgeIds);
+                }
+            }
+
+            List<String> sortedBusIds = groupBusIds.stream()
+                    .map(UUID::toString)
+                    .sorted()
+                    .toList();
+            List<String> sortedEdgeIds = connectedEdgeIds.stream()
+                    .sorted()
+                    .toList();
+            ObjectNode groupNode = objectMapper.createObjectNode();
+            ArrayNode busIdsNode = objectMapper.createArrayNode();
+            for (String busId : sortedBusIds) {
+                busIdsNode.add(busId);
+            }
+            ArrayNode edgeIdsNode = objectMapper.createArrayNode();
+            for (String edgeId : sortedEdgeIds) {
+                edgeIdsNode.add(edgeId);
+            }
+            groupNode.set("busIds", busIdsNode);
+            groupNode.set("edgeIds", edgeIdsNode);
+            transformerGroupsNode.set(transformer.getId().toString(), groupNode);
+        }
+
+        visualizationNode.set("transformerGroups", transformerGroupsNode);
+        return visualizationNode;
+    }
+
+    private void addConnectedEdge(Map<UUID, Set<String>> edgeIdsByBusId, UUID busId, String edgeId) {
+        Set<String> edgeIds = edgeIdsByBusId.get(busId);
+        if (edgeIds == null) {
+            edgeIds = new HashSet<>();
+            edgeIdsByBusId.put(busId, edgeIds);
+        }
+        edgeIds.add(edgeId);
     }
 
     private List<Bus> parseBuses(UUID gridId, JsonNode busesNode, Map<String, UUID> busIdMap) {

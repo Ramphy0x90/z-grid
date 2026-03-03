@@ -43,8 +43,13 @@ import {
 	type GridElementInspectorSelection,
 } from '../grid-element-inspector/grid-element-inspector.component';
 import { GridViewerToolbarComponent } from './toolbar/grid-viewer-toolbar.component';
-import { MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-toolbar.constants';
-import type { ActiveView, MapStyleId, MapStyleOption } from './toolbar/grid-viewer-toolbar.types';
+import { COLOR_MODE_OPTIONS, MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-toolbar.constants';
+import type {
+	ActiveView,
+	ColorModeId,
+	MapStyleId,
+	MapStyleOption,
+} from './toolbar/grid-viewer-toolbar.types';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { latToMercatorY, mercatorYToLat } from './utils/web-mercator';
 
@@ -95,7 +100,9 @@ export class GridViewerComponent implements AfterViewInit {
 
 	protected readonly activeView = signal<ActiveView>('map');
 	protected readonly mapStyleOptions = MAP_STYLE_OPTIONS;
+	protected readonly colorModeOptions = COLOR_MODE_OPTIONS;
 	protected readonly selectedMapStyleId = signal<MapStyleId>(this.resolveInitialMapStyleId());
+	protected readonly selectedColorModeId = this.facade.colorMode;
 	readonly dataset = input<GridDataset | null>(null);
 	protected readonly editEnabled = this.store.selectSignal(GridSelectors.isGridEditState);
 	readonly datasetChange = output<GridDataset>();
@@ -182,6 +189,10 @@ export class GridViewerComponent implements AfterViewInit {
 	});
 	private readonly mapViewportSyncEffect = effect(() => {
 		this.syncLeafletViewToViewport(this.facade.mapViewport());
+	});
+	private readonly colorModeSyncEffect = effect(() => {
+		this.facade.colorMode();
+		this.syncGraphToRenderers();
 	});
 
 	ngAfterViewInit(): void {
@@ -286,6 +297,10 @@ export class GridViewerComponent implements AfterViewInit {
 	protected onMapStyleIdChange(mapStyleId: MapStyleId): void {
 		this.selectedMapStyleId.set(mapStyleId);
 		this.applyMapStyleLayer();
+	}
+
+	protected onColorModeIdChange(colorModeId: ColorModeId): void {
+		this.facade.setColorMode(colorModeId);
 	}
 
 	private syncGraphToRenderers(): void {
