@@ -496,10 +496,13 @@ export class GridViewerComponent implements AfterViewInit {
 			this.leafletTileLayer = null;
 		}
 		const style = this.getSelectedMapStyle();
+		this.leafletMap.getContainer().style.backgroundColor = style.backgroundColor;
 		this.leafletTileLayer = tileLayer(style.tileUrl, {
 			attribution: style.attribution,
 			maxNativeZoom: style.maxZoom,
 			maxZoom: MAP_VIEW_MAX_ZOOM,
+			keepBuffer: 6,
+			updateWhenZooming: false,
 		});
 		this.leafletTileLayer.addTo(this.leafletMap);
 	}

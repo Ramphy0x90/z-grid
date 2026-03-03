@@ -9,6 +9,7 @@ export type MapStyleOption = {
 	tileUrl: string;
 	attribution: string;
 	maxZoom: number;
+	backgroundColor: string;
 };
 
 export type ToolbarPlacementTool = Exclude<PlacementTool, null>;
