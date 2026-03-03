@@ -167,6 +167,33 @@ export const gridReducer = createReducer(
 			error,
 		},
 	})),
+	on(GridActions.gridImportRequested, (state) => ({
+		...state,
+		import: {
+			isRunning: true,
+			error: null,
+		},
+	})),
+	on(GridActions.gridImportSucceeded, (state, { importedGrid }) => ({
+		...state,
+		grids: [importedGrid, ...state.grids],
+		selectedGridId: importedGrid.id,
+		selectedGridIdByProjectId: {
+			...state.selectedGridIdByProjectId,
+			[importedGrid.projectId]: importedGrid.id,
+		},
+		import: {
+			isRunning: false,
+			error: null,
+		},
+	})),
+	on(GridActions.gridImportFailed, (state, { error }) => ({
+		...state,
+		import: {
+			isRunning: false,
+			error,
+		},
+	})),
 	on(GridActions.powerFlowRunRequested, (state) => ({
 		...state,
 		run: {

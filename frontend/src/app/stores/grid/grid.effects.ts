@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 import {
 	catchError,
 	concatMap,
@@ -22,6 +23,7 @@ import { ProjectService } from '../../services/project.service';
 import type { ProjectGrid } from '../../types/project.types';
 import { GridActions } from './grid.actions';
 import { GridSelectors } from './grid.selectors';
+import type { GridDataset } from '../../components/grid-viewer/models/grid.models';
 
 @Injectable({ providedIn: 'root' })
 export class GridEffects {
@@ -31,6 +33,7 @@ export class GridEffects {
 	private readonly powerFlowRunService = inject(PowerFlowRunService);
 	private readonly projectService = inject(ProjectService);
 	private readonly gridExportService = inject(GridExportService);
+	private readonly toastr = inject(ToastrService);
 	private readonly store = inject(Store);
 
 	private readonly duplicateGrid$ = createEffect(() =>
@@ -147,28 +150,10 @@ export class GridEffects {
 							return of(createdGrid);
 						}
 						return this.projectService
-							.saveGridDataset$(createdGrid.id, {
-								...draftDataset,
-								grid: {
-									...draftDataset.grid,
-									id: createdGrid.id,
-									projectId: createdGrid.projectId,
-									name: createdGrid.name,
-									description: createdGrid.description,
-								},
-								buses: draftDataset.buses.map((bus) => ({
-									...bus,
-									gridId: createdGrid.id,
-								})),
-								lines: draftDataset.lines.map((line) => ({
-									...line,
-									gridId: createdGrid.id,
-								})),
-								transformers: draftDataset.transformers.map((transformer) => ({
-									...transformer,
-									gridId: createdGrid.id,
-								})),
-							})
+							.saveGridDataset$(
+								createdGrid.id,
+								this.projectService.prepareDatasetForGrid(draftDataset, createdGrid),
+							)
 							.pipe(map(() => createdGrid));
 					}),
 					concatMap((createdGrid) => {
@@ -188,6 +173,49 @@ export class GridEffects {
 				);
 			}),
 		),
+	);
+
+	private readonly importGrid$ = createEffect(() =>
+		this.actions$.pipe(
+			ofType(GridActions.gridImportRequested),
+			exhaustMap(({ projectId, fileName, dataset }) => {
+				const request = this.toImportedGridRequest(fileName, dataset);
+				return this.projectService.createGrid$(projectId, request).pipe(
+					switchMap((createdGrid) =>
+						this.projectService
+							.saveGridDataset$(
+								createdGrid.id,
+								this.projectService.prepareDatasetForGrid(dataset, createdGrid),
+							)
+							.pipe(map(() => createdGrid)),
+					),
+					concatMap((importedGrid) =>
+						of(
+							GridActions.gridImportSucceeded({ importedGrid }),
+							GridActions.gridEditorModeSet({ mode: 'view' }),
+						),
+					),
+					catchError((error: unknown) =>
+						of(
+							GridActions.gridImportFailed({
+								error: this.toErrorMessage(error),
+							}),
+						),
+					),
+				);
+			}),
+		),
+	);
+
+	private readonly notifyImportSuccess$ = createEffect(
+		() =>
+			this.actions$.pipe(
+				ofType(GridActions.gridImportSucceeded),
+				tap(({ importedGrid }) => {
+					this.toastr.success(`Grid "${importedGrid.name}" imported.`, 'Import complete');
+				}),
+			),
+		{ dispatch: false },
 	);
 
 	private readonly runPowerFlow$ = createEffect(() =>
@@ -219,5 +247,18 @@ export class GridEffects {
 			return error.message;
 		}
 		return 'Grid operation failed.';
+	}
+
+	private toImportedGridRequest(fileName: string, dataset: GridDataset): {
+		name: string;
+		description: string;
+	} {
+		const rawName = dataset.grid?.name?.trim();
+		const fallbackName = fileName.replace(/\.json$/i, '').trim();
+		const name = rawName && rawName.length > 0 ? rawName : fallbackName || 'Imported Grid';
+		return {
+			name,
+			description: dataset.grid?.description ?? '',
+		};
 	}
 }

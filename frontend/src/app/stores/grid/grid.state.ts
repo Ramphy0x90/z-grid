@@ -17,6 +17,7 @@ export type GridState = {
 	duplicate: GridOperationState;
 	delete: GridOperationState;
 	export: GridOperationState;
+	import: GridOperationState;
 	run: GridOperationState;
 };
 
@@ -35,6 +36,10 @@ export const initialGridState: GridState = {
 		error: null,
 	},
 	export: {
+		isRunning: false,
+		error: null,
+	},
+	import: {
 		isRunning: false,
 		error: null,
 	},

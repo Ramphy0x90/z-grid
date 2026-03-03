@@ -208,6 +208,32 @@ export class ProjectService {
     }));
   }
 
+  prepareDatasetForGrid(dataset: GridDataset, targetGrid: ProjectGrid): GridDataset {
+    const normalizedDataset = this.normalizeDatasetPayload(dataset, targetGrid.id);
+    return {
+      ...normalizedDataset,
+      grid: {
+        ...normalizedDataset.grid,
+        id: targetGrid.id,
+        projectId: targetGrid.projectId,
+        name: targetGrid.name,
+        description: targetGrid.description,
+      },
+      buses: normalizedDataset.buses.map((bus) => ({
+        ...bus,
+        gridId: targetGrid.id,
+      })),
+      lines: normalizedDataset.lines.map((line) => ({
+        ...line,
+        gridId: targetGrid.id,
+      })),
+      transformers: normalizedDataset.transformers.map((transformer) => ({
+        ...transformer,
+        gridId: targetGrid.id,
+      })),
+    };
+  }
+
   private toProject(project: ProjectApiModel): Project {
     return {
       id: project.id,

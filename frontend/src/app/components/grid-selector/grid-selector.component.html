@@ -1,5 +1,12 @@
 <section class="grid-selector" aria-label="Grid selector">
 	<label class="selector-label" for="workspace-grid-selector">Grid</label>
+	<input
+		#importFileInput
+		type="file"
+		accept="application/json,.json"
+		hidden
+		(change)="onImportFileChange($event)"
+	/>
 	<div class="controls-row" (focusout)="onMenuFocusOut($event)">
 		<div class="select-wrapper">
 			<select
@@ -26,7 +33,7 @@
 				aria-label="Grid actions"
 				aria-haspopup="menu"
 				[attr.aria-expanded]="isMenuOpen()"
-				[disabled]="!hasAvailableGrids() || isAnyActionRunning()"
+				[disabled]="isAnyActionRunning()"
 				(click)="toggleMenu()"
 			>
 				<i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
@@ -38,6 +45,15 @@
 						class="action-menu-item"
 						role="menuitem"
 						[disabled]="isAnyActionRunning()"
+						(click)="onImportClick(importFileInput)"
+					>
+						Import JSON
+					</button>
+					<button
+						type="button"
+						class="action-menu-item"
+						role="menuitem"
+						[disabled]="isAnyActionRunning() || !hasAvailableGrids()"
 						(click)="onExportClick()"
 					>
 						Export JSON
@@ -46,7 +62,7 @@
 						type="button"
 						class="action-menu-item"
 						role="menuitem"
-						[disabled]="isAnyActionRunning()"
+						[disabled]="isAnyActionRunning() || !hasAvailableGrids()"
 						(click)="onDuplicateClick()"
 					>
 						Duplicate
@@ -55,7 +71,7 @@
 						type="button"
 						class="action-menu-item action-menu-item-danger"
 						role="menuitem"
-						[disabled]="isAnyActionRunning()"
+						[disabled]="isAnyActionRunning() || !hasAvailableGrids()"
 						(click)="onDeleteClick()"
 					>
 						Delete
