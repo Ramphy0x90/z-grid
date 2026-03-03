@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PowerFlowSimulationServiceTest {
+    private static final String PY_ENGINE_KEY = "remote-python-powerflow-v1";
 
     @Mock
     private SimulationRunRepository simulationRunRepository;
@@ -54,7 +55,7 @@ class PowerFlowSimulationServiceTest {
         Grid grid = Grid.builder().id(gridId).projectId(UUID.randomUUID()).name("Grid").build();
         when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
         when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
-        when(powerFlowExecutor.defaultEngineKey()).thenReturn("local-java-ac-newton-raphson");
+        when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
         when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
                 any(),
                 any(),
@@ -81,7 +82,7 @@ class PowerFlowSimulationServiceTest {
         verify(eventPublisher).publishEvent(new SimulationRunQueuedEvent(
                 response.runId(),
                 SimulationType.POWER_FLOW,
-                "local-java-ac-newton-raphson"
+                PY_ENGINE_KEY
         ));
     }
 
@@ -95,12 +96,12 @@ class PowerFlowSimulationServiceTest {
                 .gridId(gridId)
                 .simulationType(SimulationType.POWER_FLOW)
                 .status(SimulationRunStatus.RUNNING)
-                .engineKey("local-java-ac-newton-raphson")
+                .engineKey(PY_ENGINE_KEY)
                 .build();
 
         when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
         when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
-        when(powerFlowExecutor.defaultEngineKey()).thenReturn("local-java-ac-newton-raphson");
+        when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
         when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
                 any(),
                 any(),
@@ -135,13 +136,13 @@ class PowerFlowSimulationServiceTest {
                 .gridId(gridId)
                 .simulationType(SimulationType.POWER_FLOW)
                 .status(SimulationRunStatus.QUEUED)
-                .engineKey("local-java-ac-newton-raphson")
+                .engineKey(PY_ENGINE_KEY)
                 .createdAt(Instant.now().minusSeconds(180))
                 .build();
 
         when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
         when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
-        when(powerFlowExecutor.defaultEngineKey()).thenReturn("local-java-ac-newton-raphson");
+        when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
         when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
                 any(),
                 any(),

@@ -4,7 +4,7 @@ import com.r16a.zeus.features.engine.EngineExecutionRequest;
 import com.r16a.zeus.features.engine.EngineExecutionResult;
 import com.r16a.zeus.features.engine.EngineFacade;
 import com.r16a.zeus.features.engine.EngineFacadeRouter;
-import com.r16a.zeus.features.engine.local.LocalJavaPowerFlowEngineAdapter;
+import com.r16a.zeus.features.engine.remote.RemotePythonPowerFlowEngineAdapter;
 import com.r16a.zeus.features.grid.service.GridService;
 import com.r16a.zeus.features.simulation.application.SimulationExecutionRequest;
 import com.r16a.zeus.features.simulation.application.SimulationExecutionResult;
@@ -31,7 +31,7 @@ public class PowerFlowSimulationExecutor implements SimulationExecutor {
 
     @Override
     public String defaultEngineKey() {
-        return LocalJavaPowerFlowEngineAdapter.ENGINE_KEY;
+        return RemotePythonPowerFlowEngineAdapter.ENGINE_KEY;
     }
 
     @Override
