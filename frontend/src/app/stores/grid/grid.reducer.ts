@@ -2,15 +2,42 @@ import { createReducer, on } from '@ngrx/store';
 import { GridActions } from './grid.actions';
 import { initialGridState } from './grid.state';
 
+const withProjectGridSelection = (
+	selectedGridIdByProjectId: Record<string, string>,
+	projectId: string | null,
+	gridId: string | null,
+): Record<string, string> => {
+	if (!projectId) {
+		return selectedGridIdByProjectId;
+	}
+	if (!gridId) {
+		const remainingSelections = { ...selectedGridIdByProjectId };
+		delete remainingSelections[projectId];
+		return remainingSelections;
+	}
+	return {
+		...selectedGridIdByProjectId,
+		[projectId]: gridId,
+	};
+};
+
 export const gridReducer = createReducer(
 	initialGridState,
 	on(GridActions.gridsLoaded, (state, { grids }) => {
 		const hasValidSelection =
 			state.selectedGridId !== null && grids.some((grid) => grid.id === state.selectedGridId);
+		const selectedGridIdByProjectId = state.selectedGridId
+			? withProjectGridSelection(
+					state.selectedGridIdByProjectId,
+					state.selectedProjectId,
+					hasValidSelection ? state.selectedGridId : null,
+				)
+			: state.selectedGridIdByProjectId;
 		return {
 			...state,
 			grids,
 			selectedGridId: hasValidSelection ? state.selectedGridId : null,
+			selectedGridIdByProjectId,
 		};
 	}),
 	on(GridActions.selectedProjectSynced, (state, { projectId }) => {
@@ -20,13 +47,27 @@ export const gridReducer = createReducer(
 		return {
 			...state,
 			selectedProjectId: projectId,
-			selectedGridId: null,
+			selectedGridId: projectId ? state.selectedGridIdByProjectId[projectId] ?? null : null,
 		};
 	}),
-	on(GridActions.gridSelected, (state, { gridId }) => ({
-		...state,
-		selectedGridId: state.grids.some((grid) => grid.id === gridId) ? gridId : state.selectedGridId,
-	})),
+	on(GridActions.gridSelected, (state, { gridId }) => {
+		const selectedGridId = state.grids.some((grid) => grid.id === gridId)
+			? gridId
+			: state.selectedGridId;
+		if (!selectedGridId) {
+			return state;
+		}
+		const selectedProjectId = state.selectedProjectId;
+		return {
+			...state,
+			selectedGridId,
+			selectedGridIdByProjectId: withProjectGridSelection(
+				state.selectedGridIdByProjectId,
+				selectedProjectId,
+				selectedGridId,
+			),
+		};
+	}),
 	on(GridActions.gridEditorModeSet, (state, { mode }) => ({
 		...state,
 		editorMode: mode,
@@ -35,11 +76,20 @@ export const gridReducer = createReducer(
 		...state,
 		grids: [duplicatedGrid, ...state.grids],
 		selectedGridId: duplicatedGrid.id,
+		selectedGridIdByProjectId: {
+			...state.selectedGridIdByProjectId,
+			[duplicatedGrid.projectId]: duplicatedGrid.id,
+		},
 	})),
 	on(GridActions.gridDeleted, (state, { gridId, nextSelectedGridId }) => ({
 		...state,
 		grids: state.grids.filter((grid) => grid.id !== gridId),
 		selectedGridId: nextSelectedGridId,
+		selectedGridIdByProjectId: withProjectGridSelection(
+			state.selectedGridIdByProjectId,
+			state.selectedProjectId,
+			nextSelectedGridId,
+		),
 	})),
 	on(GridActions.gridDuplicateRequested, (state) => ({
 		...state,
@@ -52,6 +102,10 @@ export const gridReducer = createReducer(
 		...state,
 		grids: [duplicatedGrid, ...state.grids],
 		selectedGridId: duplicatedGrid.id,
+		selectedGridIdByProjectId: {
+			...state.selectedGridIdByProjectId,
+			[duplicatedGrid.projectId]: duplicatedGrid.id,
+		},
 		duplicate: {
 			isRunning: false,
 			error: null,
@@ -75,6 +129,11 @@ export const gridReducer = createReducer(
 		...state,
 		grids: state.grids.filter((grid) => grid.id !== gridId),
 		selectedGridId: nextSelectedGridId,
+		selectedGridIdByProjectId: withProjectGridSelection(
+			state.selectedGridIdByProjectId,
+			state.selectedProjectId,
+			nextSelectedGridId,
+		),
 		delete: {
 			isRunning: false,
 			error: null,

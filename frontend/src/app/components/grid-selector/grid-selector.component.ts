@@ -2,24 +2,20 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Store } from '@ngrx/store';
 import { GridActions } from '../../stores/grid/grid.actions';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
+import { FormsModule } from '@angular/forms';
 
 @Component({
 	selector: 'app-grid-selector',
 	templateUrl: './grid-selector.component.html',
 	styleUrl: './grid-selector.component.css',
+	imports: [FormsModule],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridSelectorComponent {
 	private readonly store = inject(Store);
 	readonly grids = this.store.selectSignal(GridSelectors.selectedProjectGrids);
 	readonly selectedGridId = this.store.selectSignal(GridSelectors.selectedGridId);
-	readonly gridSelectValue = computed(() => {
-		const selectedGridId = this.selectedGridId();
-		if (!selectedGridId) {
-			return '';
-		}
-		return this.grids().some((grid) => grid.id === selectedGridId) ? selectedGridId : '';
-	});
+	readonly gridSelectValue = computed(() => this.selectedGridId());
 	readonly duplicateOperation = this.store.selectSignal(GridSelectors.duplicateOperation);
 	readonly deleteOperation = this.store.selectSignal(GridSelectors.deleteOperation);
 	readonly exportOperation = this.store.selectSignal(GridSelectors.exportOperation);
@@ -32,12 +28,8 @@ export class GridSelectorComponent {
 	);
 	protected readonly isMenuOpen = signal(false);
 
-	protected onGridChange(event: Event): void {
-		const target = event.target;
-		if (!(target instanceof HTMLSelectElement)) {
-			return;
-		}
-		const gridId = target.value;
+	protected onGridModelChange(value: string | null): void {
+		const gridId = value ?? '';
 		if (!gridId) {
 			return;
 		}

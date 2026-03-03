@@ -5,14 +5,12 @@
 			<select
 				id="workspace-grid-selector"
 				class="selector-input"
-				[value]="gridSelectValue()"
-				[disabled]="!hasAvailableGrids()"
-				(change)="onGridChange($event)"
+				[ngModel]="gridSelectValue()"
+				(ngModelChange)="onGridModelChange($event)"
 			>
 				@if (!hasAvailableGrids()) {
 					<option value="">No grids available</option>
 				} @else {
-					<option value="">Select a grid</option>
 					@for (grid of grids(); track grid.id) {
 						<option [value]="grid.id">{{ grid.name }}</option>
 					}
