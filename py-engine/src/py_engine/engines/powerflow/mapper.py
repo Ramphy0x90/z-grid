@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import math
 from typing import Any
 
 from py_engine.core.exceptions import EngineValidationError
@@ -33,6 +34,8 @@ def _as_text(value: Any, fallback: str) -> str:
 def build_case(dataset: dict[str, Any]) -> PowerFlowCase:
     grid = dataset.get("grid", {})
     base_mva = _as_float(grid.get("baseMva"), 100.0)
+    if not math.isfinite(base_mva) or base_mva <= 0.0:
+        raise EngineValidationError("Power flow requires grid.baseMva to be a positive finite number.")
 
     buses_raw = dataset.get("buses") or []
     lines_raw = dataset.get("lines") or []
@@ -49,6 +52,8 @@ def build_case(dataset: dict[str, Any]) -> PowerFlowCase:
         bus_id = _as_text(bus.get("id"), "").strip()
         if not bus_id:
             continue
+        if bus_id in bus_idx_by_id:
+            raise EngineValidationError(f"Duplicate in-service bus id detected: {bus_id}")
         bus_idx_by_id[bus_id] = len(active_buses)
         active_buses.append(bus)
 
@@ -193,4 +198,64 @@ def build_case(dataset: dict[str, Any]) -> PowerFlowCase:
     if not branches:
         raise EngineValidationError("Power flow requires at least one in-service branch.")
 
-    return PowerFlowCase(base_mva=base_mva, buses=buses, branches=branches)
+    slack_index = next((idx for idx, bus in enumerate(buses) if bus.bus_type == "SLACK"), None)
+    if slack_index is None:
+        raise EngineValidationError("Power flow requires exactly one slack bus.")
+
+    adjacency: list[set[int]] = [set() for _ in buses]
+    for branch in branches:
+        adjacency[branch.from_idx].add(branch.to_idx)
+        adjacency[branch.to_idx].add(branch.from_idx)
+
+    visited = {slack_index}
+    stack = [slack_index]
+    while stack:
+        node = stack.pop()
+        for neighbor in adjacency[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                stack.append(neighbor)
+
+    preprocessing_warnings: list[str] = []
+    if len(visited) != len(buses):
+        dropped_bus_ids = [buses[idx].bus_id for idx in range(len(buses)) if idx not in visited]
+        preview = ", ".join(dropped_bus_ids[:5])
+        suffix = " ..." if len(dropped_bus_ids) > 5 else ""
+        preprocessing_warnings.append(
+            "Dropped in-service bus(es) disconnected from the slack-connected component. "
+            f"Count={len(dropped_bus_ids)} ({preview}{suffix})."
+        )
+        old_to_new_idx: dict[int, int] = {}
+        filtered_buses: list[BusNode] = []
+        for old_idx, bus in enumerate(buses):
+            if old_idx in visited:
+                old_to_new_idx[old_idx] = len(filtered_buses)
+                filtered_buses.append(bus)
+        filtered_branches: list[BranchEdge] = []
+        for branch in branches:
+            if branch.from_idx in old_to_new_idx and branch.to_idx in old_to_new_idx:
+                filtered_branches.append(
+                    BranchEdge(
+                        element_id=branch.element_id,
+                        element_type=branch.element_type,
+                        name=branch.name,
+                        from_idx=old_to_new_idx[branch.from_idx],
+                        to_idx=old_to_new_idx[branch.to_idx],
+                        resistance_pu=branch.resistance_pu,
+                        reactance_pu=branch.reactance_pu,
+                        shunt_susceptance_pu=branch.shunt_susceptance_pu,
+                        tap_ratio=branch.tap_ratio,
+                        phase_shift_deg=branch.phase_shift_deg,
+                        rating_mva=branch.rating_mva,
+                        max_loading_percent=branch.max_loading_percent,
+                    )
+                )
+        buses = filtered_buses
+        branches = filtered_branches
+
+    return PowerFlowCase(
+        base_mva=base_mva,
+        buses=buses,
+        branches=branches,
+        preprocessing_warnings=preprocessing_warnings,
+    )

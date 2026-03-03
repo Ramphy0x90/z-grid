@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import warnings as py_warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -19,6 +20,7 @@ class SolverOptions:
     tolerance: float = 1e-6
     min_voltage_pu: float = 0.5
     max_voltage_pu: float = 1.5
+    min_branch_impedance_pu: float = 1e-6
 
 
 @dataclass(frozen=True)
@@ -37,15 +39,34 @@ def _polar(magnitude: float, angle_rad: float) -> complex:
     return complex(magnitude * math.cos(angle_rad), magnitude * math.sin(angle_rad))
 
 
-def _build_ybus(case: PowerFlowCase) -> sp.csr_matrix:
+def _effective_series_impedance(
+    branch: BranchEdge, min_impedance_sq: float
+) -> tuple[float, float, bool]:
+    r = branch.resistance_pu
+    x = branch.reactance_pu
+    den = r * r + x * x
+    if den >= min_impedance_sq:
+        return r, x, False
+
+    if den > 0.0:
+        scale = math.sqrt(min_impedance_sq / den)
+        return r * scale, x * scale, True
+
+    # For exactly zero impedance branches preserve connectivity with a tiny inductive reactance.
+    return 0.0, math.sqrt(min_impedance_sq), True
+
+
+def _build_ybus(case: PowerFlowCase, min_impedance_sq: float) -> tuple[sp.csr_matrix, int]:
     n_bus = len(case.buses)
     y = sp.lil_matrix((n_bus, n_bus), dtype=np.complex128)
+    clamped_branch_count = 0
 
     for br in case.branches:
-        den = br.resistance_pu * br.resistance_pu + br.reactance_pu * br.reactance_pu
-        if den < 1e-12:
-            continue
-        y_series = complex(br.resistance_pu / den, -br.reactance_pu / den)
+        r_eff, x_eff, clamped = _effective_series_impedance(br, min_impedance_sq)
+        if clamped:
+            clamped_branch_count += 1
+        den = r_eff * r_eff + x_eff * x_eff
+        y_series = complex(r_eff / den, -x_eff / den)
         y_shunt_half = complex(0.0, br.shunt_susceptance_pu / 2.0)
         tap = _polar(br.tap_ratio, math.radians(br.phase_shift_deg))
         tap_conj = np.conjugate(tap)
@@ -63,7 +84,7 @@ def _build_ybus(case: PowerFlowCase) -> sp.csr_matrix:
         y[t, f] += ytf
         y[t, t] += ytt
 
-    return y.tocsr()
+    return y.tocsr(), clamped_branch_count
 
 
 def _calc_power(ybus: sp.csr_matrix, vm: np.ndarray, va: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -166,17 +187,18 @@ def _build_jacobian(
     return sp.csr_matrix((data, (rows, cols)), shape=(n, n), dtype=np.float64)
 
 
-def _branch_flows(case: PowerFlowCase, vm: np.ndarray, va: np.ndarray) -> tuple[list[dict], list[dict], float]:
+def _branch_flows(
+    case: PowerFlowCase, vm: np.ndarray, va: np.ndarray, min_impedance_sq: float
+) -> tuple[list[dict], list[dict], float]:
     v = vm * np.exp(1j * va)
     branch_results: list[dict] = []
     thermal_violations: list[dict] = []
     total_losses_mw = 0.0
 
     for br in case.branches:
-        den = br.resistance_pu * br.resistance_pu + br.reactance_pu * br.reactance_pu
-        if den < 1e-12:
-            continue
-        y_series = complex(br.resistance_pu / den, -br.reactance_pu / den)
+        r_eff, x_eff, _ = _effective_series_impedance(br, min_impedance_sq)
+        den = r_eff * r_eff + x_eff * x_eff
+        y_series = complex(r_eff / den, -x_eff / den)
         y_shunt_half = complex(0.0, br.shunt_susceptance_pu / 2.0)
         tap = _polar(br.tap_ratio, math.radians(br.phase_shift_deg))
         tap_conj = np.conjugate(tap)
@@ -232,7 +254,8 @@ def _branch_flows(case: PowerFlowCase, vm: np.ndarray, va: np.ndarray) -> tuple[
 
 def solve_powerflow(case: PowerFlowCase, options: SolverOptions) -> SolveResult:
     n_bus = len(case.buses)
-    ybus = _build_ybus(case)
+    min_impedance_sq = max(options.min_branch_impedance_pu, 1e-12) ** 2
+    ybus, clamped_branch_count = _build_ybus(case, min_impedance_sq)
 
     vm = np.empty(n_bus, dtype=np.float64)
     va = np.empty(n_bus, dtype=np.float64)
@@ -260,7 +283,12 @@ def solve_powerflow(case: PowerFlowCase, options: SolverOptions) -> SolveResult:
 
     p_buses = pv + pq
     converged = False
-    warnings: list[str] = []
+    warnings: list[str] = list(case.preprocessing_warnings)
+    if clamped_branch_count > 0:
+        warnings.append(
+            f"Clamped {clamped_branch_count} near-zero impedance branch(es) to minimum "
+            f"{math.sqrt(min_impedance_sq):.3e} pu."
+        )
     iterations = 0
     last_norm = float("inf")
 
@@ -275,13 +303,31 @@ def solve_powerflow(case: PowerFlowCase, options: SolverOptions) -> SolveResult:
             break
 
         jac = _build_jacobian(ybus, vm, va, p_calc, q_calc, p_buses, pq)
+        rank_warning_seen = False
         try:
-            correction = spla.spsolve(jac, mismatch)
+            with py_warnings.catch_warnings(record=True) as caught:
+                py_warnings.simplefilter("always")
+                correction = spla.spsolve(jac, mismatch)
+            for warning in caught:
+                if "singular" in str(warning.message).lower():
+                    rank_warning_seen = True
+                    break
         except Exception as exc:
-            raise EngineExecutionError("Power flow Jacobian solve failed.") from exc
+            raise EngineExecutionError(
+                f"Power flow Jacobian solve failed at iteration {iteration} "
+                f"(mismatch={mismatch_norm:.3e}, clampedBranches={clamped_branch_count})."
+            ) from exc
 
         if np.any(np.isnan(correction)) or np.any(np.isinf(correction)):
-            raise EngineExecutionError("Power flow Jacobian is singular or ill-conditioned.")
+            raise EngineExecutionError(
+                f"Power flow Jacobian is singular or ill-conditioned at iteration {iteration} "
+                f"(mismatch={mismatch_norm:.3e}, clampedBranches={clamped_branch_count})."
+            )
+        if rank_warning_seen:
+            raise EngineExecutionError(
+                f"Power flow Jacobian is singular or ill-conditioned at iteration {iteration} "
+                f"(rank warning, mismatch={mismatch_norm:.3e}, clampedBranches={clamped_branch_count})."
+            )
 
         n_angle = len(p_buses)
         d_theta = correction[:n_angle]
@@ -344,7 +390,7 @@ def solve_powerflow(case: PowerFlowCase, options: SolverOptions) -> SolveResult:
                 }
             )
 
-    branch_results, thermal_violations, losses_mw = _branch_flows(case, vm, va)
+    branch_results, thermal_violations, losses_mw = _branch_flows(case, vm, va, min_impedance_sq)
 
     total_load_mw = sum(max(0.0, -bus.p_spec_pu) * case.base_mva for bus in case.buses)
     total_generation_mw = sum(max(0.0, bus.p_spec_pu) * case.base_mva for bus in case.buses)

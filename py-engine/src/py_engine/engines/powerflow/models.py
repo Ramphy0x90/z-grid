@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from dataclasses import field
 
 
 @dataclass(frozen=True)
@@ -36,3 +37,4 @@ class PowerFlowCase:
     base_mva: float
     buses: list[BusNode]
     branches: list[BranchEdge]
+    preprocessing_warnings: list[str] = field(default_factory=list)

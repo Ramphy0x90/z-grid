@@ -56,3 +56,16 @@ def test_execute_endpoint_returns_engine_execution_envelope() -> None:
     assert "summary" in payload
     assert "data" in payload
     assert payload["data"]["converged"] is True
+
+
+def test_execute_endpoint_clamps_zero_impedance_branch_when_configured() -> None:
+    payload = _request_payload()
+    payload["gridDataset"]["lines"][0]["resistancePu"] = 0.0
+    payload["gridDataset"]["lines"][0]["reactancePu"] = 0.0
+    payload["options"]["minBranchImpedancePu"] = 1e-5
+    client = TestClient(app)
+    response = client.post("/api/v1/engine/execute", json=payload)
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["converged"] is True
+    assert any("Clamped" in warning for warning in data["warnings"])

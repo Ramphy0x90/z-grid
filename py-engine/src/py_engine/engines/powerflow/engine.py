@@ -19,6 +19,7 @@ class PowerFlowEngine:
             tolerance=max(1e-10, min(float(options.get("tolerance", 1e-6)), 1e-2)),
             min_voltage_pu=max(0.4, min(float(options.get("minVoltagePu", 0.5)), 0.95)),
             max_voltage_pu=max(1.05, min(float(options.get("maxVoltagePu", 1.5)), 2.0)),
+            min_branch_impedance_pu=max(1e-8, min(float(options.get("minBranchImpedancePu", 1e-6)), 1e-2)),
         )
         result = solve_powerflow(case, solver_options)
         data = {
