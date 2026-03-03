@@ -9,12 +9,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      py-engine:
+        condition: service_started
     environment:
       DB_URL: jdbc:postgresql://db:5432/zeus
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+      ENGINE_REMOTE_PYTHON_BASE_URL: http://py-engine:8090
     ports:
       - "8080:8080"
+    restart: unless-stopped
+
+  py-engine:
+    build:
+      context: ../py-engine
+      dockerfile: Dockerfile
+    container_name: zeus-py-engine
+    ports:
+      - "8090:8090"
     restart: unless-stopped
 
   db:

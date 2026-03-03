@@ -5,4 +5,6 @@ resources:
     - backend-service.yaml
     - frontend-deployment.yaml
     - frontend-service.yaml
+    - py-engine-deployment.yaml
+    - py-engine-service.yaml
     - ingress.yaml

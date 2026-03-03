@@ -11,8 +11,10 @@ jobs:
         env:
             KUBECONFIG: /home/r16a-runner/.kube/config
             REGISTRY: registry.r16a.cloud
+            GIT_SHA: ${{ github.sha }}
             BACKEND_IMAGE: registry.r16a.cloud/r16a-z-grid-api
             FRONTEND_IMAGE: registry.r16a.cloud/r16a-z-grid-web
+            PY_ENGINE_IMAGE: registry.r16a.cloud/r16a-z-grid-py-engine
 
         steps:
             - name: Checkout repository
@@ -28,10 +30,10 @@ jobs:
                     --build-arg BUILDKIT_INLINE_CACHE=1 \
                     --cache-from "${{ env.BACKEND_IMAGE }}:latest" \
                     --network host \
-                    -t "${{ env.BACKEND_IMAGE }}:${{ github.sha }}" \
+                    -t "${{ env.BACKEND_IMAGE }}:${{ env.GIT_SHA }}" \
                     -t "${{ env.BACKEND_IMAGE }}:latest" \
                     ./backend
-                  docker push "${{ env.BACKEND_IMAGE }}:${{ github.sha }}"
+                  docker push "${{ env.BACKEND_IMAGE }}:${{ env.GIT_SHA }}"
                   docker push "${{ env.BACKEND_IMAGE }}:latest"
 
             - name: Build and push frontend image
@@ -40,16 +42,29 @@ jobs:
                   docker build \
                     --build-arg BUILDKIT_INLINE_CACHE=1 \
                     --cache-from "${{ env.FRONTEND_IMAGE }}:latest" \
-                    -t "${{ env.FRONTEND_IMAGE }}:${{ github.sha }}" \
+                    -t "${{ env.FRONTEND_IMAGE }}:${{ env.GIT_SHA }}" \
                     -t "${{ env.FRONTEND_IMAGE }}:latest" \
                     ./frontend
-                  docker push "${{ env.FRONTEND_IMAGE }}:${{ github.sha }}"
+                  docker push "${{ env.FRONTEND_IMAGE }}:${{ env.GIT_SHA }}"
                   docker push "${{ env.FRONTEND_IMAGE }}:latest"
+
+            - name: Build and push py-engine image
+              run: |
+                  docker pull "${{ env.PY_ENGINE_IMAGE }}:latest" || true
+                  docker build \
+                    --build-arg BUILDKIT_INLINE_CACHE=1 \
+                    --cache-from "${{ env.PY_ENGINE_IMAGE }}:latest" \
+                    -t "${{ env.PY_ENGINE_IMAGE }}:${{ env.GIT_SHA }}" \
+                    -t "${{ env.PY_ENGINE_IMAGE }}:latest" \
+                    ./py-engine
+                  docker push "${{ env.PY_ENGINE_IMAGE }}:${{ env.GIT_SHA }}"
+                  docker push "${{ env.PY_ENGINE_IMAGE }}:latest"
 
             - name: Update deployment images in manifests
               run: |
-                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-api:.*|image: registry.r16a.cloud/r16a-z-grid-api:${{ github.sha }}|" infra/backend-deployment.yaml
-                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-web:.*|image: registry.r16a.cloud/r16a-z-grid-web:${{ github.sha }}|" infra/frontend-deployment.yaml
+                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-api:.*|image: registry.r16a.cloud/r16a-z-grid-api:${{ env.GIT_SHA }}|" infra/backend-deployment.yaml
+                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-web:.*|image: registry.r16a.cloud/r16a-z-grid-web:${{ env.GIT_SHA }}|" infra/frontend-deployment.yaml
+                  sed -i "s|image: registry.r16a.cloud/r16a-z-grid-py-engine:.*|image: registry.r16a.cloud/r16a-z-grid-py-engine:${{ env.GIT_SHA }}|" infra/py-engine-deployment.yaml
 
             - name: Apply Kubernetes manifests
               run: |
@@ -59,3 +74,4 @@ jobs:
               run: |
                   kubectl rollout status deployment/r16a-z-grid-api -n r16a-z-grid --timeout=180s
                   kubectl rollout status deployment/r16a-z-grid-web -n r16a-z-grid --timeout=180s
+                  kubectl rollout status deployment/r16a-z-grid-py-engine -n r16a-z-grid --timeout=180s

@@ -1,0 +1,39 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Test / coverage / benchmark caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.benchmarks/
+
+# Type/checker/linter caches
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+# IDE / local files
+.python-version
+.DS_Store
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+generated-grid.json

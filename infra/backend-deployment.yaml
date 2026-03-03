@@ -22,6 +22,9 @@ spec:
                   envFrom:
                       - secretRef:
                             name: r16a-z-grid-secret
+                  env:
+                      - name: ENGINE_REMOTE_PYTHON_BASE_URL
+                        value: http://r16a-z-grid-py-engine:8090
                   readinessProbe:
                       tcpSocket:
                           port: 8080
