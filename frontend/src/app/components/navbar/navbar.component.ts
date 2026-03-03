@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import {
@@ -16,10 +16,14 @@ import { ProjectSelectors } from '../../stores/project/project.selectors';
 	templateUrl: './navbar.component.html',
 	styleUrl: './navbar.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'(document:click)': 'onDocumentClick($event)',
+	},
 })
 export class NavbarComponent {
 	private readonly store = inject(Store);
 	private readonly router = inject(Router);
+	private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
 	protected readonly projects = this.store.selectSignal(ProjectSelectors.projects);
 	protected readonly selectedProjectId = this.store.selectSignal(
@@ -87,6 +91,17 @@ export class NavbarComponent {
 
 	protected toggleFloatingGroup(groupId: string): void {
 		this.floatingGroupId.update((current) => (current === groupId ? null : groupId));
+	}
+
+	protected onDocumentClick(event: MouseEvent): void {
+		const target = event.target;
+		if (!(target instanceof Node)) {
+			return;
+		}
+
+		if (!this.elementRef.nativeElement.contains(target)) {
+			this.floatingGroupId.set(null);
+		}
 	}
 
 	protected isGroupExpanded(groupId: string): boolean {
