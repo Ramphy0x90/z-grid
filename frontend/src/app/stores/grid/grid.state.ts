@@ -19,6 +19,7 @@ export type GridState = {
 	export: GridOperationState;
 	import: GridOperationState;
 	run: GridOperationState;
+	shortCircuitRun: GridOperationState;
 };
 
 export const initialGridState: GridState = {
@@ -44,6 +45,10 @@ export const initialGridState: GridState = {
 		error: null,
 	},
 	run: {
+		isRunning: false,
+		error: null,
+	},
+	shortCircuitRun: {
 		isRunning: false,
 		error: null,
 	},

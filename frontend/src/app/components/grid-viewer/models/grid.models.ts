@@ -43,6 +43,9 @@ export type LineModel = {
   inService: boolean;
   ratingMvaShortTerm: number;
   maxLoadingPercent: number;
+  r0Pu?: number | null;
+  x0Pu?: number | null;
+  b0Pu?: number | null;
   fromSwitchClosed: boolean;
   toSwitchClosed: boolean;
 };
@@ -65,6 +68,15 @@ export type TransformerModel = {
   tapSide: TapSide;
   windingType: WindingType;
   maxLoadingPercent: number;
+  r0Pu?: number | null;
+  x0Pu?: number | null;
+  vectorGroup?: string | null;
+  hvNeutralGrounding?: string | null;
+  lvNeutralGrounding?: string | null;
+  hvNeutralResistancePu?: number | null;
+  hvNeutralReactancePu?: number | null;
+  lvNeutralResistancePu?: number | null;
+  lvNeutralReactancePu?: number | null;
   fromSwitchClosed: boolean;
   toSwitchClosed: boolean;
 };
@@ -93,6 +105,11 @@ export type GeneratorModel = {
   minMvar: number;
   maxMvar: number;
   xdppPu: number;
+  x2Pu?: number | null;
+  x0Pu?: number | null;
+  neutralGrounded?: boolean | null;
+  neutralResistancePu?: number | null;
+  neutralReactancePu?: number | null;
   costA: number;
   costB: number;
   costC: number;

@@ -20,6 +20,7 @@ import { ProjectSelectors } from '../project/project.selectors';
 import { GridExportService } from '../../services/grid-export.service';
 import { PowerFlowRunService } from '../../services/power-flow-run.service';
 import { ProjectService } from '../../services/project.service';
+import { ShortCircuitRunService } from '../../services/short-circuit-run.service';
 import type { ProjectGrid } from '../../types/project.types';
 import { GridActions } from './grid.actions';
 import { GridSelectors } from './grid.selectors';
@@ -31,6 +32,7 @@ export class GridEffects {
 	private readonly router = inject(Router);
 	private readonly gridEditorSessionService = inject(GridEditorSessionService);
 	private readonly powerFlowRunService = inject(PowerFlowRunService);
+	private readonly shortCircuitRunService = inject(ShortCircuitRunService);
 	private readonly projectService = inject(ProjectService);
 	private readonly gridExportService = inject(GridExportService);
 	private readonly toastr = inject(ToastrService);
@@ -233,6 +235,30 @@ export class GridEffects {
 					catchError((error: unknown) =>
 						of(
 							GridActions.powerFlowRunFailed({
+								error: this.toErrorMessage(error),
+							}),
+						),
+					),
+				);
+			}),
+		),
+	);
+
+	private readonly runShortCircuit$ = createEffect(() =>
+		this.actions$.pipe(
+			ofType(GridActions.shortCircuitRunRequested),
+			exhaustMap(({ projectId, gridId, options }) => {
+				const dataset = this.projectService.getGridDatasetById(gridId);
+				const saveBeforeRun$ = dataset
+					? this.projectService.saveGridDataset$(gridId, dataset).pipe(map(() => null))
+					: of(null);
+				return saveBeforeRun$.pipe(
+					switchMap(() => this.shortCircuitRunService.startRun$(gridId, options)),
+					switchMap(() => from(this.router.navigate([...toProjectPageCommands(projectId, 'short-circuit')]))),
+					map(() => GridActions.shortCircuitRunSucceeded()),
+					catchError((error: unknown) =>
+						of(
+							GridActions.shortCircuitRunFailed({
 								error: this.toErrorMessage(error),
 							}),
 						),

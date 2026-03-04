@@ -215,4 +215,25 @@ export const gridReducer = createReducer(
 			error,
 		},
 	})),
+	on(GridActions.shortCircuitRunRequested, (state) => ({
+		...state,
+		shortCircuitRun: {
+			isRunning: true,
+			error: null,
+		},
+	})),
+	on(GridActions.shortCircuitRunSucceeded, (state) => ({
+		...state,
+		shortCircuitRun: {
+			isRunning: false,
+			error: null,
+		},
+	})),
+	on(GridActions.shortCircuitRunFailed, (state, { error }) => ({
+		...state,
+		shortCircuitRun: {
+			isRunning: false,
+			error,
+		},
+	})),
 );

@@ -29,4 +29,5 @@ export const GridSelectors = {
 	exportOperation: createSelector(selectGridState, (state) => state.export),
 	importOperation: createSelector(selectGridState, (state) => state.import),
 	runOperation: createSelector(selectGridState, (state) => state.run),
+	shortCircuitRunOperation: createSelector(selectGridState, (state) => state.shortCircuitRun),
 };

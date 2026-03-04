@@ -2,6 +2,7 @@ import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { ProjectGrid } from '../../types/project.types';
 import type { GridEditorMode } from './grid.state';
 import type { GridDataset } from '../../components/grid-viewer/models/grid.models';
+import type { ShortCircuitRunOptions } from '../../types/short-circuit.types';
 
 export const GridActions = createActionGroup({
 	source: 'Grid',
@@ -38,6 +39,13 @@ export const GridActions = createActionGroup({
 		'Power Flow Run Requested': props<{ projectId: string; gridId: string }>(),
 		'Power Flow Run Succeeded': emptyProps(),
 		'Power Flow Run Failed': props<{ error: string }>(),
+		'Short Circuit Run Requested': props<{
+			projectId: string;
+			gridId: string;
+			options?: ShortCircuitRunOptions;
+		}>(),
+		'Short Circuit Run Succeeded': emptyProps(),
+		'Short Circuit Run Failed': props<{ error: string }>(),
 		'Grid Editor Mode Set': props<{ mode: GridEditorMode }>(),
 	},
 });

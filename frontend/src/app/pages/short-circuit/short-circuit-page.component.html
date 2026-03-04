@@ -1,7 +1,163 @@
-<section class="base-page" aria-label="Short Circuit">
-  <header class="page-header" aria-label="Short circuit header">
-    <h2 class="page-title">Short Circuit</h2>
-    <div class="page-actions"></div>
-  </header>
-  <p class="subtitle">Base page ready. Implementation will be added next.</p>
+<section
+	class="base-page"
+	[class.base-page-empty]="!loading() && !run() && !error()"
+	aria-label="Short Circuit"
+>
+	<header class="page-header" aria-label="Short circuit header">
+		<h2 class="page-title">Short Circuit</h2>
+		<div class="page-actions">
+			<button
+				type="button"
+				class="page-action-button"
+				[disabled]="!selectedGridId() || runOperation().isRunning"
+				(click)="runShortCircuit()"
+			>
+				Run
+			</button>
+		</div>
+	</header>
+	<app-grid-selector />
+
+	<section class="fault-options" aria-label="Fault type selection">
+		<span class="fault-options-label">Fault Types</span>
+		<div class="fault-options-list">
+			@for (faultType of ['3PH', 'SLG', 'LL', 'DLG']; track faultType) {
+				<label class="fault-option">
+					<input
+						type="checkbox"
+						[checked]="selectedFaultTypes().includes($any(faultType))"
+						(change)="toggleFaultType($any(faultType), $any($event.target).checked)"
+					/>
+					{{ faultType }}
+				</label>
+			}
+		</div>
+	</section>
+
+	@if (loading()) {
+		<p class="subtitle">Loading latest run…</p>
+	}
+
+	@if (error()) {
+		<p class="error-msg" role="alert">{{ error() }}</p>
+	}
+
+	@if (!loading() && !run() && !error()) {
+		<div class="empty-state">
+			<i class="bi bi-lightning-charge" aria-hidden="true"></i>
+			<p>No short-circuit runs yet. Run a calculation from the page header.</p>
+		</div>
+	}
+
+	@if (run()) {
+		<section class="status-card" aria-label="Run status">
+			<span
+				class="status-badge"
+				[class.badge-queued]="run()!.status === 'QUEUED'"
+				[class.badge-running]="run()!.status === 'RUNNING'"
+				[class.badge-succeeded]="run()!.status === 'SUCCEEDED'"
+				[class.badge-failed]="run()!.status === 'FAILED'"
+			>
+				<span class="badge-dot" aria-hidden="true"></span>
+				{{ run()!.status }}
+			</span>
+			<div class="status-meta">
+				<span class="meta-item">
+					<span class="meta-key">Engine</span>
+					<span class="meta-val">{{ run()!.solver }}</span>
+				</span>
+				@if (run()!.createdAt) {
+					<span class="meta-sep" aria-hidden="true">·</span>
+					<span class="meta-item">
+						<span class="meta-key">Created</span>
+						<span class="meta-val">{{ run()!.createdAt }}</span>
+					</span>
+				}
+				@if (run()!.finishedAt) {
+					<span class="meta-sep" aria-hidden="true">·</span>
+					<span class="meta-item">
+						<span class="meta-key">Finished</span>
+						<span class="meta-val">{{ run()!.finishedAt }}</span>
+					</span>
+				}
+			</div>
+			@if (run()!.errorMessage) {
+				<div class="status-error" role="alert">
+					<i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+					{{ run()!.errorMessage }}
+				</div>
+			}
+		</section>
+	}
+
+	@if (hasResult() && result()) {
+		<section class="summary-grid" aria-label="Run summary">
+			<article class="summary-item">
+				<div class="summary-icon" aria-hidden="true"><i class="bi bi-diagram-3-fill"></i></div>
+				<div class="summary-body">
+					<h3>Buses</h3>
+					<p>{{ busRows().length }}</p>
+				</div>
+			</article>
+			<article class="summary-item">
+				<div class="summary-icon" aria-hidden="true"><i class="bi bi-lightning-fill"></i></div>
+				<div class="summary-body">
+					<h3>Max Fault</h3>
+					<p>{{ maxFaultKa().toFixed(3) }} <span class="unit">kA</span></p>
+				</div>
+			</article>
+			<article class="summary-item">
+				<div class="summary-icon" aria-hidden="true"><i class="bi bi-list-check"></i></div>
+				<div class="summary-body">
+					<h3>Fault Types</h3>
+					<p>{{ result()!.faultTypes.join(', ') }}</p>
+				</div>
+			</article>
+		</section>
+
+		<section class="result-pane" aria-label="Short circuit bus results">
+			<div class="table-shell" role="region" aria-label="Short circuit table">
+				<table class="result-table">
+					<thead>
+						<tr>
+							<th scope="col">Bus</th>
+							<th scope="col">kV</th>
+							@for (faultType of result()!.faultTypes; track faultType) {
+								<th scope="col">{{ faultType }} (kA)</th>
+							}
+							<th scope="col">Max (kA)</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (bus of busRows(); track bus.busId) {
+							<tr>
+								<td>{{ bus.busName }}</td>
+								<td>{{ bus.nominalVoltageKv.toFixed(1) }}</td>
+								@for (faultType of result()!.faultTypes; track faultType) {
+									<td>
+										@if (faultValue(bus.faults, $any(faultType)) !== null) {
+											{{ faultValue(bus.faults, $any(faultType))!.toFixed(3) }}
+										} @else {
+											-
+										}
+									</td>
+								}
+								<td class="v-crit">{{ bus.maxIkssKa.toFixed(3) }}</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			@if (result()!.warnings.length > 0) {
+				<div class="status-error" role="status">
+					<i class="bi bi-info-circle" aria-hidden="true"></i>
+					<div>
+						@for (warning of result()!.warnings; track warning) {
+							<div>{{ warning }}</div>
+						}
+					</div>
+				</div>
+			}
+		</section>
+	}
 </section>
