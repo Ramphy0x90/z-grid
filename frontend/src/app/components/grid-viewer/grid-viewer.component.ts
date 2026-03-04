@@ -52,6 +52,8 @@ import type {
 } from './toolbar/grid-viewer-toolbar.types';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { latToMercatorY, mercatorYToLat } from './utils/web-mercator';
+import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
+import type { GridHoverResultCard } from '../../types/grid-hover-result.types';
 
 const NEW_GRID_MAP_VIEWPORT = {
 	centerX: 60,
@@ -76,6 +78,12 @@ type TransformerIconOverlay = {
 	highlighted: boolean;
 };
 
+type HoverResultOverlay = {
+	x: number;
+	y: number;
+	card: GridHoverResultCard;
+};
+
 @Component({
 	selector: 'app-grid-viewer',
 	imports: [GridElementInspectorComponent, GridViewerToolbarComponent],
@@ -88,6 +96,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly facade = inject(GridViewerFacade);
 	private readonly store = inject(Store);
+	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
 
 	@ViewChild('mapCanvas', { static: true })
 	private readonly mapCanvasRef?: ElementRef<HTMLCanvasElement>;
@@ -115,6 +124,7 @@ export class GridViewerComponent implements AfterViewInit {
 	protected readonly placedConnectionOverlays = computed(() => this.getPlacedConnectionOverlays());
 	protected readonly transformerIconOverlays = computed(() => this.getTransformerIconOverlays());
 	protected readonly attachedElementIconOverlays = computed(() => this.getAttachedElementIconOverlays());
+	protected readonly hoverResultOverlay = computed(() => this.getHoverResultOverlay());
 	protected readonly inspectorSelection = computed<GridElementInspectorSelection | null>(() => {
 		const placementMode = this.facade.placementMode();
 		if (placementMode === 'line' || placementMode === 'transformer') {
@@ -677,6 +687,68 @@ export class GridViewerComponent implements AfterViewInit {
 			overlays.push({ id, x: midpoint.x, y: midpoint.y, angle, highlighted: isSelected || isHovered });
 		}
 		return overlays;
+	}
+
+	private getHoverResultOverlay(): HoverResultOverlay | null {
+		const hoveredElement = this.hoveredElement();
+		if (!hoveredElement) {
+			return null;
+		}
+		const provider = this.hoverResultOverlayService.activeProvider();
+		if (!provider) {
+			return null;
+		}
+		const anchor = this.getHoveredElementAnchor(hoveredElement);
+		if (!anchor) {
+			return null;
+		}
+		const card = provider({
+			hoveredElement,
+			dataset: this.facade.dataset(),
+		});
+		if (!card) {
+			return null;
+		}
+		return { ...anchor, card };
+	}
+
+	private getHoveredElementAnchor(element: SelectedElement): { x: number; y: number } | null {
+		if (!element) {
+			return null;
+		}
+		const graph = this.facade.normalizedGraph();
+		if (element.kind === 'bus') {
+			const busIndex = graph.busIndexById.get(element.id);
+			if (busIndex === undefined) {
+				return null;
+			}
+			const positions =
+				this.activeView() === 'map' ? graph.mapNodePositions : graph.schematicNodePositions;
+			return this.worldPointToScreen(positions[busIndex * 2], positions[busIndex * 2 + 1]);
+		}
+		if (element.kind === 'line' || element.kind === 'transformer') {
+			const edgeIndex = graph.edgeIds.findIndex((edgeId) => edgeId === element.id);
+			if (edgeIndex < 0) {
+				return null;
+			}
+			const segments =
+				this.activeView() === 'map' ? graph.mapLineSegments : graph.schematicLineSegments;
+			const x1 = segments[edgeIndex * 4];
+			const y1 = segments[edgeIndex * 4 + 1];
+			const x2 = segments[edgeIndex * 4 + 2];
+			const y2 = segments[edgeIndex * 4 + 3];
+			return this.worldPointToScreen((x1 + x2) / 2, (y1 + y2) / 2);
+		}
+		const attachedIndex = graph.attachedElementIds.findIndex(
+			(attachedId, index) =>
+				attachedId === element.id && graph.attachedElementKinds[index] === element.kind,
+		);
+		if (attachedIndex < 0) {
+			return null;
+		}
+		const positions =
+			this.activeView() === 'map' ? graph.mapAttachedPositions : graph.schematicAttachedPositions;
+		return this.worldPointToScreen(positions[attachedIndex * 2], positions[attachedIndex * 2 + 1]);
 	}
 
 	private worldSegmentToScreen(

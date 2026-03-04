@@ -21,6 +21,37 @@
 		@if (editEnabled() && placementMode()) {
 			<p class="placement-hint" aria-live="polite">{{ placementHint() }}</p>
 		}
+		@if (hoverResultOverlay(); as hoverResult) {
+			<aside
+				class="hover-result-floating"
+				[style.left.px]="hoverResult.x + 14"
+				[style.top.px]="hoverResult.y + 14"
+				aria-label="Hovered element result"
+			>
+				<p class="hover-result-title">{{ hoverResult.card.title }}</p>
+				@if (hoverResult.card.subtitle) {
+					<p class="hover-result-subtitle">{{ hoverResult.card.subtitle }}</p>
+				}
+				@if (hoverResult.card.statusText) {
+					<p class="hover-result-status">{{ hoverResult.card.statusText }}</p>
+				}
+				<div class="hover-result-rows">
+					@for (row of hoverResult.card.rows; track row.label) {
+						<div class="hover-result-row">
+							<span class="hover-result-row-label">{{ row.label }}</span>
+							<span
+								class="hover-result-row-value"
+								[class.hover-result-row-value-ok]="row.tone === 'ok'"
+								[class.hover-result-row-value-warn]="row.tone === 'warn'"
+								[class.hover-result-row-value-critical]="row.tone === 'critical'"
+							>
+								{{ row.value }}
+							</span>
+						</div>
+					}
+				</div>
+			</aside>
+		}
 		@if (inspectorSelection(); as selected) {
 			<aside class="inspector-floating" aria-label="Selected element inspector">
 				<app-grid-element-inspector

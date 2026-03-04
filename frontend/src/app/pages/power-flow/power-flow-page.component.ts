@@ -16,6 +16,12 @@ import { GridActions } from '../../stores/grid/grid.actions';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { PowerFlowRunService } from '../../services/power-flow-run.service';
 import type { PowerFlowRunStatus } from '../../types/power-flow.types';
+import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
+import type {
+	GridHoverResultCard,
+	GridHoverResultContext,
+	GridHoverResultProvider,
+} from '../../types/grid-hover-result.types';
 
 @Component({
 	selector: 'app-power-flow-page',
@@ -26,6 +32,7 @@ import type { PowerFlowRunStatus } from '../../types/power-flow.types';
 })
 export class PowerFlowPageComponent {
 	private readonly powerFlowRunService = inject(PowerFlowRunService);
+	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
 	private readonly store = inject(Store);
 	private readonly destroyRef = inject(DestroyRef);
 
@@ -53,6 +60,9 @@ export class PowerFlowPageComponent {
 	});
 
 	constructor() {
+		const unregisterHoverProvider = this.hoverResultOverlayService.registerProvider(
+			this.provideHoverResultCard,
+		);
 		effect(() => {
 			const gridId = this.selectedGridId();
 			this.powerFlowRunService.powerFlowRunRefreshToken();
@@ -66,7 +76,10 @@ export class PowerFlowPageComponent {
 			this.loadLatestRun(gridId);
 		});
 
-		this.destroyRef.onDestroy(() => this.stopPolling());
+		this.destroyRef.onDestroy(() => {
+			unregisterHoverProvider();
+			this.stopPolling();
+		});
 	}
 
 	protected setActivePane(pane: 'buses' | 'branches' | 'violations'): void {
@@ -179,5 +192,141 @@ export class PowerFlowPageComponent {
 					this.errorState.set('Run status polling failed. The run may still be processing.');
 				},
 			});
+	}
+
+	private readonly provideHoverResultCard: GridHoverResultProvider = (
+		context: GridHoverResultContext,
+	): GridHoverResultCard | null => {
+		const title = this.getHoverElementTitle(context);
+		if (!title) {
+			return null;
+		}
+		const run = this.runState();
+		if (!run) {
+			return { title, statusText: 'No power flow run available for this grid.', rows: [] };
+		}
+		if (run.status === 'QUEUED' || run.status === 'RUNNING') {
+			return { title, statusText: `Run status: ${run.status}.`, rows: [] };
+		}
+		if (run.status === 'FAILED') {
+			return {
+				title,
+				statusText: run.errorMessage ?? 'Run failed and no result payload is available.',
+				rows: [],
+			};
+		}
+		if (!run.result) {
+			return {
+				title,
+				statusText: 'Run succeeded but result payload is not available yet.',
+				rows: [],
+			};
+		}
+		return this.buildResultCardFromPayload(context, run);
+	};
+
+	private buildResultCardFromPayload(
+		context: GridHoverResultContext,
+		run: PowerFlowRunStatus,
+	): GridHoverResultCard {
+		const title = this.getHoverElementTitle(context) ?? 'Element';
+		const result = run.result;
+		if (!result) {
+			return { title, statusText: 'No result payload available.', rows: [] };
+		}
+		if (context.hoveredElement.kind === 'bus') {
+			const busResult = result.busResults.find((item) => item.busId === context.hoveredElement.id);
+			if (!busResult) {
+				return { title, statusText: 'No bus result available.', rows: [] };
+			}
+			const v = busResult.voltageMagnitudePu;
+			const voltageTone = v < 0.9 || v > 1.1 ? 'critical' : v < 0.95 || v > 1.05 ? 'warn' : 'ok';
+			return {
+				title,
+				rows: [
+					{ label: 'Voltage', value: `${v.toFixed(4)} pu`, tone: voltageTone },
+					{ label: 'Angle', value: `${busResult.voltageAngleDeg.toFixed(3)} deg` },
+				],
+			};
+		}
+		if (context.hoveredElement.kind === 'line' || context.hoveredElement.kind === 'transformer') {
+			const branchResult = result.branchResults.find(
+				(item) => item.elementId === context.hoveredElement.id,
+			);
+			if (!branchResult) {
+				return { title, statusText: 'No branch result available.', rows: [] };
+			}
+			const loadingTone =
+				branchResult.loadingPercent >= 100
+					? 'critical'
+					: branchResult.loadingPercent >= 90
+						? 'warn'
+						: 'ok';
+			return {
+				title,
+				subtitle: branchResult.elementType,
+				rows: [
+					{
+						label: 'Loading',
+						value: `${branchResult.loadingPercent.toFixed(1)}%`,
+						tone: loadingTone,
+					},
+					{ label: 'P From', value: `${branchResult.pFromMw.toFixed(2)} MW` },
+					{ label: 'P To', value: `${branchResult.pToMw.toFixed(2)} MW` },
+				],
+			};
+		}
+		const busId = this.resolveAttachedElementBusId(context);
+		if (!busId) {
+			return { title, statusText: 'No linked bus found for this element.', rows: [] };
+		}
+		const busResult = result.busResults.find((item) => item.busId === busId);
+		if (!busResult) {
+			return { title, statusText: 'No linked bus result available.', rows: [] };
+		}
+		const v = busResult.voltageMagnitudePu;
+		const voltageTone = v < 0.9 || v > 1.1 ? 'critical' : v < 0.95 || v > 1.05 ? 'warn' : 'ok';
+		return {
+			title,
+			subtitle: `Bus: ${busResult.busName}`,
+			rows: [
+				{ label: 'Bus Voltage', value: `${v.toFixed(4)} pu`, tone: voltageTone },
+				{ label: 'Bus Angle', value: `${busResult.voltageAngleDeg.toFixed(3)} deg` },
+			],
+		};
+	}
+
+	private getHoverElementTitle(context: GridHoverResultContext): string | null {
+		const id = context.hoveredElement.id;
+		if (context.hoveredElement.kind === 'bus') {
+			return context.dataset.buses.find((item) => item.id === id)?.name ?? null;
+		}
+		if (context.hoveredElement.kind === 'line') {
+			return context.dataset.lines.find((item) => item.id === id)?.name ?? null;
+		}
+		if (context.hoveredElement.kind === 'transformer') {
+			return context.dataset.transformers.find((item) => item.id === id)?.name ?? null;
+		}
+		if (context.hoveredElement.kind === 'load') {
+			return context.dataset.loads.find((item) => item.id === id)?.name ?? null;
+		}
+		if (context.hoveredElement.kind === 'generator') {
+			return context.dataset.generators.find((item) => item.id === id)?.name ?? null;
+		}
+		return context.dataset.shuntCompensators.find((item) => item.id === id)?.name ?? null;
+	}
+
+	private resolveAttachedElementBusId(context: GridHoverResultContext): string | null {
+		const id = context.hoveredElement.id;
+		if (context.hoveredElement.kind === 'load') {
+			return context.dataset.loads.find((item) => item.id === id)?.busId ?? null;
+		}
+		if (context.hoveredElement.kind === 'generator') {
+			return context.dataset.generators.find((item) => item.id === id)?.busId ?? null;
+		}
+		if (context.hoveredElement.kind === 'shunt') {
+			return context.dataset.shuntCompensators.find((item) => item.id === id)?.busId ?? null;
+		}
+		return null;
 	}
 }
