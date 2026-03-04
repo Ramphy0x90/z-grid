@@ -13,13 +13,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
 public class GridService {
     private static final String DEFAULT_GRID_NAME = "New Grid";
+    /**
+     * Keep IN-clause queries safely below PostgreSQL's 65,535 bind-parameter limit.
+     * Some JDBC mappings can expand one UUID into multiple parameters, so we leave headroom.
+     */
+    private static final int BUS_ID_IN_QUERY_CHUNK_SIZE = 10_000;
 
     private final GridRepository gridRepository;
     private final BusRepository busRepository;
@@ -156,9 +163,9 @@ public class GridService {
     private GridDatasetSnapshot loadSnapshot(UUID gridId) {
         List<Bus> buses = busRepository.findByGridId(gridId);
         List<UUID> busIds = buses.stream().map(Bus::getId).toList();
-        List<Load> loads = busIds.isEmpty() ? List.of() : loadRepository.findByBusIdIn(busIds);
-        List<Generator> generators = busIds.isEmpty() ? List.of() : generatorRepository.findByBusIdIn(busIds);
-        List<ShuntCompensator> shunts = busIds.isEmpty() ? List.of() : shuntCompensatorRepository.findByBusIdIn(busIds);
+        List<Load> loads = fetchByBusIdsInChunks(busIds, loadRepository::findByBusIdIn);
+        List<Generator> generators = fetchByBusIdsInChunks(busIds, generatorRepository::findByBusIdIn);
+        List<ShuntCompensator> shunts = fetchByBusIdsInChunks(busIds, shuntCompensatorRepository::findByBusIdIn);
         return new GridDatasetSnapshot(
                 buses,
                 lineRepository.findByGridId(gridId),
@@ -169,5 +176,20 @@ public class GridService {
                 busLayoutRepository.findByGridId(gridId),
                 edgeLayoutRepository.findByGridId(gridId)
         );
+    }
+
+    private <T> List<T> fetchByBusIdsInChunks(List<UUID> busIds, Function<List<UUID>, List<T>> fetcher) {
+        if (busIds.isEmpty()) {
+            return List.of();
+        }
+        if (busIds.size() <= BUS_ID_IN_QUERY_CHUNK_SIZE) {
+            return fetcher.apply(busIds);
+        }
+        List<T> combined = new ArrayList<>();
+        for (int start = 0; start < busIds.size(); start += BUS_ID_IN_QUERY_CHUNK_SIZE) {
+            int end = Math.min(start + BUS_ID_IN_QUERY_CHUNK_SIZE, busIds.size());
+            combined.addAll(fetcher.apply(busIds.subList(start, end)));
+        }
+        return combined;
     }
 }
