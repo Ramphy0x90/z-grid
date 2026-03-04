@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PowerFlowSimulationServiceTest {
     private static final String PY_ENGINE_KEY = "remote-python-powerflow-v1";
+    private static final String PY_SC_ENGINE_KEY = "remote-python-short-circuit-v1";
 
     @Mock
     private SimulationRunRepository simulationRunRepository;
@@ -46,6 +47,8 @@ class PowerFlowSimulationServiceTest {
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private SimulationExecutor powerFlowExecutor;
+    @Mock
+    private SimulationExecutor shortCircuitExecutor;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -56,6 +59,8 @@ class PowerFlowSimulationServiceTest {
         when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
         when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
         when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
+        when(shortCircuitExecutor.simulationType()).thenReturn(SimulationType.SHORT_CIRCUIT);
+        when(shortCircuitExecutor.defaultEngineKey()).thenReturn(PY_SC_ENGINE_KEY);
         when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
                 any(),
                 any(),
@@ -69,7 +74,7 @@ class PowerFlowSimulationServiceTest {
                 gridService,
                 eventPublisher,
                 objectMapper,
-                List.of(powerFlowExecutor)
+                List.of(powerFlowExecutor, shortCircuitExecutor)
         );
 
         StartSimulationRunResponse response = facade.startRun(
@@ -102,6 +107,8 @@ class PowerFlowSimulationServiceTest {
         when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
         when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
         when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
+        when(shortCircuitExecutor.simulationType()).thenReturn(SimulationType.SHORT_CIRCUIT);
+        when(shortCircuitExecutor.defaultEngineKey()).thenReturn(PY_SC_ENGINE_KEY);
         when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
                 any(),
                 any(),
@@ -114,7 +121,7 @@ class PowerFlowSimulationServiceTest {
                 gridService,
                 eventPublisher,
                 objectMapper,
-                List.of(powerFlowExecutor)
+                List.of(powerFlowExecutor, shortCircuitExecutor)
         );
 
         StartSimulationRunResponse response = facade.startRun(
@@ -143,6 +150,8 @@ class PowerFlowSimulationServiceTest {
         when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
         when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
         when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
+        when(shortCircuitExecutor.simulationType()).thenReturn(SimulationType.SHORT_CIRCUIT);
+        when(shortCircuitExecutor.defaultEngineKey()).thenReturn(PY_SC_ENGINE_KEY);
         when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
                 any(),
                 any(),
@@ -156,7 +165,7 @@ class PowerFlowSimulationServiceTest {
                 gridService,
                 eventPublisher,
                 objectMapper,
-                List.of(powerFlowExecutor)
+                List.of(powerFlowExecutor, shortCircuitExecutor)
         );
 
         StartSimulationRunResponse response = facade.startRun(
@@ -170,5 +179,44 @@ class PowerFlowSimulationServiceTest {
         SimulationRun firstSave = captor.getAllValues().get(0);
         assertEquals(SimulationRunStatus.FAILED, firstSave.getStatus());
         assertEquals(response.simulationType(), SimulationType.POWER_FLOW);
+    }
+
+    @Test
+    void startShortCircuitRunUsesShortCircuitExecutorDefaultEngine() {
+        UUID gridId = UUID.randomUUID();
+        Grid grid = Grid.builder().id(gridId).projectId(UUID.randomUUID()).name("Grid").build();
+        when(gridService.getGridByIdOrThrow(gridId)).thenReturn(grid);
+        when(powerFlowExecutor.simulationType()).thenReturn(SimulationType.POWER_FLOW);
+        when(powerFlowExecutor.defaultEngineKey()).thenReturn(PY_ENGINE_KEY);
+        when(shortCircuitExecutor.simulationType()).thenReturn(SimulationType.SHORT_CIRCUIT);
+        when(shortCircuitExecutor.defaultEngineKey()).thenReturn(PY_SC_ENGINE_KEY);
+        when(simulationRunRepository.findFirstByGridIdAndSimulationTypeAndStatusInOrderByCreatedAtDesc(
+                any(),
+                any(),
+                any(Set.class)
+        )).thenReturn(Optional.empty());
+        when(simulationRunRepository.save(any(SimulationRun.class))).thenAnswer((invocation) -> invocation.getArgument(0));
+
+        SimulationFacade facade = new SimulationFacade(
+                simulationRunRepository,
+                simulationResultStore,
+                gridService,
+                eventPublisher,
+                objectMapper,
+                List.of(powerFlowExecutor, shortCircuitExecutor)
+        );
+
+        StartSimulationRunResponse response = facade.startRun(
+                gridId,
+                new StartSimulationRunRequest(SimulationType.SHORT_CIRCUIT, null, null, null)
+        );
+
+        assertFalse(response.reusedExisting());
+        assertEquals(SimulationType.SHORT_CIRCUIT, response.simulationType());
+        verify(eventPublisher).publishEvent(new SimulationRunQueuedEvent(
+                response.runId(),
+                SimulationType.SHORT_CIRCUIT,
+                PY_SC_ENGINE_KEY
+        ));
     }
 }

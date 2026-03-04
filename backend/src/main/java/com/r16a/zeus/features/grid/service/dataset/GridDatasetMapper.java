@@ -158,6 +158,9 @@ public class GridDatasetMapper {
             node.put("inService", line.isInService());
             node.put("ratingMvaShortTerm", nullableDouble(line.getRatingMvaShortTerm()));
             node.put("maxLoadingPercent", nullableDouble(line.getMaxLoadingPercent()));
+            node.put("r0Pu", line.getR0Pu());
+            node.put("x0Pu", line.getX0Pu());
+            node.put("b0Pu", line.getB0Pu());
             node.put("fromSwitchClosed", line.isFromSwitchClosed());
             node.put("toSwitchClosed", line.isToSwitchClosed());
             array.add(node);
@@ -187,6 +190,15 @@ public class GridDatasetMapper {
             node.put("tapSide", toFrontendTapSide(transformer.getTapSide()));
             node.put("windingType", toFrontendWindingType(transformer.getWindingType()));
             node.put("maxLoadingPercent", nullableDouble(transformer.getMaxLoadingPercent()));
+            node.put("r0Pu", transformer.getR0Pu());
+            node.put("x0Pu", transformer.getX0Pu());
+            node.put("vectorGroup", transformer.getVectorGroup());
+            node.put("hvNeutralGrounding", transformer.getHvNeutralGrounding());
+            node.put("lvNeutralGrounding", transformer.getLvNeutralGrounding());
+            node.put("hvNeutralResistancePu", transformer.getHvNeutralResistancePu());
+            node.put("hvNeutralReactancePu", transformer.getHvNeutralReactancePu());
+            node.put("lvNeutralResistancePu", transformer.getLvNeutralResistancePu());
+            node.put("lvNeutralReactancePu", transformer.getLvNeutralReactancePu());
             node.put("fromSwitchClosed", transformer.isFromSwitchClosed());
             node.put("toSwitchClosed", transformer.isToSwitchClosed());
             array.add(node);
@@ -227,6 +239,11 @@ public class GridDatasetMapper {
             node.put("minMvar", nullableDouble(generator.getMinMvar()));
             node.put("maxMvar", nullableDouble(generator.getMaxMvar()));
             node.put("xdppPu", nullableDouble(generator.getXdppPu()));
+            node.put("x2Pu", generator.getX2Pu());
+            node.put("x0Pu", generator.getX0Pu());
+            node.put("neutralGrounded", generator.getNeutralGrounded());
+            node.put("neutralResistancePu", generator.getNeutralResistancePu());
+            node.put("neutralReactancePu", generator.getNeutralReactancePu());
             node.put("costA", nullableDouble(generator.getCostA()));
             node.put("costB", nullableDouble(generator.getCostB()));
             node.put("costC", nullableDouble(generator.getCostC()));
@@ -409,6 +426,9 @@ public class GridDatasetMapper {
                     .inService(getBoolean(lineNode, "inService", true))
                     .ratingMvaShortTerm(getDouble(lineNode, "ratingMvaShortTerm", 0.0))
                     .maxLoadingPercent(getDouble(lineNode, "maxLoadingPercent", 100.0))
+                    .r0Pu(getNullableDouble(lineNode, "r0Pu"))
+                    .x0Pu(getNullableDouble(lineNode, "x0Pu"))
+                    .b0Pu(getNullableDouble(lineNode, "b0Pu"))
                     .fromSwitchClosed(getBoolean(lineNode, "fromSwitchClosed", true))
                     .toSwitchClosed(getBoolean(lineNode, "toSwitchClosed", true))
                     .build());
@@ -454,6 +474,15 @@ public class GridDatasetMapper {
                     .tapSide(mapTapSide(getText(transformerNode, "tapSide", "FROM")))
                     .windingType(mapWindingType(getText(transformerNode, "windingType", "YNyn")))
                     .maxLoadingPercent(getDouble(transformerNode, "maxLoadingPercent", 100.0))
+                    .r0Pu(getNullableDouble(transformerNode, "r0Pu"))
+                    .x0Pu(getNullableDouble(transformerNode, "x0Pu"))
+                    .vectorGroup(getText(transformerNode, "vectorGroup", null))
+                    .hvNeutralGrounding(getText(transformerNode, "hvNeutralGrounding", null))
+                    .lvNeutralGrounding(getText(transformerNode, "lvNeutralGrounding", null))
+                    .hvNeutralResistancePu(getNullableDouble(transformerNode, "hvNeutralResistancePu"))
+                    .hvNeutralReactancePu(getNullableDouble(transformerNode, "hvNeutralReactancePu"))
+                    .lvNeutralResistancePu(getNullableDouble(transformerNode, "lvNeutralResistancePu"))
+                    .lvNeutralReactancePu(getNullableDouble(transformerNode, "lvNeutralReactancePu"))
                     .fromSwitchClosed(getBoolean(transformerNode, "fromSwitchClosed", true))
                     .toSwitchClosed(getBoolean(transformerNode, "toSwitchClosed", true))
                     .build());
@@ -508,6 +537,11 @@ public class GridDatasetMapper {
                     .minMvar(getDouble(generatorNode, "minMvar", 0.0))
                     .maxMvar(getDouble(generatorNode, "maxMvar", 0.0))
                     .xdppPu(getDouble(generatorNode, "xdppPu", 0.0))
+                    .x2Pu(getNullableDouble(generatorNode, "x2Pu"))
+                    .x0Pu(getNullableDouble(generatorNode, "x0Pu"))
+                    .neutralGrounded(getNullableBoolean(generatorNode, "neutralGrounded"))
+                    .neutralResistancePu(getNullableDouble(generatorNode, "neutralResistancePu"))
+                    .neutralReactancePu(getNullableDouble(generatorNode, "neutralReactancePu"))
                     .costA(getDouble(generatorNode, "costA", 0.0))
                     .costB(getDouble(generatorNode, "costB", 0.0))
                     .costC(getDouble(generatorNode, "costC", 0.0))
@@ -634,12 +668,28 @@ public class GridDatasetMapper {
         return value.asDouble(fallback);
     }
 
+    private Double getNullableDouble(JsonNode node, String field) {
+        JsonNode value = node == null ? null : node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        return value.asDouble();
+    }
+
     private boolean getBoolean(JsonNode node, String field, boolean fallback) {
         JsonNode value = node == null ? null : node.get(field);
         if (value == null || value.isNull()) {
             return fallback;
         }
         return value.asBoolean(fallback);
+    }
+
+    private Boolean getNullableBoolean(JsonNode node, String field) {
+        JsonNode value = node == null ? null : node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        return value.asBoolean();
     }
 
     private Integer parseIntegerLike(JsonNode node, String field, Integer fallback) {

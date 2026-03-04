@@ -71,6 +71,33 @@ public class Transformer {
     @Column("max_loading_percent")
     private Double maxLoadingPercent;
 
+    @Column("r0_pu")
+    private Double r0Pu;
+
+    @Column("x0_pu")
+    private Double x0Pu;
+
+    @Column("vector_group")
+    private String vectorGroup;
+
+    @Column("hv_neutral_grounding")
+    private String hvNeutralGrounding;
+
+    @Column("lv_neutral_grounding")
+    private String lvNeutralGrounding;
+
+    @Column("hv_neutral_resistance_pu")
+    private Double hvNeutralResistancePu;
+
+    @Column("hv_neutral_reactance_pu")
+    private Double hvNeutralReactancePu;
+
+    @Column("lv_neutral_resistance_pu")
+    private Double lvNeutralResistancePu;
+
+    @Column("lv_neutral_reactance_pu")
+    private Double lvNeutralReactancePu;
+
     @Column("from_switch_closed")
     private boolean fromSwitchClosed;
 

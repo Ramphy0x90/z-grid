@@ -54,6 +54,15 @@ public class Line {
     @Column("max_loading_percent")
     private Double maxLoadingPercent;
 
+    @Column("r0_pu")
+    private Double r0Pu;
+
+    @Column("x0_pu")
+    private Double x0Pu;
+
+    @Column("b0_pu")
+    private Double b0Pu;
+
     @Column("from_switch_closed")
     private boolean fromSwitchClosed;
 

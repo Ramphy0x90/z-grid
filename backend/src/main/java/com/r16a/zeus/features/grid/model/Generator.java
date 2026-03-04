@@ -51,6 +51,21 @@ public class Generator {
     @Column("xdpp_pu")
     private Double xdppPu;
 
+    @Column("x2_pu")
+    private Double x2Pu;
+
+    @Column("x0_pu")
+    private Double x0Pu;
+
+    @Column("neutral_grounded")
+    private Boolean neutralGrounded;
+
+    @Column("neutral_resistance_pu")
+    private Double neutralResistancePu;
+
+    @Column("neutral_reactance_pu")
+    private Double neutralReactancePu;
+
     @Column("cost_a")
     private Double costA;
 
