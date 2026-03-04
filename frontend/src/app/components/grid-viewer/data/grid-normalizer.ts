@@ -86,6 +86,9 @@ const finalizeBounds = (bounds: Bounds): Bounds => {
 	return bounds;
 };
 
+const clamp = (value: number, min: number, max: number): number =>
+	Math.min(max, Math.max(min, value));
+
 const colorForLineByEnergized = (line: LineModel): readonly number[] => {
 	if (!line.inService || !line.fromSwitchClosed || !line.toSwitchClosed) {
 		return COLOR_EDGE_OFFLINE;
@@ -237,10 +240,11 @@ export const normalizeGridDataset = (
 	const mapSpanY = Math.abs(mapBounds.maxY - mapBounds.minY);
 	const schematicSpanX = Math.abs(schematicBounds.maxX - schematicBounds.minX);
 	const schematicSpanY = Math.abs(schematicBounds.maxY - schematicBounds.minY);
-	const mapAttachmentOffset = Math.max(0.004, Math.max(mapSpanX, mapSpanY, 0.25) * 0.035);
-	const schematicAttachmentOffset = Math.max(
-		1.5,
-		Math.max(schematicSpanX, schematicSpanY, 40) * 0.035,
+	const mapAttachmentOffset = clamp(Math.max(mapSpanX, mapSpanY, 0.25) * 0.012, 0.0018, 0.008);
+	const schematicAttachmentOffset = clamp(
+		Math.max(schematicSpanX, schematicSpanY, 40) * 0.012,
+		0.8,
+		2.8,
 	);
 
 	const attachedByBusId = new Map<
