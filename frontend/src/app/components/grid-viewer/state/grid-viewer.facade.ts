@@ -1,6 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import type { GridColorMode, GridDataset } from '../models/grid.models';
 import { normalizeGridDataset } from '../data/grid-normalizer';
+import { latToMercatorY, mercatorYToLat } from '../utils/web-mercator';
 
 export type ViewportState = {
   centerX: number;
@@ -333,6 +334,48 @@ export class GridViewerFacade {
     };
     this.datasetState.set(newDataset);
     return id;
+  }
+
+  moveBusBy(
+    busId: string,
+    view: 'map' | 'schematic',
+    delta: { x: number; y: number },
+  ): void {
+    if (Math.abs(delta.x) <= Number.EPSILON && Math.abs(delta.y) <= Number.EPSILON) {
+      return;
+    }
+    const dataset = this.datasetState();
+    const busIndex = dataset.buses.findIndex((bus) => bus.id === busId);
+    if (busIndex < 0) {
+      return;
+    }
+    const currentLayout = dataset.busLayout.find((layout) => layout.busId === busId) ?? {
+      busId,
+      lat: 0,
+      lng: 0,
+      schematicX: busIndex * 16,
+      schematicY: 0,
+    };
+    const nextLayout =
+      view === 'map'
+        ? {
+            ...currentLayout,
+            lng: currentLayout.lng + delta.x,
+            lat: mercatorYToLat(latToMercatorY(currentLayout.lat) + delta.y),
+          }
+        : {
+            ...currentLayout,
+            schematicX: currentLayout.schematicX + delta.x,
+            schematicY: currentLayout.schematicY + delta.y,
+          };
+    const layoutExists = dataset.busLayout.some((layout) => layout.busId === busId);
+    const nextBusLayout = layoutExists
+      ? dataset.busLayout.map((layout) => (layout.busId === busId ? nextLayout : layout))
+      : [...dataset.busLayout, nextLayout];
+    this.datasetState.set({
+      ...dataset,
+      busLayout: nextBusLayout,
+    });
   }
 
   private createNumericIndex(ids: readonly string[], prefix: string): number {

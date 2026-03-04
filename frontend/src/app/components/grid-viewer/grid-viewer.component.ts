@@ -170,10 +170,17 @@ export class GridViewerComponent implements AfterViewInit {
 	private resizeObserver: ResizeObserver | null = null;
 	private animationFrameId = 0;
 	private lastDatasetGridId: string | null = null;
+	private dragBusId: string | null = null;
+	private dragLastWorldPoint: { x: number; y: number } | null = null;
+	private dragChangedDataset = false;
 	private readonly pendingConnectionBusId = signal<string | null>(null);
 	private readonly viewerSize = signal({ width: 1, height: 1 });
 	private readonly datasetSyncEffect = effect(() => {
 		const dataset = this.dataset();
+		if (dataset && this.dragBusId) {
+			// Preserve in-progress local drag updates; parent sync resumes after drag ends.
+			return;
+		}
 		if (!dataset) {
 			this.lastDatasetGridId = null;
 			this.facade.clearDataset();
@@ -228,6 +235,10 @@ export class GridViewerComponent implements AfterViewInit {
 			onHoverChange: (element) => this.facade.hoverElement(element),
 			onSelect: (element) => this.onCanvasSelect(element),
 			onBackgroundClick: (point) => this.onCanvasBackgroundClick('map', point.x, point.y),
+			canDragElement: (element) => this.canDragBusElement(element),
+			onElementDragStart: (element, point) => this.onBusDragStart('map', element, point),
+			onElementDrag: (element, point) => this.onBusDrag('map', element, point),
+			onElementDragEnd: (element) => this.onBusDragEnd(element),
 		});
 		this.schematicController = new GridInteractionController(
 			schematicCanvas,
@@ -237,6 +248,10 @@ export class GridViewerComponent implements AfterViewInit {
 				onHoverChange: (element) => this.facade.hoverElement(element),
 				onSelect: (element) => this.onCanvasSelect(element),
 				onBackgroundClick: (point) => this.onCanvasBackgroundClick('schematic', point.x, point.y),
+				canDragElement: (element) => this.canDragBusElement(element),
+				onElementDragStart: (element, point) => this.onBusDragStart('schematic', element, point),
+				onElementDrag: (element, point) => this.onBusDrag('schematic', element, point),
+				onElementDragEnd: (element) => this.onBusDragEnd(element),
 			},
 		);
 
@@ -395,6 +410,60 @@ export class GridViewerComponent implements AfterViewInit {
 			return;
 		}
 		this.placeConnectionElement(mode, element);
+	}
+
+	private canDragBusElement(element: SelectedElement): boolean {
+		return Boolean(
+			this.editEnabled() && this.facade.placementMode() === null && element?.kind === 'bus',
+		);
+	}
+
+	private onBusDragStart(
+		_view: ActiveView,
+		element: SelectedElement,
+		point: { x: number; y: number },
+	): void {
+		if (!this.canDragBusElement(element) || !element || element.kind !== 'bus') {
+			return;
+		}
+		this.dragBusId = element.id;
+		this.dragLastWorldPoint = point;
+		this.dragChangedDataset = false;
+		this.facade.selectElement(element);
+	}
+
+	private onBusDrag(
+		view: ActiveView,
+		element: SelectedElement,
+		point: { x: number; y: number },
+	): void {
+		if (!element || element.kind !== 'bus' || !this.dragLastWorldPoint || this.dragBusId !== element.id) {
+			return;
+		}
+		const deltaX = point.x - this.dragLastWorldPoint.x;
+		const deltaY = point.y - this.dragLastWorldPoint.y;
+		this.dragLastWorldPoint = point;
+		if (Math.abs(deltaX) <= Number.EPSILON && Math.abs(deltaY) <= Number.EPSILON) {
+			return;
+		}
+		this.facade.moveBusBy(element.id, view, { x: deltaX, y: deltaY });
+		this.syncGraphToRenderers();
+		this.dragChangedDataset = true;
+	}
+
+	private onBusDragEnd(element: SelectedElement): void {
+		if (!element || element.kind !== 'bus' || this.dragBusId !== element.id) {
+			this.dragBusId = null;
+			this.dragLastWorldPoint = null;
+			this.dragChangedDataset = false;
+			return;
+		}
+		if (this.dragChangedDataset) {
+			this.emitDatasetChange();
+		}
+		this.dragBusId = null;
+		this.dragLastWorldPoint = null;
+		this.dragChangedDataset = false;
 	}
 
 	private placeBusAttachedElement(
