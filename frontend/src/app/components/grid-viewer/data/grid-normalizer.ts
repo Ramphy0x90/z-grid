@@ -242,9 +242,9 @@ export const normalizeGridDataset = (
 	const schematicSpanY = Math.abs(schematicBounds.maxY - schematicBounds.minY);
 	const mapAttachmentOffset = clamp(Math.max(mapSpanX, mapSpanY, 0.25) * 0.012, 0.0018, 0.008);
 	const schematicAttachmentOffset = clamp(
-		Math.max(schematicSpanX, schematicSpanY, 40) * 0.012,
-		0.8,
-		2.8,
+		Math.max(schematicSpanX, schematicSpanY, 40) * 0.006,
+		0.35,
+		1.2,
 	);
 
 	const attachedByBusId = new Map<
