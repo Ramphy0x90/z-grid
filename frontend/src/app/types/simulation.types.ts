@@ -1,4 +1,4 @@
-export type SimulationType = 'POWER_FLOW' | 'HOSTING_CAPACITY' | 'SHORT_CIRCUIT';
+export type SimulationType = 'POWER_FLOW' | 'HOSTING_CAPACITY' | 'SHORT_CIRCUIT' | 'POWER_QUALITY';
 
 export type SimulationRunStatusValue = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
 

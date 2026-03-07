@@ -17,6 +17,8 @@ from py_engine.engines.hosting_capacity.models import HCConfig
 from py_engine.engines.hosting_capacity.models import HCResult
 from py_engine.engines.hosting_capacity.models import VoltageLevel
 from py_engine.engines.powerflow.engine import PowerFlowEngine
+from py_engine.engines.power_quality.core import estimate_power_quality_indices as shared_estimate_power_quality_indices
+from py_engine.engines.power_quality.core import estimate_short_circuit_mva as shared_estimate_short_circuit_mva
 
 
 class HostingCapacityEngine:
@@ -217,17 +219,6 @@ class HostingCapacityEngine:
         modified["generators"] = generators
         return modified
 
-    def _estimate_bus_load_kw(self, dataset: dict[str, Any], bus_id: str) -> float:
-        total_kw = 0.0
-        for load in dataset.get("loads") or []:
-            if str(load.get("busId")) != bus_id:
-                continue
-            if not load.get("inService", True):
-                continue
-            scaling = float(load.get("scalingFactor", 1.0))
-            total_kw += float(load.get("activePowerMw", 0.0)) * scaling * 1000.0
-        return max(total_kw, 0.0)
-
     def _estimate_power_quality_indices(
         self,
         dataset: dict[str, Any],
@@ -235,45 +226,13 @@ class HostingCapacityEngine:
         dg_kw: float,
         config: HCConfig,
     ) -> tuple[float, float, float]:
-        if dg_kw <= 0:
-            return (0.0, 0.0, 0.0)
-
-        sn_mva = dg_kw / 1000.0 / max(config.dg_power_factor, 0.1)
-        ssc_mva = self._estimate_short_circuit_mva(dataset, bus_id)
-        if ssc_mva is None or sn_mva <= 0:
-            # Fall back to conservative values when short-circuit data is unavailable.
-            return (float("inf"), float("inf"), float("inf"))
-
-        ssc_sn_ratio = ssc_mva / sn_mva
-        load_kw = self._estimate_bus_load_kw(dataset, bus_id)
-        dg_to_load_ratio = dg_kw / max(load_kw, 100.0)
-
-        thd_factor_by_type = {
-            DGType.PV: 1.0,
-            DGType.WIND: 1.15,
-            DGType.BATTERY: 0.85,
-            DGType.GENERIC: 1.0,
-        }
-        flicker_factor_by_type = {
-            DGType.PV: 0.35,
-            DGType.WIND: 0.55,
-            DGType.BATTERY: 0.25,
-            DGType.GENERIC: 0.40,
-        }
-        unbalance_factor_by_type = {
-            DGType.PV: 0.25,
-            DGType.WIND: 0.20,
-            DGType.BATTERY: 0.15,
-            DGType.GENERIC: 0.20,
-        }
-
-        # Simplified v1 proxy metrics:
-        # - THD proxy inversely proportional to short-circuit ratio.
-        # - Flicker and unbalance proxies increase with local DG-to-load ratio.
-        thd_pct = (200.0 / max(ssc_sn_ratio, 1e-6)) * thd_factor_by_type[config.dg_type]
-        flicker_plt = dg_to_load_ratio * flicker_factor_by_type[config.dg_type]
-        unbalance_pct = dg_to_load_ratio * 100.0 * unbalance_factor_by_type[config.dg_type]
-        return (thd_pct, flicker_plt, unbalance_pct)
+        return shared_estimate_power_quality_indices(
+            dataset,
+            bus_id,
+            dg_kw,
+            config.dg_type,
+            config.dg_power_factor,
+        )
 
     # ── Constraint checking ─────────────────────────────────────────
 
@@ -401,15 +360,7 @@ class HostingCapacityEngine:
         )
 
     def _estimate_short_circuit_mva(self, dataset: dict[str, Any], bus_id: str) -> float | None:
-        bus_dict = self._find_bus_dict(dataset, bus_id)
-        ssc = bus_dict.get("shortCircuitPowerMva")
-        if ssc is not None:
-            return float(ssc)
-        kv = float(bus_dict.get("nominalVoltageKv", 0.0))
-        if kv <= 0:
-            return None
-        base_mva = float((dataset.get("grid") or {}).get("baseMva", 100.0))
-        return base_mva
+        return shared_estimate_short_circuit_mva(dataset, bus_id)
 
     # ── Binary search ───────────────────────────────────────────────
 

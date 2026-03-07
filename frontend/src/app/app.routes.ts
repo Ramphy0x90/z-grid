@@ -46,6 +46,7 @@ export const PAGE_GROUPS: readonly AppPageGroup[] = [
 		icon: 'bi-calculator',
 		children: [
 			{ id: 'power-flow', label: 'Power Flow', shortLabel: 'PF', icon: 'bi-lightning-charge' },
+			{ id: 'power-quality', label: 'Power Quality', shortLabel: 'PQ', icon: 'bi-soundwave' },
 			{ id: 'hosting-capacity', label: 'Hosting Capacity', shortLabel: 'HC', icon: 'bi-bar-chart-line' },
 			{ id: 'short-circuit', label: 'Short Circuit', shortLabel: 'SC', icon: 'bi-exclamation-triangle' },
 		],
@@ -66,6 +67,10 @@ const pageLoaders: Readonly<Record<string, () => Promise<Type<unknown>>>> = {
 	'power-flow': () =>
 		import('./pages/power-flow/power-flow-page.component').then(
 			(module) => module.PowerFlowPageComponent,
+		),
+	'power-quality': () =>
+		import('./pages/power-quality/power-quality-page.component').then(
+			(module) => module.PowerQualityPageComponent,
 		),
 	'hosting-capacity': () =>
 		import('./pages/hosting-capacity/hosting-capacity-page.component').then(
