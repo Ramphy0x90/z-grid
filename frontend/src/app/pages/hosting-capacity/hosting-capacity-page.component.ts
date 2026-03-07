@@ -15,6 +15,7 @@ import { ProjectSelectors } from '../../stores/project/project.selectors';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { HostingCapacityRunService } from '../../services/hosting-capacity-run.service';
 import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
+import { ProjectService } from '../../services/project.service';
 import { UserPreferencesService } from '../../services/user-preferences.service';
 import type {
 	GridHoverResultCard,
@@ -37,6 +38,7 @@ import type {
 export class HostingCapacityPageComponent {
 	private readonly runService = inject(HostingCapacityRunService);
 	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
+	private readonly projectService = inject(ProjectService);
 	private readonly userPreferencesService = inject(UserPreferencesService);
 	private readonly store = inject(Store);
 	private readonly destroyRef = inject(DestroyRef);
@@ -61,6 +63,17 @@ export class HostingCapacityPageComponent {
 	protected readonly hasResult = computed(() => this.runState()?.result != null);
 	protected readonly result = computed(() => this.runState()?.result ?? null);
 	protected readonly busRows = computed<HostingCapacityBusResult[]>(() => this.result()?.busResults ?? []);
+	protected readonly busNameById = computed(() => {
+		const gridId = this.selectedGridId();
+		if (!gridId) {
+			return new Map<string, string>();
+		}
+		const dataset = this.projectService.getGridDatasetById(gridId);
+		if (!dataset) {
+			return new Map<string, string>();
+		}
+		return new Map(dataset.buses.map((bus) => [bus.id, bus.name]));
+	});
 	protected readonly meanHcKw = computed(() => {
 		const rows = this.busRows();
 		if (rows.length === 0) {
@@ -322,6 +335,7 @@ export class HostingCapacityPageComponent {
 		busResult: HostingCapacityBusResult,
 		showLinkedSubtitle = false,
 	): GridHoverResultCard {
+		const busName = this.busNameById().get(busResult.busId) ?? busResult.busId;
 		const nominalKv = context.dataset.buses.find((item) => item.id === busResult.busId)?.nominalVoltageKv;
 		const voltageTone = this.toVoltageTone(busResult.voltageAtHcPu);
 		const riseLimit = this.resolveVoltageRiseLimit(context, busResult.busId);
@@ -331,7 +345,7 @@ export class HostingCapacityPageComponent {
 		return {
 			title,
 			subtitle: showLinkedSubtitle
-				? `Bus ${busResult.busId}${typeof nominalKv === 'number' ? ` (${nominalKv.toFixed(1)} kV)` : ''}`
+				? `Bus ${busName}${typeof nominalKv === 'number' ? ` (${nominalKv.toFixed(1)} kV)` : ''}`
 				: typeof nominalKv === 'number'
 					? `${nominalKv.toFixed(1)} kV`
 					: undefined,
@@ -360,6 +374,10 @@ export class HostingCapacityPageComponent {
 				},
 			],
 		};
+	}
+
+	protected busLabel(busId: string): string {
+		return this.busNameById().get(busId) ?? busId;
 	}
 
 	private getHoverElementTitle(context: GridHoverResultContext): string | null {

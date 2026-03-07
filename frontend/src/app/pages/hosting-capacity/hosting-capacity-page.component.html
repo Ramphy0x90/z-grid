@@ -142,7 +142,7 @@
 					<tbody>
 						@for (bus of busRows(); track bus.busId) {
 							<tr>
-								<td>{{ bus.busId }}</td>
+								<td>{{ busLabel(bus.busId) }}</td>
 								<td>{{ bus.hcKw.toFixed(2) }}</td>
 								<td>{{ bus.bindingConstraint }}</td>
 								<td

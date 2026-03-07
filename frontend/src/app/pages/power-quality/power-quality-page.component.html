@@ -154,7 +154,7 @@
 					<tbody>
 						@for (bus of busRows(); track bus.busId) {
 							<tr>
-								<td>{{ bus.busId }}</td>
+								<td>{{ busLabel(bus.busId) }}</td>
 								<td [class.v-crit]="bus.thdPct > result()!.constraintsApplied.thdLimitPct">
 									{{ bus.thdPct.toFixed(3) }}
 								</td>

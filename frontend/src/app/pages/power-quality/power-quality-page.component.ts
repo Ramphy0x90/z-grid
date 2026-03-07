@@ -15,6 +15,7 @@ import { ProjectSelectors } from '../../stores/project/project.selectors';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { PowerQualityRunService } from '../../services/power-quality-run.service';
 import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
+import { ProjectService } from '../../services/project.service';
 import { UserPreferencesService } from '../../services/user-preferences.service';
 import type {
 	GridHoverResultCard,
@@ -39,6 +40,7 @@ import type {
 export class PowerQualityPageComponent {
 	private readonly runService = inject(PowerQualityRunService);
 	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
+	private readonly projectService = inject(ProjectService);
 	private readonly userPreferencesService = inject(UserPreferencesService);
 	private readonly store = inject(Store);
 	private readonly destroyRef = inject(DestroyRef);
@@ -67,6 +69,17 @@ export class PowerQualityPageComponent {
 	protected readonly hasResult = computed(() => this.runState()?.result != null);
 	protected readonly result = computed(() => this.runState()?.result ?? null);
 	protected readonly busRows = computed<PowerQualityBusResult[]>(() => this.result()?.busResults ?? []);
+	protected readonly busNameById = computed(() => {
+		const gridId = this.selectedGridId();
+		if (!gridId) {
+			return new Map<string, string>();
+		}
+		const dataset = this.projectService.getGridDatasetById(gridId);
+		if (!dataset) {
+			return new Map<string, string>();
+		}
+		return new Map(dataset.buses.map((bus) => [bus.id, bus.name]));
+	});
 	protected readonly passCount = computed(() => this.busRows().filter((row) => row.passes).length);
 	protected readonly failCount = computed(() => this.busRows().length - this.passCount());
 
@@ -312,13 +325,14 @@ export class PowerQualityPageComponent {
 		busResult: PowerQualityBusResult,
 		showLinkedSubtitle: boolean,
 	): GridHoverResultCard {
+		const busName = this.busNameById().get(busResult.busId) ?? busResult.busId;
 		const metricTone = this.toMetricTone(busResult.passes);
 		const thdLimit = this.result()?.constraintsApplied.thdLimitPct ?? 8;
 		const flickerLimit = this.result()?.constraintsApplied.flickerPltLimit ?? 1;
 		const unbalanceLimit = this.result()?.constraintsApplied.voltageUnbalanceLimitPct ?? 2;
 		return {
 			title,
-			subtitle: showLinkedSubtitle ? `Bus ${busResult.busId}` : undefined,
+			subtitle: showLinkedSubtitle ? `Bus ${busName}` : undefined,
 			rows: [
 				{ label: 'Status', value: busResult.passes ? 'PASS' : 'FAIL', tone: metricTone },
 				{
@@ -347,6 +361,10 @@ export class PowerQualityPageComponent {
 				},
 			],
 		};
+	}
+
+	protected busLabel(busId: string): string {
+		return this.busNameById().get(busId) ?? busId;
 	}
 
 	private toMetricTone(passes: boolean): GridHoverResultTone {
