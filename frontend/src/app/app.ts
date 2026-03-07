@@ -24,6 +24,7 @@ import { GridSelectors } from './stores/grid/grid.selectors';
 import { AuthService } from './services/auth.service';
 import { GridEditorSessionService } from './services/grid-editor-session.service';
 import { ProjectService } from './services/project.service';
+import { UserPreferencesService } from './services/user-preferences.service';
 import { WorkspaceDataSyncService } from './services/workspace-data-sync.service';
 import { WorkspaceRouteService } from './services/workspace-route.service';
 
@@ -41,6 +42,7 @@ export class App {
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly store = inject(Store);
 	private readonly authService = inject(AuthService);
+	private readonly userPreferencesService = inject(UserPreferencesService);
 	private readonly gridEditorSessionService = inject(GridEditorSessionService);
 	private readonly projectService = inject(ProjectService);
 	private readonly workspaceDataSyncService = inject(WorkspaceDataSyncService);
@@ -86,9 +88,17 @@ export class App {
 			previousAuthenticationState = isAuthenticated;
 			if (isAuthenticated) {
 				this.syncProjectsFromBackend();
+				const currentUser = this.authService.currentUser();
+				if (currentUser) {
+					this.userPreferencesService
+						.ensureLoadedForUser$(currentUser.id)
+						.pipe(take(1), takeUntilDestroyed(this.destroyRef))
+						.subscribe();
+				}
 				return;
 			}
 			this.workspaceDataSyncService.resetSessionState();
+			this.userPreferencesService.reset();
 			this.store.dispatch(ProjectActions.projectsLoaded({ projects: [] }));
 			this.store.dispatch(GridActions.gridsLoaded({ grids: [] }));
 		});

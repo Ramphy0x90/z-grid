@@ -15,6 +15,7 @@ import { ProjectSelectors } from '../../stores/project/project.selectors';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { HostingCapacityRunService } from '../../services/hosting-capacity-run.service';
 import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 import type {
 	GridHoverResultCard,
 	GridHoverResultContext,
@@ -36,6 +37,7 @@ import type {
 export class HostingCapacityPageComponent {
 	private readonly runService = inject(HostingCapacityRunService);
 	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
+	private readonly userPreferencesService = inject(UserPreferencesService);
 	private readonly store = inject(Store);
 	private readonly destroyRef = inject(DestroyRef);
 
@@ -96,6 +98,14 @@ export class HostingCapacityPageComponent {
 			}
 			this.errorState.set(null);
 			this.loadLatestRun(gridId);
+		});
+		effect(() => {
+			if (!this.userPreferencesService.isLoaded()) {
+				return;
+			}
+			this.selectedCountryState.set(
+				this.userPreferencesService.preferences().defaultHostingCapacityCountry,
+			);
 		});
 		this.destroyRef.onDestroy(() => {
 			unregisterHoverProvider();

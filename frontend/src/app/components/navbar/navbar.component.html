@@ -162,19 +162,49 @@
 		}
 	</div>
 
-	<button
-		type="button"
-		class="collapse-toggle"
-		[attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
-		(click)="toggleCollapsed()"
-	>
-		<i
-			class="bi"
-			[class.bi-layout-sidebar-inset]="collapsed()"
-			[class.bi-layout-sidebar]="!collapsed()"
-		></i>
-		@if (!collapsed()) {
-			<span class="collapse-label">Collapse</span>
+	<div class="sidebar-bottom-controls">
+		@if (collapsed()) {
+			<div class="icon-rail">
+				<button
+					type="button"
+					class="rail-btn"
+					[class.rail-btn-active]="isSettingsRoute()"
+					aria-label="Open settings"
+					[attr.aria-current]="isSettingsRoute() ? 'page' : null"
+					(click)="onOpenSettings()"
+				>
+					<i class="bi bi-gear" aria-hidden="true"></i>
+					<span class="rail-tooltip">Settings</span>
+				</button>
+			</div>
+		} @else {
+			<button
+				type="button"
+				class="nav-item"
+				[class.nav-item-active]="isSettingsRoute()"
+				aria-label="Open settings"
+				[attr.aria-current]="isSettingsRoute() ? 'page' : null"
+				(click)="onOpenSettings()"
+			>
+				<i class="bi bi-gear nav-item-icon" aria-hidden="true"></i>
+				<span class="nav-item-label">Settings</span>
+			</button>
 		}
-	</button>
+
+		<button
+			type="button"
+			class="collapse-toggle"
+			[attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+			(click)="toggleCollapsed()"
+		>
+			<i
+				class="bi"
+				[class.bi-layout-sidebar-inset]="collapsed()"
+				[class.bi-layout-sidebar]="!collapsed()"
+			></i>
+			@if (!collapsed()) {
+				<span class="collapse-label">Collapse</span>
+			}
+		</button>
+	</div>
 </aside>

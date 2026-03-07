@@ -14,6 +14,7 @@ import com.r16a.zeus.project.exception.ProjectConflictException;
 import com.r16a.zeus.project.exception.ProjectExampleNotFoundException;
 import com.r16a.zeus.project.exception.ProjectNotFoundException;
 import com.r16a.zeus.user.exception.UserConflictException;
+import com.r16a.zeus.user.exception.InvalidUserPreferencesException;
 import com.r16a.zeus.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -39,6 +40,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ProblemDetail handleUserConflict(UserConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidUserPreferencesException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleInvalidUserPreferences(InvalidUserPreferencesException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(TeamNotFoundException.class)

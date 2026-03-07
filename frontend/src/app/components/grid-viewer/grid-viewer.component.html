@@ -2,15 +2,12 @@
 	<div class="viewer-body" #viewerBody [class.viewer-body-placement]="placementMode() !== null">
 		<app-grid-viewer-toolbar
 			[activeView]="activeView()"
-			[mapStyleOptions]="mapStyleOptions"
-			[selectedMapStyleId]="selectedMapStyleId()"
 			[colorModeOptions]="colorModeOptions"
 			[selectedColorModeId]="selectedColorModeId()"
 			[totalElements]="totalElements()"
 			[editEnabled]="editEnabled()"
 			[placementMode]="placementMode()"
 			(activeViewChange)="setActiveView($event)"
-			(mapStyleChange)="onMapStyleIdChange($event)"
 			(colorModeChange)="onColorModeIdChange($event)"
 			(fitViewRequested)="resetViewport()"
 			(zoomInRequested)="zoomIn()"

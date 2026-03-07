@@ -20,8 +20,13 @@ export class WorkspaceRouteService {
 		const segments = urlTree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
 		const [firstSegment, secondSegment] = segments;
 		const isLoginRoute = firstSegment === ROUTES.LOGIN;
+		const isSettingsRoute = firstSegment === ROUTES.SETTINGS;
 		const hasPrimarySegment = typeof firstSegment === 'string' && firstSegment.length > 0;
-		const isWorkspaceRoute = hasPrimarySegment && !isLoginRoute && firstSegment !== ROUTES.PROJECTS;
+		const isWorkspaceRoute =
+			hasPrimarySegment &&
+			!isLoginRoute &&
+			!isSettingsRoute &&
+			firstSegment !== ROUTES.PROJECTS;
 		return {
 			isLoginRoute,
 			isWorkspaceRoute,

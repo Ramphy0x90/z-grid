@@ -15,6 +15,7 @@ import { ProjectSelectors } from '../../stores/project/project.selectors';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { PowerQualityRunService } from '../../services/power-quality-run.service';
 import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 import type {
 	GridHoverResultCard,
 	GridHoverResultContext,
@@ -38,6 +39,7 @@ import type {
 export class PowerQualityPageComponent {
 	private readonly runService = inject(PowerQualityRunService);
 	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
+	private readonly userPreferencesService = inject(UserPreferencesService);
 	private readonly store = inject(Store);
 	private readonly destroyRef = inject(DestroyRef);
 
@@ -83,6 +85,14 @@ export class PowerQualityPageComponent {
 			}
 			this.errorState.set(null);
 			this.loadLatestRun(gridId);
+		});
+		effect(() => {
+			if (!this.userPreferencesService.isLoaded()) {
+				return;
+			}
+			this.selectedCountryState.set(
+				this.userPreferencesService.preferences().defaultPowerQualityCountry,
+			);
 		});
 		this.destroyRef.onDestroy(() => {
 			unregisterHoverProvider();

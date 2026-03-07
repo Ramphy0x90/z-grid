@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import type { GridColorMode, GridDataset } from '../models/grid.models';
-import { normalizeGridDataset } from '../data/grid-normalizer';
+import { normalizeGridDataset, type VoltageLevelColors } from '../data/grid-normalizer';
 import { latToMercatorY, mercatorYToLat } from '../utils/web-mercator';
 
 export type ViewportState = {
@@ -44,10 +44,15 @@ export class GridViewerFacade {
   private readonly hoveredElementState = signal<SelectedElement>(null);
   private readonly placementModeState = signal<PlacementTool>(null);
   private readonly colorModeState = signal<GridColorMode>('energized');
+  private readonly voltageLevelColorsState = signal<VoltageLevelColors>({});
 
   readonly dataset = this.datasetState.asReadonly();
   readonly normalizedGraph = computed(() =>
-    normalizeGridDataset(this.datasetState(), this.colorModeState()),
+    normalizeGridDataset(
+      this.datasetState(),
+      this.colorModeState(),
+      this.voltageLevelColorsState(),
+    ),
   );
   readonly mapViewport = this.mapViewportState.asReadonly();
   readonly schematicViewport = this.schematicViewportState.asReadonly();
@@ -122,6 +127,10 @@ export class GridViewerFacade {
 
   setColorMode(mode: GridColorMode): void {
     this.colorModeState.set(mode);
+  }
+
+  setVoltageLevelColors(colors: VoltageLevelColors): void {
+    this.voltageLevelColorsState.set({ ...colors });
   }
 
   addBusAt(layout: { mapX: number; mapY: number; schematicX: number; schematicY: number }): string {

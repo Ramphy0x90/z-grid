@@ -1,9 +1,13 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DestroyRef } from '@angular/core';
 import { Store } from '@ngrx/store';
 import {
 	DEFAULT_PROJECT_PAGE,
 	PAGE_GROUPS,
+	ROUTES,
 	toProjectPageCommands,
 	toProjectsCommands,
 } from '../../app.routes';
@@ -24,6 +28,9 @@ export class NavbarComponent {
 	private readonly store = inject(Store);
 	private readonly router = inject(Router);
 	private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+	private readonly destroyRef = inject(DestroyRef);
+
+	protected readonly isSettingsRoute = signal(this.router.url.startsWith('/settings'));
 
 	protected readonly projects = this.store.selectSignal(ProjectSelectors.projects);
 	protected readonly selectedProjectId = this.store.selectSignal(
@@ -35,6 +42,17 @@ export class NavbarComponent {
 	);
 	protected readonly collapsed = this.store.selectSignal(NavigationSelectors.collapsed);
 	protected readonly pageGroups = PAGE_GROUPS;
+
+	constructor() {
+		this.router.events
+			.pipe(
+				filter((e) => e instanceof NavigationEnd),
+				takeUntilDestroyed(this.destroyRef),
+			)
+			.subscribe(() => {
+				this.isSettingsRoute.set(this.router.url.startsWith('/settings'));
+			});
+	}
 
 	protected readonly expandedGroups = signal<Record<string, boolean>>({
 		project: false,
@@ -80,6 +98,11 @@ export class NavbarComponent {
 	protected toggleCollapsed(): void {
 		this.store.dispatch(NavigationActions.navbarToggled());
 		this.floatingGroupId.set(null);
+	}
+
+	protected onOpenSettings(): void {
+		this.floatingGroupId.set(null);
+		void this.router.navigate(['/', ROUTES.SETTINGS]);
 	}
 
 	protected toggleGroup(groupId: string): void {

@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { COLOR_MODE_OPTIONS, MAP_STYLE_OPTIONS } from './grid-viewer-toolbar.constants';
+import { COLOR_MODE_OPTIONS } from './grid-viewer-toolbar.constants';
 import type {
 	ActiveView,
 	ColorModeId,
 	ColorModeOption,
-	MapStyleId,
-	MapStyleOption,
 	ToolbarPlacementTool,
 } from './grid-viewer-toolbar.types';
 
@@ -17,8 +15,6 @@ import type {
 })
 export class GridViewerToolbarComponent {
 	readonly activeView = input<ActiveView>('map');
-	readonly mapStyleOptions = input<readonly MapStyleOption[]>(MAP_STYLE_OPTIONS);
-	readonly selectedMapStyleId = input<MapStyleId>('cartoDark');
 	readonly colorModeOptions = input<readonly ColorModeOption[]>(COLOR_MODE_OPTIONS);
 	readonly selectedColorModeId = input<ColorModeId>('energized');
 	readonly totalElements = input(0);
@@ -26,7 +22,6 @@ export class GridViewerToolbarComponent {
 	readonly placementMode = input<ToolbarPlacementTool | null>(null);
 
 	readonly activeViewChange = output<ActiveView>();
-	readonly mapStyleChange = output<MapStyleId>();
 	readonly colorModeChange = output<ColorModeId>();
 	readonly fitViewRequested = output<void>();
 	readonly zoomInRequested = output<void>();
@@ -35,18 +30,6 @@ export class GridViewerToolbarComponent {
 
 	protected setActiveView(view: ActiveView): void {
 		this.activeViewChange.emit(view);
-	}
-
-	protected onMapStyleChange(event: Event): void {
-		const target = event.target;
-		if (!(target instanceof HTMLSelectElement)) {
-			return;
-		}
-		const value = target.value;
-		if (!this.isMapStyleId(value)) {
-			return;
-		}
-		this.mapStyleChange.emit(value);
 	}
 
 	protected requestPlacementMode(tool: ToolbarPlacementTool): void {
@@ -63,10 +46,6 @@ export class GridViewerToolbarComponent {
 			return;
 		}
 		this.colorModeChange.emit(value);
-	}
-
-	private isMapStyleId(value: string): value is MapStyleId {
-		return this.mapStyleOptions().some((style) => style.id === value);
 	}
 
 	private isColorModeId(value: string): value is ColorModeId {

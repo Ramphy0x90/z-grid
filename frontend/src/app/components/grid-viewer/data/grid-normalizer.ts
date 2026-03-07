@@ -32,6 +32,8 @@ export type NormalizedGridGraph = {
 	schematicBounds: Bounds;
 };
 
+export type VoltageLevelColors = Record<string, string>;
+
 const COLOR_NODE_ACTIVE = [0, 0.831, 1, 1];
 const COLOR_NODE_OFFLINE = [0.42, 0.42, 0.45, 1];
 const COLOR_EDGE_ACTIVE = [0, 0.89, 1, 0.95];
@@ -142,6 +144,21 @@ const hashString = (value: string): number => {
 const colorFromPalette = (key: string): readonly number[] =>
 	COLOR_PALETTE[hashString(key) % COLOR_PALETTE.length] ?? COLOR_EDGE_ACTIVE;
 
+const parseHexColorToRgba = (value: string): readonly [number, number, number, number] | null => {
+	const trimmed = value.trim();
+	const matches = trimmed.match(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
+	if (!matches) {
+		return null;
+	}
+	const raw = matches[1] ?? '';
+	const parse = (start: number): number => Number.parseInt(raw.slice(start, start + 2), 16) / 255;
+	const r = parse(0);
+	const g = parse(2);
+	const b = parse(4);
+	const a = raw.length === 8 ? parse(6) : 0.95;
+	return [r, g, b, a];
+};
+
 const collectTransformerGroups = (
 	dataset: GridDataset,
 ): Array<{ transformerId: string; busIds: Set<string>; edgeIds: Set<string> }> => {
@@ -202,6 +219,7 @@ const copyColor = (target: Float32Array, targetOffset: number, color: readonly n
 export const normalizeGridDataset = (
 	dataset: GridDataset,
 	colorMode: GridColorMode = 'energized',
+	voltageLevelColors: VoltageLevelColors = {},
 ): NormalizedGridGraph => {
 	const busIds = dataset.buses.map((bus) => bus.id);
 	const busById = new Map(dataset.buses.map((bus) => [bus.id, bus]));
@@ -419,7 +437,10 @@ export const normalizeGridDataset = (
 		const busColorById = new Map<string, readonly number[]>();
 		for (const bus of dataset.buses) {
 			const voltageBucket = `${Math.round(bus.nominalVoltageKv * 100) / 100}kV`;
-			busColorById.set(bus.id, colorFromPalette(voltageBucket));
+			const configuredColor = voltageLevelColors[voltageBucket];
+			const parsedConfiguredColor =
+				typeof configuredColor === 'string' ? parseHexColorToRgba(configuredColor) : null;
+			busColorById.set(bus.id, parsedConfiguredColor ?? colorFromPalette(voltageBucket));
 		}
 		for (let index = 0; index < busIds.length; index += 1) {
 			const busId = busIds[index];

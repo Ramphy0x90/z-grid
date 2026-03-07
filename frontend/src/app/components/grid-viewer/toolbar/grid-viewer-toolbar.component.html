@@ -21,21 +21,6 @@
 			Map
 		</button>
 	</div>
-	@if (activeView() === 'map') {
-		<label class="map-style-control" for="map-style-select">
-			<span>Style</span>
-			<select
-				id="map-style-select"
-				class="map-style-select"
-				[value]="selectedMapStyleId()"
-				(change)="onMapStyleChange($event)"
-			>
-				@for (style of mapStyleOptions(); track style.id) {
-					<option [value]="style.id">{{ style.label }}</option>
-				}
-			</select>
-		</label>
-	}
 	<label
 		class="map-style-control color-mode-control"
 		for="color-mode-select"

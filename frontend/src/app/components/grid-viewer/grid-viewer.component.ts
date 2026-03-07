@@ -47,13 +47,13 @@ import { COLOR_MODE_OPTIONS, MAP_STYLE_OPTIONS } from './toolbar/grid-viewer-too
 import type {
 	ActiveView,
 	ColorModeId,
-	MapStyleId,
 	MapStyleOption,
 } from './toolbar/grid-viewer-toolbar.types';
 import { GridSelectors } from '../../stores/grid/grid.selectors';
 import { latToMercatorY, mercatorYToLat } from './utils/web-mercator';
 import { GridHoverResultOverlayService } from '../../services/grid-hover-result-overlay.service';
 import type { GridHoverResultCard } from '../../types/grid-hover-result.types';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 
 const NEW_GRID_MAP_VIEWPORT = {
 	centerX: 60,
@@ -97,6 +97,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private readonly facade = inject(GridViewerFacade);
 	private readonly store = inject(Store);
 	private readonly hoverResultOverlayService = inject(GridHoverResultOverlayService);
+	private readonly userPreferencesService = inject(UserPreferencesService);
 
 	@ViewChild('mapCanvas', { static: true })
 	private readonly mapCanvasRef?: ElementRef<HTMLCanvasElement>;
@@ -108,9 +109,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private readonly viewerBodyRef?: ElementRef<HTMLElement>;
 
 	protected readonly activeView = signal<ActiveView>('map');
-	protected readonly mapStyleOptions = MAP_STYLE_OPTIONS;
 	protected readonly colorModeOptions = COLOR_MODE_OPTIONS;
-	protected readonly selectedMapStyleId = signal<MapStyleId>(this.resolveInitialMapStyleId());
 	protected readonly selectedColorModeId = this.facade.colorMode;
 	readonly dataset = input<GridDataset | null>(null);
 	protected readonly editEnabled = this.store.selectSignal(GridSelectors.isGridEditState);
@@ -210,6 +209,19 @@ export class GridViewerComponent implements AfterViewInit {
 	private readonly colorModeSyncEffect = effect(() => {
 		this.facade.colorMode();
 		this.syncGraphToRenderers();
+	});
+	private readonly mapStyleSyncEffect = effect(() => {
+		this.userPreferencesService.preferences().mapStyle;
+		this.applyMapStyleLayer();
+	});
+	private readonly voltageLevelColorsSyncEffect = effect(() => {
+		this.facade.setVoltageLevelColors(this.userPreferencesService.preferences().voltageLevelColors);
+	});
+	private readonly defaultMapViewSyncEffect = effect(() => {
+		if (!this.userPreferencesService.isLoaded()) {
+			return;
+		}
+		this.setActiveView(this.userPreferencesService.preferences().defaultMapView);
 	});
 
 	ngAfterViewInit(): void {
@@ -317,11 +329,6 @@ export class GridViewerComponent implements AfterViewInit {
 		const isSameTool = this.facade.placementMode() === tool;
 		this.pendingConnectionBusId.set(null);
 		this.facade.setPlacementMode(isSameTool ? null : tool);
-	}
-
-	protected onMapStyleIdChange(mapStyleId: MapStyleId): void {
-		this.selectedMapStyleId.set(mapStyleId);
-		this.applyMapStyleLayer();
 	}
 
 	protected onColorModeIdChange(colorModeId: ColorModeId): void {
@@ -566,17 +573,11 @@ export class GridViewerComponent implements AfterViewInit {
 		return Math.min(MAP_VIEW_MAX_ZOOM, Math.max(0, rawZoom));
 	}
 
-	private resolveInitialMapStyleId(): MapStyleId {
-		const configuredTileUrl = environment.map.tileUrl;
-		const matching = MAP_STYLE_OPTIONS.find((style) => style.tileUrl === configuredTileUrl);
-		return matching?.id ?? 'cartoDark';
-	}
-
 	private getSelectedMapStyle(): MapStyleOption {
-		const selectedId = this.selectedMapStyleId();
+		const selectedId = this.userPreferencesService.preferences().mapStyle;
 		return (
 			MAP_STYLE_OPTIONS.find((style) => style.id === selectedId) ??
-			MAP_STYLE_OPTIONS.find((style) => style.id === 'cartoDark') ??
+			MAP_STYLE_OPTIONS.find((style) => style.tileUrl === environment.map.tileUrl) ??
 			MAP_STYLE_OPTIONS[0]
 		);
 	}

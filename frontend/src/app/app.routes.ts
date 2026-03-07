@@ -20,6 +20,7 @@ export type AppPageGroup = {
 export const enum ROUTES {
 	LOGIN = 'login',
 	PROJECTS = 'projects',
+	SETTINGS = 'settings',
 }
 
 export const ROUTE_PARAMS = {
@@ -108,6 +109,14 @@ export const routes: Routes = [
 		loadComponent: () =>
 			import('./pages/projects/projects-page.component').then(
 				(module) => module.ProjectsPageComponent,
+			),
+	},
+	{
+		path: ROUTES.SETTINGS,
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./pages/settings/settings-page.component').then(
+				(module) => module.SettingsPageComponent,
 			),
 	},
 	{

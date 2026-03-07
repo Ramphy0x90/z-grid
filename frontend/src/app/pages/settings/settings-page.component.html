@@ -1,0 +1,145 @@
+<div class="settings-shell" aria-label="Settings">
+
+	<main class="settings-content">
+		<header class="page-header">
+			<h2 class="page-title">Settings</h2>
+			<p class="page-desc">Manage your account and application preferences.</p>
+		</header>
+
+		<form [formGroup]="form" (ngSubmit)="save()" novalidate class="settings-form">
+
+			<!-- Map section -->
+			<section id="map-section" class="settings-section" aria-labelledby="map-heading">
+				<header class="section-header">
+					<h3 id="map-heading" class="section-title">Map</h3>
+					<p class="section-desc">Control how the map looks and which view is shown by default when opening a project.</p>
+				</header>
+
+				<!-- Map Style -->
+				<div class="setting-row">
+					<div class="setting-info">
+						<span class="setting-label" id="map-style-label">Map Style</span>
+						<span class="setting-hint">The basemap tile layer rendered underneath the grid.</span>
+					</div>
+					<div class="setting-control" role="radiogroup" aria-labelledby="map-style-label">
+						<div class="tile-grid">
+							@for (option of mapStyleOptions; track option.value) {
+								<label
+									class="tile"
+									[class.tile-selected]="form.get('mapStyle')?.value === option.value"
+								>
+									<input
+										type="radio"
+										formControlName="mapStyle"
+										[value]="option.value"
+										class="sr-only"
+									/>
+									<span class="tile-name">{{ option.label }}</span>
+									<span class="tile-desc">{{ option.description }}</span>
+								</label>
+							}
+						</div>
+					</div>
+				</div>
+
+				<div class="divider" aria-hidden="true"></div>
+
+				<!-- Default View -->
+				<div class="setting-row">
+					<div class="setting-info">
+						<span class="setting-label" id="map-view-label">Default View</span>
+						<span class="setting-hint">Which panel is shown first when opening a project grid.</span>
+					</div>
+					<div class="setting-control">
+						<div class="seg-control" role="radiogroup" aria-labelledby="map-view-label">
+							@for (option of mapViewOptions; track option.value) {
+								<label
+									class="seg-option"
+									[class.seg-option-selected]="form.get('defaultMapView')?.value === option.value"
+								>
+									<input
+										type="radio"
+										formControlName="defaultMapView"
+										[value]="option.value"
+										class="sr-only"
+									/>
+									<i [class]="'bi ' + option.icon" aria-hidden="true"></i>
+									<span>{{ option.label }}</span>
+								</label>
+							}
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Analysis section -->
+			<section id="analysis-section" class="settings-section" aria-labelledby="analysis-heading">
+				<header class="section-header">
+					<h3 id="analysis-heading" class="section-title">Analysis Defaults</h3>
+					<p class="section-desc">Pre-fill the country standard when starting a new calculation run. You can always override it per run.</p>
+				</header>
+
+				<div class="setting-row">
+					<div class="setting-info">
+						<label class="setting-label" for="pq-country">Power Quality Country</label>
+						<span class="setting-hint">The grid code and limits applied in power-quality calculations.</span>
+					</div>
+					<div class="setting-control">
+						<select id="pq-country" formControlName="defaultPowerQualityCountry" class="select-input">
+							@for (option of countryOptions; track option.value) {
+								<option [value]="option.value">{{ option.flag }} {{ option.label }}</option>
+							}
+						</select>
+					</div>
+				</div>
+
+				<div class="divider" aria-hidden="true"></div>
+
+				<div class="setting-row">
+					<div class="setting-info">
+						<label class="setting-label" for="hc-country">Hosting Capacity Country</label>
+						<span class="setting-hint">The grid code and limits applied in hosting-capacity calculations.</span>
+					</div>
+					<div class="setting-control">
+						<select id="hc-country" formControlName="defaultHostingCapacityCountry" class="select-input">
+							@for (option of countryOptions; track option.value) {
+								<option [value]="option.value">{{ option.flag }} {{ option.label }}</option>
+							}
+						</select>
+					</div>
+				</div>
+			</section>
+
+			<!-- Footer save -->
+			<footer class="settings-footer">
+				@if (saveError()) {
+					<p class="feedback feedback-error" role="alert">
+						<i class="bi-exclamation-triangle-fill" aria-hidden="true"></i>
+						{{ saveError() }}
+					</p>
+				}
+				@if (saveSuccess()) {
+					<p class="feedback feedback-success" role="status">
+						<i class="bi-check-circle-fill" aria-hidden="true"></i>
+						Preferences saved successfully.
+					</p>
+				}
+				<button
+					type="submit"
+					class="btn-save"
+					[disabled]="form.invalid || saving()"
+					[attr.aria-busy]="saving()"
+				>
+					@if (saving()) {
+						<span class="spinner" aria-hidden="true"></span>
+						Saving…
+					} @else {
+						Save Changes
+					}
+				</button>
+			</footer>
+
+		</form>
+	</main>
+
+</div>
