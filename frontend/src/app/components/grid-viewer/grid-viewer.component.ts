@@ -172,6 +172,7 @@ export class GridViewerComponent implements AfterViewInit {
 	private dragBusId: string | null = null;
 	private dragLastWorldPoint: { x: number; y: number } | null = null;
 	private dragChangedDataset = false;
+	private defaultMapViewInitialized = false;
 	private readonly pendingConnectionBusId = signal<string | null>(null);
 	private readonly viewerSize = signal({ width: 1, height: 1 });
 	private readonly datasetSyncEffect = effect(() => {
@@ -221,6 +222,10 @@ export class GridViewerComponent implements AfterViewInit {
 		if (!this.userPreferencesService.isLoaded()) {
 			return;
 		}
+		if (this.defaultMapViewInitialized) {
+			return;
+		}
+		this.defaultMapViewInitialized = true;
 		this.setActiveView(this.userPreferencesService.preferences().defaultMapView);
 	});
 

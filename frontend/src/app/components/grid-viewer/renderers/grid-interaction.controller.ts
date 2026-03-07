@@ -15,6 +15,7 @@ export type InteractionCallbacks = {
 export class GridInteractionController {
 	private dragMode: 'none' | 'pan' | 'element' = 'none';
 	private draggedElement: SelectedElement = null;
+	private activePointerId: number | null = null;
 	private lastX = 0;
 	private lastY = 0;
 	private hasMoved = false;
@@ -30,12 +31,15 @@ export class GridInteractionController {
 	}
 
 	dispose(): void {
+		this.completeActiveInteraction(false);
 		this.canvas.removeEventListener('pointerdown', this.onPointerDown);
 		this.canvas.removeEventListener('pointermove', this.onPointerMove);
-		this.canvas.removeEventListener('pointerup', this.onPointerUp);
 		this.canvas.removeEventListener('pointerleave', this.onPointerLeave);
 		this.canvas.removeEventListener('wheel', this.onWheel);
 		this.canvas.removeEventListener('click', this.onClick);
+		window.removeEventListener('pointermove', this.onWindowPointerMove, true);
+		window.removeEventListener('pointerup', this.onWindowPointerUp, true);
+		window.removeEventListener('pointercancel', this.onWindowPointerCancel, true);
 		if (this.pendingHoverFrame !== 0) {
 			cancelAnimationFrame(this.pendingHoverFrame);
 			this.pendingHoverFrame = 0;
@@ -45,13 +49,19 @@ export class GridInteractionController {
 	private bindEvents(): void {
 		this.canvas.addEventListener('pointerdown', this.onPointerDown);
 		this.canvas.addEventListener('pointermove', this.onPointerMove);
-		this.canvas.addEventListener('pointerup', this.onPointerUp);
 		this.canvas.addEventListener('pointerleave', this.onPointerLeave);
 		this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
 		this.canvas.addEventListener('click', this.onClick);
+		window.addEventListener('pointermove', this.onWindowPointerMove, true);
+		window.addEventListener('pointerup', this.onWindowPointerUp, true);
+		window.addEventListener('pointercancel', this.onWindowPointerCancel, true);
 	}
 
 	private readonly onPointerDown = (event: PointerEvent): void => {
+		if (event.button !== 0 || this.activePointerId !== null) {
+			return;
+		}
+		this.activePointerId = event.pointerId;
 		this.lastX = event.offsetX;
 		this.lastY = event.offsetY;
 		this.hasMoved = false;
@@ -68,66 +78,102 @@ export class GridInteractionController {
 			this.dragMode = 'pan';
 			this.draggedElement = null;
 		}
-		this.canvas.setPointerCapture(event.pointerId);
 		this.canvas.style.cursor = 'grabbing';
 	};
 
 	private readonly onPointerMove = (event: PointerEvent): void => {
+		if (this.activePointerId !== null) {
+			return;
+		}
+		this.scheduleHover(event.offsetX, event.offsetY);
+	};
+
+	private readonly onWindowPointerMove = (event: PointerEvent): void => {
+		if (this.activePointerId !== null && event.pointerId !== this.activePointerId) {
+			return;
+		}
+		if (this.activePointerId === null) {
+			return;
+		}
+		const point = this.toCanvasPoint(event);
 		if (this.dragMode === 'pan') {
-			const dx = event.offsetX - this.lastX;
-			const dy = event.offsetY - this.lastY;
+			const dx = point.x - this.lastX;
+			const dy = point.y - this.lastY;
 			this.hasMoved =
 				this.hasMoved || Math.abs(dx) > Number.EPSILON || Math.abs(dy) > Number.EPSILON;
-			this.lastX = event.offsetX;
-			this.lastY = event.offsetY;
+			this.lastX = point.x;
+			this.lastY = point.y;
 			const viewport = this.renderer.panBy(dx, dy);
 			this.callbacks.onViewportChange(viewport);
 			return;
 		}
 		if (this.dragMode === 'element' && this.draggedElement) {
-			const dx = event.offsetX - this.lastX;
-			const dy = event.offsetY - this.lastY;
+			const dx = point.x - this.lastX;
+			const dy = point.y - this.lastY;
 			this.hasMoved =
 				this.hasMoved || Math.abs(dx) > Number.EPSILON || Math.abs(dy) > Number.EPSILON;
-			this.lastX = event.offsetX;
-			this.lastY = event.offsetY;
+			this.lastX = point.x;
+			this.lastY = point.y;
 			this.callbacks.onElementDrag?.(
 				this.draggedElement,
-				this.renderer.toWorldCoordinates(event.offsetX, event.offsetY),
+				this.renderer.toWorldCoordinates(point.x, point.y),
 			);
 			return;
 		}
-		if (this.pendingHoverFrame !== 0) {
-			return;
-		}
-		this.pendingHoverFrame = requestAnimationFrame(() => {
-			this.pendingHoverFrame = 0;
-			this.callbacks.onHoverChange(this.renderer.hitTest(event.offsetX, event.offsetY));
-		});
 	};
 
-	private readonly onPointerUp = (event: PointerEvent): void => {
-		if (this.dragMode === 'element' && this.draggedElement) {
+	private readonly onWindowPointerUp = (event: PointerEvent): void => {
+		if (event.pointerId !== this.activePointerId) {
+			return;
+		}
+		this.completeActiveInteraction(true);
+	};
+
+	private readonly onWindowPointerCancel = (event: PointerEvent): void => {
+		if (event.pointerId !== this.activePointerId) {
+			return;
+		}
+		this.completeActiveInteraction(true);
+	};
+
+	private readonly onPointerLeave = (): void => {
+		// Keep drag active when pointer left canvas bounds; drag end is handled by
+		// global pointerup/pointercancel listeners.
+		if (this.activePointerId !== null) {
+			return;
+		}
+		this.callbacks.onHoverChange(null);
+	};
+
+	private completeActiveInteraction(emitDragEnd: boolean): void {
+		if (emitDragEnd && this.dragMode === 'element' && this.draggedElement) {
 			this.callbacks.onElementDragEnd?.(this.draggedElement);
 		}
 		this.suppressClick = this.hasMoved;
 		this.dragMode = 'none';
 		this.draggedElement = null;
+		this.activePointerId = null;
 		this.hasMoved = false;
-		this.canvas.releasePointerCapture(event.pointerId);
 		this.canvas.style.cursor = 'crosshair';
-	};
+	}
 
-	private readonly onPointerLeave = (): void => {
-		if (this.dragMode === 'element' && this.draggedElement) {
-			this.callbacks.onElementDragEnd?.(this.draggedElement);
+	private scheduleHover(screenX: number, screenY: number): void {
+		if (this.pendingHoverFrame !== 0) {
+			return;
 		}
-		this.dragMode = 'none';
-		this.draggedElement = null;
-		this.hasMoved = false;
-		this.canvas.style.cursor = 'crosshair';
-		this.callbacks.onHoverChange(null);
-	};
+		this.pendingHoverFrame = requestAnimationFrame(() => {
+			this.pendingHoverFrame = 0;
+			this.callbacks.onHoverChange(this.renderer.hitTest(screenX, screenY));
+		});
+	}
+
+	private toCanvasPoint(event: PointerEvent): { x: number; y: number } {
+		const bounds = this.canvas.getBoundingClientRect();
+		return {
+			x: event.clientX - bounds.left,
+			y: event.clientY - bounds.top,
+		};
+	}
 
 	private readonly onWheel = (event: WheelEvent): void => {
 		event.preventDefault();

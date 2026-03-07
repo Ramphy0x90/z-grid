@@ -217,6 +217,7 @@
 	display: block;
 	cursor: crosshair;
 	z-index: 1;
+	touch-action: none;
 }
 
 .viewer-body-placement .viewer-canvas {
